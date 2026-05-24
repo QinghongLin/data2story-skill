@@ -1,0 +1,7 @@
+{
+  "tool": "openrouter-text2music",
+  "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "default_model": "google/lyria-3-pro-preview",
+  "env_key": "OPENROUTER_API_KEY",
+  "note": "Music generation only. Not TTS — use a separate TTS tool for narration."
+}

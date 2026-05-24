@@ -1,0 +1,8 @@
+{
+  "tool": "openrouter-image2video",
+  "submit_endpoint": "https://openrouter.ai/api/v1/videos",
+  "poll_endpoint": "https://openrouter.ai/api/v1/videos/{jobId}",
+  "content_endpoint": "https://openrouter.ai/api/v1/videos/{jobId}/content",
+  "default_model": "google/veo-3.1-fast",
+  "env_key": "OPENROUTER_API_KEY"
+}

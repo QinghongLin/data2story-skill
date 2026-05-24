@@ -1,0 +1,6 @@
+{
+  "tool": "openrouter-embeddings",
+  "endpoint": "https://openrouter.ai/api/v1/embeddings",
+  "default_model": "qwen/qwen3-embedding-8b",
+  "env_key": "OPENROUTER_API_KEY"
+}
