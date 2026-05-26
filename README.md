@@ -46,10 +46,10 @@ Think of it as a small newsroom in a box. Each role reads what the previous one 
    └──┬───┘
       ▼
    Detective → Analyst → Editor → Designer → Programmer → Auditor → Inspector
-   (context)   (numbers)  (story)  (visuals)  (the HTML)   (layout)   (fact-check)
+   (context)   (numbers)  (story)  (visuals)  (the HTML)   (layout)   (evidence-blinding)
       │
       ▼
-   final index.html  +  interactive viewer.html
+   final index.html  +  viewer.html (evidence-grounded)
 ```
 
 | # | Role | What it does | Produces |
