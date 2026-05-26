@@ -1,34 +1,19 @@
-<div align="center">
-
-<img src="assets/logo.png" alt="Data Journalist Agent logo" width="100"/>
-
 # Data2Story
 
-</div>
+<p align="center">
+<img src="assets/logo.png" alt="Data2Story" width="96">
+<p>
+
+<p align="center">
+        &nbsp&nbsp 🌐 <a href="https://data2story.github.io/">Website</a> &nbsp&nbsp 
+        | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2411.17465">Paper</a> &nbsp&nbsp 
+</p>
+
+<!-- [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fshowlab%2FShowUI&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com) -->
 
 > **Data Journalist Agent: Transforming Data into a Reproducible Multimodal Story**<br>
-> Kevin Qinghong Lin, Batu EI, Yuhong Shi, Pan Lu, Philip Torr, James Zou
+> [Kevin Qinghong Lin](https://qhlin.me/), [Batu EI](https://ellabs.ai/#/works), [Yuhong Shi](https://www.linkedin.com/in/yuhong-shi-134a7b3b5/), [Pan Lu](https://lupantech.github.io/), [Philip Torr](https://eng.ox.ac.uk/people/philip-torr), [James Zou](https://www.james-zou.com/)
 > <br>University of Oxford, Stanford University<br>
-
-
-**Turn any dataset into a polished, fully traceable data-story blog — automatically.**
-
-## ✏️ TL;DR
-
-Give **Data2Story** a folder of data. It hands back a finished, web-ready blog post — researched, analyzed, written, designed, and built into a single page. Two properties set it apart:
-
-**🔍 Claims are evidence-grounded and reproducible.** Every number and sentence in the article carries hidden `data-*` tags that trace back to the exact calculation or source that produced it. The pipeline ships an interactive `viewer.html` — click any sentence to see its evidence chain, all the way down to a re-runnable Python script.
-
-```
-HTML  data-des="des_01"
-   └─▶ designer.json   des_01.data_source = "ana_01"
-        └─▶ analyst.json   ana_01.calculation.code
-             └─▶ a real, re-runnable Python script
-```
-
-**🎨 Articles are multimodally generative.** The story isn't just text and charts. A designer role picks the right medium for each finding — generating **images, video, music / sonification, and interactive demos** that fit the data — so readers can *see, hear, and play with* the insight, not just read it.
-
----
 
 ## 🚀 Quick Start
 
