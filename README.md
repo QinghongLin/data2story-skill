@@ -36,7 +36,7 @@ Each run creates its own **versioned project folder** and snapshots the exact sk
 
 ---
 
-## 🗞️ The Newsroom
+## 🏢 The Virtual Newsroom
 
 Think of it as a small newsroom in a box. Each role reads what the previous one produced, then adds its own artifact — a fixed pipeline that runs once, end to end.
 
