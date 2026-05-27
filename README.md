@@ -11,13 +11,18 @@
 
 <!-- [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fshowlab%2FShowUI&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com) -->
 
-> **Data Journalist Agent: Transforming Data into a Reproducible Multimodal Story**<br>
-> [Kevin Qinghong Lin](https://qhlin.me/), [Batu EI](https://ellabs.ai/#/works), [Yuhong Shi](https://www.linkedin.com/in/yuhong-shi-134a7b3b5/), [Pan Lu](https://lupantech.github.io/), [Philip Torr](https://eng.ox.ac.uk/people/philip-torr), [James Zou](https://www.james-zou.com/)
-> <br>University of Oxford, Stanford University<br>
+<p align="center">
+<b>Data2Story is a data-journalist agent that turns any dataset into a reproducible, evidence-grounded multimodal story.</b><br>
+It runs a newsroom of specialist roles — from raw data to a published article where every sentence traces back to its source.
+</p>
 
 <p align="center">
 <img src="assets/teaser.png" alt="Data2Story turns a dataset into a reproducible multimodal story" width="820">
 </p>
+
+> **Data Journalist Agent: Transforming Data into a Reproducible Multimodal Story**<br>
+> [Kevin Qinghong Lin](https://qhlin.me/), [Batu EI](https://ellabs.ai/#/works), [Yuhong Shi](https://www.linkedin.com/in/yuhong-shi-134a7b3b5/), [Pan Lu](https://lupantech.github.io/), [Philip Torr](https://eng.ox.ac.uk/people/philip-torr), [James Zou](https://www.james-zou.com/)
+> <br>University of Oxford, Stanford University<br>
 
 ## 🖼️ Gallery
 
