@@ -17,20 +17,41 @@
 
 ## 🚀 Quick Start
 
-Data2Story is a [Claude Code](https://claude.com/claude-code) skill. The orchestrator lives in [`skill/SKILL.md`](skill/SKILL.md).
+Data2Story is an agent skill. The orchestrator lives in [`skills/SKILL.md`](skills/SKILL.md) — point any coding agent at it. It works first-class with [Claude Code](https://claude.com/claude-code), and equally with [Codex](https://openai.com/codex/) and other agents (Cursor, Gemini CLI, etc.).
 
 ```
-data2blog-skill/
+data2story-skill/
 ├── assets/        # logo and shared assets
-├── skill/         # the agent: SKILL.md + one folder per role
+├── skills/        # the agent: SKILL.md + one folder per role
 │   ├── detective/ analyst/ editor/ designer/
 │   └── programmer/ auditor/ inspector/
 └── tools/         # OpenRouter media tools (text→image/video/music, embeddings)
 ```
 
-1. Set your API key for media generation: `export OPENROUTER_API_KEY=...`
-2. Point the agent at a dataset and let the pipeline run.
-3. Open the resulting `index.html` (the blog) and `viewer.html` (the evidence inspector).
+**1. Set up your API key.** Media generation routes through [OpenRouter](https://openrouter.ai/) by default (you can swap in another provider):
+
+```bash
+export OPENROUTER_API_KEY=sk-or-...
+```
+
+**2. Run the skill** by pointing your agent at a dataset:
+
+- **Claude Code** — drop `skills/` into your skills folder, then:
+
+  ```
+  /data2story data/pick_a_card
+  ```
+
+- **Codex / other agents** — open the repo and ask the agent to follow the orchestrator:
+
+  ```
+  Read skills/SKILL.md and run the Data2Story pipeline on data/pick_a_card
+  ```
+
+**3. Open the output.** Each run writes a self-contained blog and an evidence viewer:
+
+- `index.html` — the finished multimodal blog
+- `viewer.html` — the evidence-grounded inspector, where every sentence traces back to its source
 
 Each run creates its own **versioned project folder** and snapshots the exact skill versions used, so results are reproducible.
 
@@ -46,7 +67,6 @@ Think of it as a small newsroom in a box. Each role reads what the previous one 
    └──┬───┘
       ▼
    Detective → Analyst → Editor → Designer → Programmer → Auditor → Inspector
-   (context)   (numbers)  (story)  (visuals)  (the HTML)   (layout)   (evidence-blinding)
       │
       ▼
    final index.html  +  viewer.html (evidence-grounded)
