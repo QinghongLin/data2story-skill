@@ -21,7 +21,7 @@
 
 ## 🖼️ Gallery
 
-Curious what it produces? Browse real example stories in the gallery on our **[website](https://data2story.github.io/)** before you start.
+Curious what it produces? Browse real example stories in the gallery on our [website](https://data2story.github.io/) before you start.
 
 <p align="center">
 <a href="https://data2story.github.io/"><img src="assets/gallery.png" alt="Gallery of agent-generated stories" width="820"></a>
