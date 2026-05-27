@@ -15,9 +15,17 @@
 > [Kevin Qinghong Lin](https://qhlin.me/), [Batu EI](https://ellabs.ai/#/works), [Yuhong Shi](https://www.linkedin.com/in/yuhong-shi-134a7b3b5/), [Pan Lu](https://lupantech.github.io/), [Philip Torr](https://eng.ox.ac.uk/people/philip-torr), [James Zou](https://www.james-zou.com/)
 > <br>University of Oxford, Stanford University<br>
 
+<p align="center">
+<img src="assets/teaser.png" alt="Data2Story turns a dataset into a reproducible multimodal story" width="820">
+</p>
+
 ## 🖼️ Gallery
 
 Curious what it produces? Browse real example stories in the gallery on our **[website](https://data2story.github.io/)** before you start.
+
+<p align="center">
+<a href="https://data2story.github.io/"><img src="assets/gallery.png" alt="Gallery of agent-generated stories" width="820"></a>
+</p>
 
 ## 🚀 Quick Start
 
@@ -64,6 +72,10 @@ Each run creates its own **versioned project folder** and snapshots the exact sk
 ## 🏢 The Virtual Newsroom
 
 Think of it as a small newsroom in a box. Each role reads what the previous one produced, then adds its own artifact — a fixed pipeline that runs once, end to end.
+
+<p align="center">
+<img src="assets/pipeline.png" alt="The Data2Story newsroom pipeline" width="900">
+</p>
 
 ```
    ┌──────┐
