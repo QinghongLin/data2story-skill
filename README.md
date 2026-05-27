@@ -48,9 +48,9 @@ export OPENROUTER_API_KEY=sk-or-...
   Read skills/SKILL.md and run the Data2Story pipeline on data/pick_a_card
   ```
 
-**3. Open the output.** Each run writes a self-contained blog and an evidence viewer:
+**3. Open the output.** Each run writes a self-contained article and an evidence viewer:
 
-- `index.html` — the finished multimodal blog
+- `index.html` — the finished multimodal article
 - `viewer.html` — the evidence-grounded inspector, where every sentence traces back to its source
 
 Each run creates its own **versioned project folder** and snapshots the exact skill versions used, so results are reproducible.
@@ -76,7 +76,7 @@ Think of it as a small newsroom in a box. Each role reads what the previous one 
 |---|------|--------------|----------|
 | 1 | 🕵️ **Detective** | Researches external context — domain background, history, why the data matters | `detective.json` |
 | 2 | 📊 **Analyst** | Exhaustively profiles the data — distributions, correlations, trends, anomalies | `analyst.json`, `code/*.py` |
-| 3 | ✍️ **Editor** | Decides the narrative — what the blog argues and which findings matter | `editor.md`, `editor.json` |
+| 3 | ✍️ **Editor** | Decides the narrative — what the article argues and which findings matter | `editor.md`, `editor.json` |
 | 4 | 🎨 **Designer** | Chooses how to show each point — charts, images, video, interactives | `designer.json`, `assets/` |
 | 5 | 💻 **Programmer** | Builds the final HTML, tagging every element with its source IDs | `index.html` |
 | 6 | 🔧 **Auditor** | Fixes layout issues — overlap, spacing, alignment — without changing content | `index.html` (fixed), `auditor.json` |
