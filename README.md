@@ -1,10 +1,6 @@
 # Data2Story
 
 <p align="center">
-<img src="assets/logo.png" alt="Data2Story" width="96">
-<p>
-
-<p align="center">
         &nbsp&nbsp 🌐 <a href="https://data2story.github.io/">Website</a> &nbsp&nbsp 
         | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2411.17465">Paper</a> &nbsp&nbsp 
 </p>
@@ -12,8 +8,7 @@
 <!-- [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fshowlab%2FShowUI&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com) -->
 
 <p align="center">
-<b>Data2Story is a data-journalist agent that turns any dataset into a reproducible, evidence-grounded multimodal story.</b><br>
-It runs a newsroom of specialist roles — from raw data to a published article where every sentence traces back to its source.
+<b>TL;DR:</b> A data-journalist agent that turns any dataset into a reproducible, evidence-grounded multimodal story.
 </p>
 
 <p align="center">
