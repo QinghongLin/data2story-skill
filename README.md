@@ -15,6 +15,10 @@
 > [Kevin Qinghong Lin](https://qhlin.me/), [Batu EI](https://ellabs.ai/#/works), [Yuhong Shi](https://www.linkedin.com/in/yuhong-shi-134a7b3b5/), [Pan Lu](https://lupantech.github.io/), [Philip Torr](https://eng.ox.ac.uk/people/philip-torr), [James Zou](https://www.james-zou.com/)
 > <br>University of Oxford, Stanford University<br>
 
+## 🖼️ Gallery
+
+Curious what it produces? Browse real example stories in the gallery on our **[website](https://data2story.github.io/)** before you start.
+
 ## 🚀 Quick Start
 
 Data2Story is an agent skill. The orchestrator lives in [`skills/SKILL.md`](skills/SKILL.md) — point any coding agent at it. It works first-class with [Claude Code](https://claude.com/claude-code), and equally with [Codex](https://openai.com/codex/) and other agents (Cursor, Gemini CLI, etc.).
@@ -36,7 +40,7 @@ export OPENROUTER_API_KEY=sk-or-...
 
 **2. Run the skill** by pointing your agent at a dataset:
 
-- **Claude Code** — drop `skills/` into your skills folder, then:
+- **Claude Code** — make the skill available to Claude Code (place `skills/` under `~/.claude/skills/`, or run from inside this repo), then invoke it:
 
   ```
   /data2story data/pick_a_card
@@ -67,9 +71,9 @@ Think of it as a small newsroom in a box. Each role reads what the previous one 
    └──┬───┘
       ▼
    Detective → Analyst → Editor → Designer → Programmer → Auditor → Inspector
-      │
-      ▼
-   final index.html  +  viewer.html (evidence-grounded)
+                                                                        │
+                                                                        ▼
+                                              final index.html  +  viewer.html (evidence-grounded)
 ```
 
 | # | Role | What it does | Produces |
