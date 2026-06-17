@@ -2,7 +2,7 @@
 
 A data-journalist agent skill that turns any dataset into a verifiable, evidence-grounded multimodal story — a self-contained HTML article where every sentence traces back to the data or source that justifies it.
 
-[![Website](https://img.shields.io/badge/🌐_Website-data2story.github.io-1a73e8)](https://data2story.github.io/)
+[![Website](https://img.shields.io/badge/🌐_Website-1a73e8)](https://data2story.github.io/)
 [![arXiv](https://img.shields.io/badge/arXiv-2606.11176-b31b1b?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2606.11176)
 [![License: MIT](https://img.shields.io/badge/License-MIT-3da639.svg)](LICENSE)
 
@@ -40,9 +40,32 @@ Data2Story is an agent skill. The orchestrator lives in `skills/SKILL.md` — it
 
 3. Open the output: `index.html` (the finished article) and `viewer.html` (the evidence inspector).
 
+## Project structure
+
+```
+data2story-skill/
+├── skills/   the agent: SKILL.md (orchestrator) + one folder per role
+│             each role = SKILL.md (instructions) + references/ (JSON) + scripts/ (the tools it runs)
+│               · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
+│               · inspector/scripts/ — verify.py + generate_viewer.py
+│               · detective/scripts/ — Wikimedia/Commons fetch helpers
+├── data/     example datasets
+└── assets/   shared images
+```
+
 ## The virtual newsroom
 
 Think of it as a small newsroom in a box. Each role reads what the previous one produced, then adds its own artifact — a fixed pipeline that runs once, end to end.
+
+| # | Role | What it does | Produces |
+|---|------|--------------|----------|
+| 1 | **Detective** | Researches external context — domain background, history, why the data matters | `detective.json` |
+| 2 | **Analyst** | Exhaustively profiles the data — distributions, correlations, trends, anomalies | `analyst.json`, `code/*.py` |
+| 3 | **Editor** | Decides the narrative — what the article argues and which findings matter | `editor.md`, `editor.json` |
+| 4 | **Designer** | Chooses how to show each point — charts, images, video, audio, interactives | `designer.json`, `assets/` |
+| 5 | **Programmer** | Builds the final HTML, tagging every element with its source IDs | `index.html` |
+| 6 | **Auditor** | Fixes layout issues — overlap, spacing, alignment — without changing content | `index.html` (fixed), `auditor.json` |
+| 7 | **Inspector** | Verifies every sentence traces to its evidence; builds an interactive viewer | `inspector.json`, `viewer.html` |
 
 ```mermaid
 flowchart TB
@@ -64,29 +87,6 @@ flowchart TB
     DATA --> DET
     DES -->|designer.json + assets| PRG
     INS -->|inspector.json + viewer.html| OUT([article + evidence viewer])
-```
-
-| # | Role | What it does | Produces |
-|---|------|--------------|----------|
-| 1 | **Detective** | Researches external context — domain background, history, why the data matters | `detective.json` |
-| 2 | **Analyst** | Exhaustively profiles the data — distributions, correlations, trends, anomalies | `analyst.json`, `code/*.py` |
-| 3 | **Editor** | Decides the narrative — what the article argues and which findings matter | `editor.md`, `editor.json` |
-| 4 | **Designer** | Chooses how to show each point — charts, images, video, audio, interactives | `designer.json`, `assets/` |
-| 5 | **Programmer** | Builds the final HTML, tagging every element with its source IDs | `index.html` |
-| 6 | **Auditor** | Fixes layout issues — overlap, spacing, alignment — without changing content | `index.html` (fixed), `auditor.json` |
-| 7 | **Inspector** | Verifies every sentence traces to its evidence; builds an interactive viewer | `inspector.json`, `viewer.html` |
-
-## Project structure
-
-```
-data2story-skill/
-├── skills/   the agent: SKILL.md (orchestrator) + one folder per role
-│             each role = SKILL.md (instructions) + references/ (JSON) + scripts/ (the tools it runs)
-│               · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
-│               · inspector/scripts/ — verify.py + generate_viewer.py
-│               · detective/scripts/ — Wikimedia/Commons fetch helpers
-├── data/     example datasets
-└── assets/   shared images
 ```
 
 
