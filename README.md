@@ -45,14 +45,24 @@ Data2Story is an agent skill. The orchestrator lives in `skills/SKILL.md` — it
 Think of it as a small newsroom in a box. Each role reads what the previous one produced, then adds its own artifact — a fixed pipeline that runs once, end to end.
 
 ```mermaid
-flowchart LR
-    DATA[(dataset)] --> DET[Detective]
-    DET -->|detective.json| ANA[Analyst]
-    ANA -->|analyst.json + code| EDT[Editor]
-    EDT -->|editor.md + editor.json| DES[Designer]
-    DES -->|designer.json + assets| PRG[Programmer]
-    PRG -->|index.html| AUD[Auditor]
-    AUD -->|index.html| INS[Inspector]
+flowchart TB
+    DATA[(dataset)]
+
+    subgraph plan [Plan and design]
+        direction LR
+        DET[Detective] -->|detective.json| ANA[Analyst]
+        ANA -->|analyst.json + code| EDT[Editor]
+        EDT -->|editor.md + editor.json| DES[Designer]
+    end
+
+    subgraph build [Build and verify]
+        direction LR
+        PRG[Programmer] -->|index.html| AUD[Auditor]
+        AUD -->|index.html| INS[Inspector]
+    end
+
+    DATA --> DET
+    DES -->|designer.json + assets| PRG
     INS -->|inspector.json + viewer.html| OUT([article + evidence viewer])
 ```
 
