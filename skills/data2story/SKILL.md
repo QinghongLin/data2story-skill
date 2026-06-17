@@ -14,8 +14,8 @@ Turn **$ARGUMENTS** into a blog. Orchestrates the roles below in sequence.
 Resolve paths before doing anything:
 
 - Never hard-code machine-local paths and never ask the user to export path variables.
-- Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills`)
-- Resolve `ARCHIVE_DIR` = parent of `SKILL_DIR`; it must contain `skills/`
+- Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills/data2story`)
+- Resolve `ARCHIVE_DIR` = the ancestor directory that contains `skills/` (two levels up from `SKILL_DIR`, i.e. `SKILL_DIR/../..`)
 - Resolve `DATA2STORY_ROOT` = parent of `ARCHIVE_DIR`
 - Commands below use symbolic placeholders such as `ARCHIVE_DIR`; replace them with resolved, quoted paths before running Bash.
 - `DATA_NAME` = the dataset folder name (e.g. `pick_a_card`)

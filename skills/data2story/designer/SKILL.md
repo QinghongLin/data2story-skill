@@ -14,7 +14,7 @@ Think like a creative director, not a developer. Your output is a precise visual
 ## Setup
 
 - `PROJECT_DIR` = first argument
-- Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills/designer`). Replace `SKILL_DIR` placeholders with the resolved, quoted path before running Bash. Do not hard-code machine-local paths.
+- Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills/data2story/designer`). Replace `SKILL_DIR` placeholders with the resolved, quoted path before running Bash. Do not hard-code machine-local paths.
 - Read `PROJECT_DIR/editor.md`, `PROJECT_DIR/editor.json`, and `PROJECT_DIR/analyst.json` before doing anything
 - Assets go in `PROJECT_DIR/assets/`
 - Output: `PROJECT_DIR/designer.json`

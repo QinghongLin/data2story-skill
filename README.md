@@ -16,7 +16,7 @@ A data-journalist agent skill that turns any dataset into a verifiable, evidence
 
 ## Installation & usage
 
-Data2Story is an agent skill. The orchestrator lives in `skills/SKILL.md` — it works first-class with Claude Code, and equally with Codex, Cursor, Gemini CLI, and other agents.
+Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL.md` — it works first-class with Claude Code, and equally with Codex, Cursor, Gemini CLI, and other agents.
 
 1. Set your API key. Media generation routes through [OpenRouter](https://openrouter.ai/) by default:
 
@@ -26,7 +26,7 @@ Data2Story is an agent skill. The orchestrator lives in `skills/SKILL.md` — it
 
 2. Run the skill on a dataset:
 
-   - **Claude Code** — make the skill available (place `skills/` under `~/.claude/skills/`, or run from inside this repo), then:
+   - **Claude Code** — make the skill available (place `skills/data2story/` under `~/.claude/skills/`, or run from inside this repo), then:
 
      ```
      /data2story data/pick_a_card
@@ -35,7 +35,7 @@ Data2Story is an agent skill. The orchestrator lives in `skills/SKILL.md` — it
    - **Codex / other agents** — open the repo and ask the agent to follow the orchestrator:
 
      ```
-     Read skills/SKILL.md and run the Data2Story pipeline on data/pick_a_card
+     Read skills/data2story/SKILL.md and run the Data2Story pipeline on data/pick_a_card
      ```
 
 3. Open the output: `index.html` (the finished article) and `viewer.html` (the evidence inspector).
@@ -44,11 +44,12 @@ Data2Story is an agent skill. The orchestrator lives in `skills/SKILL.md` — it
 
 ```
 data2story-skill/
-├── skills/   the agent: SKILL.md (orchestrator) + one folder per role
-│             each role = SKILL.md (instructions) + references/ (JSON) + scripts/ (the tools it runs)
-│               · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
-│               · inspector/scripts/ — verify.py + generate_viewer.py
-│               · detective/scripts/ — Wikimedia/Commons fetch helpers
+├── skills/
+│   └── data2story/   the agent: SKILL.md (orchestrator) + one folder per role
+│                     each role = SKILL.md + references/ (JSON) + scripts/ (the tools it runs)
+│                       · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
+│                       · inspector/scripts/ — verify.py + generate_viewer.py
+│                       · detective/scripts/ — Wikimedia/Commons fetch helpers
 ├── data/     example datasets
 └── assets/   shared images
 ```

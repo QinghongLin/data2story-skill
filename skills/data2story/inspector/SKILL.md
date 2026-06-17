@@ -12,7 +12,7 @@ Your job is **traceability verification**. Parse the blog HTML, extract every vi
 ## Setup
 
 - `PROJECT_DIR` = first argument
-- Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills/inspector`). Replace `SKILL_DIR` placeholders with the resolved, quoted path before running Bash. Do not hard-code machine-local paths.
+- Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills/data2story/inspector`). Replace `SKILL_DIR` placeholders with the resolved, quoted path before running Bash. Do not hard-code machine-local paths.
 - Required files in PROJECT_DIR: `index.html`, `analyst.json`, `detective.json`, `designer.json`, `editor.json`
 
 ## Step 1: Run verify.py
