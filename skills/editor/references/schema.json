@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "role": "editor",
+    "version": "2.0"
+  },
+  "core_claim": "One sentence — what this blog argues",
+  "items": {
+    "edt_01": {
+      "label": "Hook — The surprising finding",
+      "purpose": "hook",
+      "title": null,
+      "findings": ["ana_01", "ana_04"],
+      "context": ["det_02", "det_05"],
+      "triage": {
+        "ana_01": "lead",
+        "ana_04": "supporting"
+      },
+      "chart_placeholder": "ana_01",
+      "media_placeholder": "image",
+      "editorial_notes": "20.1% must be exact, do not round"
+    },
+    "edt_02": {
+      "label": "The Boom",
+      "purpose": "context",
+      "title": "The Boom",
+      "findings": ["ana_07"],
+      "context": ["det_01"],
+      "triage": {
+        "ana_07": "supporting"
+      },
+      "chart_placeholder": "ana_07",
+      "media_placeholder": null,
+      "editorial_notes": null
+    }
+  },
+  "full_triage": {
+    "ana_01": "lead",
+    "ana_02": "supporting",
+    "ana_03": "color",
+    "ana_04": "supporting",
+    "ana_05": "cut"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "principle": "All non-text elements (images, videos, audio, charts, interactives, maps) must follow these layout rules to prevent misalignment and overlap with text content.",
+  "container_structure": "Text content first (<p>), then the visual element in its own container (<div class=\"visual-container\" data-des=\"des_xx\">...), then the next text content. Never place images/videos directly adjacent to <p> tags without a wrapper div.",
+  "css_requirements_for_visual_containers": [
+    "margin: 2rem 0 — vertical spacing above and below to separate from text",
+    "display: block — force block layout, never inline",
+    "clear: both — prevent float interference",
+    "images/videos: max-width: 100%; height: auto; display: block; margin-left: auto; margin-right: auto — center and prevent overflow",
+    "charts: width: 100%; max-width: 720px; margin-left: auto; margin-right: auto — constrain width and center",
+    "full-width elements (teaser, hero): width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); max-width: none (or a separate wrapper). Do not rely on old left: 50% breakout hacks."
+  ],
+  "specific_element_rules": {
+    "images": "wrap in <figure> with margin: 2rem auto, center the <img> inside. If an image sits inside a framed card or colored block, add inner padding and overflow: hidden so edge details stay inside.",
+    "videos": "wrap in <div class=\"video-container\"> with margin: 2rem 0, apply max-width: 100% to the <video>.",
+    "generated_audio": "wrap in <div class=\"audio-container\"> with margin: 2rem 0, include a title/caption, visible controls, and a muted visual fallback.",
+    "charts_vega_lite": "container div with margin: 2rem auto, set \"width\": \"container\" in the Vega spec.",
+    "interactive_elements": "wrap in <div class=\"interactive-container\"> with margin: 2rem 0, all controls inside this container.",
+    "maps_leaflet": "fixed height (400-500px), margin: 2rem 0, max-width: 100%.",
+    "stat_callouts": "margin: 2rem 0, text-align: center, display: block."
+  },
+  "prevent_common_bugs": [
+    "Never place images/videos directly adjacent to <p> tags without a wrapper div.",
+    "Never use float on visual elements — use margin: auto for centering instead.",
+    "Always set explicit height for map containers (Leaflet requires it).",
+    "For responsive images: width: 100%; height: auto; max-width: [original-width]px.",
+    "Test that text never wraps around or overlaps visual elements."
+  ],
+  "teaser_exception": "The teaser is full-viewport and appears before the headline — it does NOT follow the 720px content-width constraint. Use width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); max-width: none; height: 100vh to break out. If the teaser lives inside a figure or visual wrapper, clear any inherited max-width there too.",
+  "base_layout": [
+    "Max content width: 720px, centered. Charts and teasers may break out to full width.",
+    "Georgia or system-serif for body text, system-ui for labels and UI elements.",
+    "Responsive, no horizontal scroll on mobile."
+  ]
+}

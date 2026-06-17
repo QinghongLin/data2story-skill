@@ -1,0 +1,17 @@
+{
+  "_note": "After all fixes, write PROJECT_DIR/auditor.json — a structured record of what you fixed. If you made no fixes, write an empty array: [].",
+  "example": [
+    {"type": "chart_mount_zero_width", "count": 3, "lines": [245, 312, 401]},
+    {"type": "full_bleed_centering", "count": 1, "lines": [89]}
+  ],
+  "type_names": {
+    "_note": "Match the error case filenames in errors/cases/.",
+    "chart_mount_zero_width": "gave mount div explicit width/min-width/display",
+    "full_bleed_centering": "fixed breakout math or cleared inherited max-width",
+    "layout_overlap": "wrapped unwrapped visual elements in containers",
+    "composite_chart_overflow": "added width constraints to facet/vconcat children",
+    "figure_caption_not_centered": "centered figcaption text",
+    "missing_image_responsive": "added max-width/height:auto to images",
+    "missing_video_responsive": "added responsive constraints to videos"
+  }
+}

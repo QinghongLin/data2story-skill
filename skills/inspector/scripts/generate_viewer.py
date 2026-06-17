@@ -6,7 +6,7 @@ Generate viewer.html from index.html + verifier.json + designer.json.
 - Assets: tagged via data-des attributes already in HTML + designer.json metadata
 
 Usage:
-    python3 tools/inspector/generate_viewer.py PROJECT_DIR
+    python3 skills/inspector/scripts/generate_viewer.py PROJECT_DIR
 """
 
 import json

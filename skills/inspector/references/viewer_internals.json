@@ -1,0 +1,25 @@
+{
+  "_note": "generate_viewer.py reads index.html + inspector.json and produces viewer.html — a self-contained file that works with file:// (no server needed). This documents what it does; you run the script, you do not reimplement it.",
+  "how_it_works": [
+    "1. Find sentence positions: for each sentence in inspector.json, use html_line to go to that exact line in index.html, then find context within that line. Avoids matching text in <script>, <style>, or <head>.",
+    "2. Inject ID tags: insert a hidden <span> before each matched sentence, processing from bottom to top to avoid offset shifts: <span class=\"_ev\" id=\"_s{N}\" style=\"display:none;...\" data-i=\"{IDX}\">{N}</span>.",
+    "3. Inject CSS: add evidence-viewer styles into <head> AFTER tagging — if done before, body offsets shift and matching breaks.",
+    "4. Inject script + inlined data: add button + side panel + JS with inspector data inlined as var V={...} before </body>. The inlined JSON is a lite version (no raw_evidence) to keep file size under 1MB. Uses ensure_ascii=True to avoid raw newlines breaking JS."
+  ],
+  "critical_constraints": [
+    "Order matters: tag sentences → inject style → inject script. Reversing breaks position matching.",
+    "Search by line number: uses html_line to find the exact line, not html.find() which may match <title> or Vega specs.",
+    "Lite JSON only: full inspector.json with raw_evidence can be 3MB+, which crashes browsers on file://. Strip to context + summary + retrieve only (~600KB).",
+    "ensure_ascii=True: prevents raw multibyte chars and newlines in the JSON string from breaking the JS parser.",
+    "</script> escaping: replace any </script> in JSON with <\\/script> to avoid premature script-tag closure.",
+    "No fetch(): everything inlined — works on file:// without a server.",
+    "ES5 JS: use var, no arrow functions, no let/const — avoid conflicts with the blog's own JS."
+  ],
+  "ui_behavior": [
+    "Default: blog looks exactly like index.html, with a 🔍 button in the bottom-right corner.",
+    "Click 🔍: right side panel (440px) slides open. body.margin-right: 440px shifts blog content left (no overlap). All sentence ID tags become visible as green superscript numbers.",
+    "Click a number in blog: right panel scrolls to the matching row and expands it (full sentence + summary).",
+    "Click a row in panel: blog scrolls to the matching sentence.",
+    "Click 🔍 again: panel closes, tags hide, blog restores to full width."
+  ]
+}

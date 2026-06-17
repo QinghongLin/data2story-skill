@@ -1,0 +1,35 @@
+{
+  "default": "Audio is included by default. Pick the audio form that fits the data — but pick one. Skipping audio is only acceptable when none of the four forms below would explain or evoke anything beyond decoration, and that decision must be recorded in meta.media_decisions.audio.used = false.",
+  "questions_before_choosing": [
+    "Does the dataset involve music, speech, sound, rhythm, ambience, signals, or time-based patterns? → embed or sonification",
+    "Could the reader learn something by hearing a key ranked or time-series sequence? → sonification",
+    "Would atmosphere, period, or place make the story land harder? → generated soundscape",
+    "Are there micro-moments (reveal, hover, completion) where a small cue would add tactility? → ambient",
+    "Has a similar audio treatment appeared in recent blogs? If yes, pick a different form before defaulting to skip."
+  ],
+  "experience_types": {
+    "embed": "Spotify / Apple Music / YouTube embed — when the blog references real songs, artists, albums, playlists, podcasts, or recorded performances. Provide the URI or embed URL.",
+    "generated": "Generated music / soundscape — when atmosphere, time period, place, tension, or emotional framing matters. Generate a short .wav with text2music, save under PROJECT_DIR/assets/, specify a non-autoplay interaction.",
+    "sonification": "Data sonification — when numeric values, sequences, rankings, distributions, or time-series changes can be mapped to pitch, tempo, volume, rhythm, or timbre. Specify field, mapping, scale range, instrument/waveform, legend. The DEFAULT FALLBACK for analytical datasets lacking an obvious sonic dimension — there is almost always a small ranked sequence worth hearing.",
+    "ambient": "Ambient audio cue — short sound effects tied to interactions (hover, scroll reveal, drag, completion). Use sparingly and always provide a visual equivalent.",
+    "none": "Only when none of the four forms above would clarify or deepen the story. Record the reason in meta.media_decisions.audio.used = false."
+  },
+  "audio_form_rules": {
+    "_note": "Do not collapse all audio into the same UI. audio_type should determine both the experience and the layout.",
+    "embed": "Native platform embed or a compact listening inset. Best for real tracks, performances, podcasts, speeches, recorded examples.",
+    "generated": "A designed mini-player that belongs to the section's visual language (embedded in a scene, timeline, quote panel, map inset, or chapter break). Avoid the default 'audio card + waveform bars' unless the whole page design calls for it.",
+    "sonification": "Make the sound data-bound and explanatory. Pair playback with a chart, timeline, map, or stepper that visibly highlights the value being heard. Specify scale, legend, tempo, and how readers compare values. Do not use generic tones if the mapping is not interpretable.",
+    "ambient": "A small optional cue tied to an interaction, with a mute toggle and no central card. The page must work fully without sound.",
+    "none": "No audio item. Record why in meta.media_decisions.audio."
+  },
+  "novelty": "If recent blogs used a click-to-play tone card, choose a different audio format or skip audio unless the dataset strongly justifies that exact pattern.",
+  "what_to_specify": [
+    "Type: generated / embed / sonification / ambient / none",
+    "Why audio: what sound adds that visuals or prose do not",
+    "Trigger: click, hover, scroll reveal, drag, etc. Never autoplay sound",
+    "Content: filename, Spotify URI, data mapping spec, or cue description",
+    "Fallback: what happens if audio is muted or unsupported",
+    "Novelty note: how this audio treatment differs from recent blogs",
+    "UI form: platform embed, section-integrated mini-player, chart-synced sonification, map/timeline sound layer, subtle interaction cue, or another specific form"
+  ]
+}

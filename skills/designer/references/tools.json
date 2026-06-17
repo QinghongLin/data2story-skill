@@ -1,0 +1,25 @@
+{
+  "note": "All media tools route through OpenRouter. Set OPENROUTER_API_KEY before any generation call. SKILL_DIR = the directory containing the Designer's SKILL.md (skills/designer); replace SKILL_DIR and PROJECT_DIR with resolved, quoted paths before running Bash. Full docs: each tool's own SKILL.md under SKILL_DIR/scripts/openrouter-*/.",
+  "tools": {
+    "text2image": {
+      "default_model": "openai/gpt-5.4-image-2",
+      "call": "python3 SKILL_DIR/scripts/openrouter-text2image/scripts/generate_image.py --prompt \"...\" --download PROJECT_DIR/assets/filename.png"
+    },
+    "text2video": {
+      "default_model": "bytedance/seedance-2.0",
+      "call": "python3 SKILL_DIR/scripts/openrouter-text2video/scripts/generate_video.py --prompt \"...\" --duration 5 --aspect-ratio 16:9 --download PROJECT_DIR/assets/clip.mp4"
+    },
+    "image2video": {
+      "default_model": "google/veo-3.1-fast",
+      "call": "python3 SKILL_DIR/scripts/openrouter-image2video/scripts/generate_video_from_image.py --image PROJECT_DIR/assets/still.png --prompt \"...\" --duration 5 --download PROJECT_DIR/assets/clip.mp4"
+    },
+    "text2music": {
+      "default_model": "google/lyria-3-pro-preview (music, not TTS)",
+      "call": "python3 SKILL_DIR/scripts/openrouter-text2music/scripts/generate_music.py --prompt \"...\" --download PROJECT_DIR/assets/bg.wav"
+    },
+    "embeddings": {
+      "default_model": "qwen/qwen3-embedding-8b",
+      "call": "python3 SKILL_DIR/scripts/openrouter-embeddings/scripts/embed.py --jsonl in.jsonl --output out.jsonl"
+    }
+  }
+}

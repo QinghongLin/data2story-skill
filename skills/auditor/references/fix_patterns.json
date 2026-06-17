@@ -1,0 +1,34 @@
+{
+  "_note": "For each issue, use the Edit tool to make minimal, surgical changes. Prefer inline styles.",
+  "fix_1_wrap_unwrapped_visuals": {
+    "before": "<p>Some text...</p>\n<img src=\"assets/hero.png\" data-des=\"des_01\" alt=\"Hero\">\n<p>More text...</p>",
+    "after": "<p>Some text...</p>\n<div class=\"visual-container\" style=\"margin: 2rem 0;\">\n  <img src=\"assets/hero.png\" data-des=\"des_01\" alt=\"Hero\" style=\"max-width: 100%; height: auto; display: block; margin: 0 auto;\">\n</div>\n<p>More text...</p>"
+  },
+  "fix_2_add_chart_spacing": {
+    "before": "<div id=\"des_02\" data-des=\"des_02\" data-ana=\"ana_05\" class=\"chart-container\">",
+    "after": "<div id=\"des_02\" data-des=\"des_02\" data-ana=\"ana_05\" class=\"chart-container\" style=\"margin: 2rem auto; max-width: 720px;\">"
+  },
+  "fix_3_image_centering": {
+    "before": "<img src=\"assets/photo.jpg\" data-des=\"des_03\">",
+    "after": "<img src=\"assets/photo.jpg\" data-des=\"des_03\" style=\"max-width: 100%; height: auto; display: block; margin: 0 auto;\">"
+  },
+  "fix_4_responsive_constraints": {
+    "before": "<video width=\"1920\" height=\"1080\" ...>",
+    "after": "<video style=\"max-width: 100%; height: auto; display: block; margin: 2rem auto;\" ...>"
+  },
+  "fix_5_recenter_full_bleed": {
+    "before": "<figure class=\"visual-container full-bleed\" style=\"position: relative; left: 50%; width: 100vw; margin-left: -50vw;\">",
+    "after": "<figure class=\"visual-container full-bleed\" style=\"width: 100vw; max-width: none; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);\">",
+    "note": "If the wrapper still has a max-width from another selector, override it on the full-bleed element."
+  },
+  "fix_6_chart_mount_width": {
+    "before": "<div class=\"chart-container\">\n  <div>\n    <div id=\"chart_des_08\"></div>\n  </div>\n</div>",
+    "after": "<div class=\"chart-container\">\n  <div style=\"width: 100%; min-width: 0;\">\n    <div id=\"chart_des_08\" style=\"width: 100%; min-width: 0; display: block;\"></div>\n  </div>\n</div>",
+    "note": "Fixes blank charts caused by the actual Vega mount collapsing to 0px, without changing the chart data or spec."
+  },
+  "verify_after_fixes": [
+    "All data-* attributes still present; no content text modified; all asset paths unchanged; no closing tags broken.",
+    "grep '<img' PROJECT_DIR/index.html | grep -v 'max-width'  # images still lacking max-width",
+    "grep '<video' PROJECT_DIR/index.html | grep -v 'max-width'  # videos lacking responsive styling"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "rules": [
+    {
+      "name": "Default to all five channels",
+      "detail": "chart, image, video, audio, and interactive_or_map should each be used in every blog by default. Each meta.media_decisions[channel].used is true unless the data genuinely cannot support that channel — and skipping requires an explicit reason in the same block. The bar for skipping is 'this channel would be decorative or fabricated', not 'it isn't the easiest option'."
+    },
+    {
+      "name": "Channel-specific defaults when no obvious fit exists",
+      "detail": "video: if no event/process/transformation jumps out, animate the strongest still with image2video. audio: if no real track and no ambience, sonify a key ranked data sequence; if too abstract even for that, embed a relevant real recording when one exists. interactive_or_map: if no geography, default to a guess-first quiz, scrubber, or before/after slider on a key finding."
+    },
+    {
+      "name": "Data-first execution within each channel",
+      "detail": "Although every channel is used by default, HOW it is used must come from the dataset. Don't reuse the same chart rhythm, teaser structure, audio card pattern, or interaction shape across blogs."
+    },
+    {
+      "name": "Avoid visual sameness across blogs",
+      "detail": "Actively vary the page's visual language from previous outputs. The same five channels can be combined in radically different ways — vary which channel is the centerpiece each time."
+    },
+    {
+      "name": "No chart streaks",
+      "detail": "Avoid placing 3+ charts in a row without a change in visual mode. Insert a non-chart element when it helps pacing or interpretation."
+    },
+    {
+      "name": "Image richness for visual-heavy datasets",
+      "detail": "For animals, insects, art, nature, food, sports, places, artifacts, etc., generate 4-5+ images. Even abstract datasets benefit from at least 2-3 atmospheric or metaphorical images."
+    },
+    {
+      "name": "Video opportunity scan",
+      "detail": "Use text2video when motion is meaningful — processes, transformations, events, journeys, simulations, atmosphere, conceptual transitions. Use image2video to bring strong stills (especially the teaser) to life. For datasets about film, photography, visual media, imaging tech, cinematic craft, or historical/technical transitions, prefer a short video teaser or chapter break showing a transformation, workflow, era shift, material contrast, or change in visual texture."
+    },
+    {
+      "name": "Audio that earns its slot",
+      "detail": "Audio is included by default but must explain or evoke something the visual cannot. Always pair audio with a visual fallback and never autoplay. Avoid the generic 'click-to-play tone card' pattern unless the data exactly fits it."
+    },
+    {
+      "name": "Map preference",
+      "detail": "When data has a real geographic dimension — lat/lng, city names, country codes, regions, routes, station locations — use an interactive map (Leaflet) rather than a non-spatial chart. Don't invent a fake map."
+    },
+    {
+      "name": "Interactive preference",
+      "detail": "When the finding is surprising, exploratory, uncertain, reader-dependent, or best understood through comparison, prefer a quiz, scrollytelling, before/after slider, card deck, filterable table, or mini-demo over a static chart."
+    },
+    {
+      "name": "Text-only sections remain valid",
+      "detail": "Some sections are best as prose — conceptual explanation, narrative transition, caveats, interpretive synthesis. 'Default to all five channels' applies at the page level, not the section level."
+    }
+  ],
+  "respect_editor_hints": "Read the editor's media_placeholder hints — they signal which sections have multimodal potential. Respect the hint direction unless you have a stronger creative reason to choose differently.",
+  "asset_volume_by_dataset": {
+    "visual_heavy": "(animals, insects, art, nature, food, sports, places, artifacts) strongly prefer 4-5+ generated images or videos.",
+    "narrative_event": "strongly consider video, image-to-video, reenactments, timelines, or scrollytelling.",
+    "film_imaging_visual_media": "strongly consider a short video teaser, image-to-video transformation, or chapter break visualizing a format shift, tool workflow, material texture, or before/after era contrast.",
+    "abstract_analytical": "1-2 atmospheric/metaphorical images may be enough; skip generated assets if they would feel forced.",
+    "technical_chart_led": "prioritize precise charts, tables, demos, and diagrams over decorative images."
+  },
+  "before_generating": "Check PROJECT_DIR/assets/ for any ref_* images the Detective downloaded. Use these as context for your generated images — match the visual tone and subject matter. Run the generation tool for every generated image/video/audio decision — do not just write the spec and skip generation; the Programmer cannot generate media. Verify each file was created (ls -la PROJECT_DIR/assets/)."
+}

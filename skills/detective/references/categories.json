@@ -1,0 +1,10 @@
+{
+  "origin": "Who created this data, when, why, how it was collected.",
+  "background": "Domain knowledge the reader needs — established findings, definitions.",
+  "related_work": "Other studies, datasets, or analyses on the same topic.",
+  "why_it_matters": "Real-world significance, who is affected, stakes.",
+  "controversy": "Contested interpretations, known limitations, ongoing debates.",
+  "interpretive_hook": "Surprising context that could reframe a finding.",
+  "benchmark": "External baseline numbers for comparison (e.g., national average, expected rate).",
+  "scope_suggestion": "Recommendations for the analyst — what to focus on, what caveats to watch."
+}

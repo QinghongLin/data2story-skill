@@ -1,0 +1,31 @@
+{
+  "principle": "Every HTML element must be tagged with its source IDs. This is critical for the Inspector. No image or video may exist without a data-des attribute.",
+  "attribute_rules": {
+    "data-edt": "on <section> elements — from editor.json section IDs.",
+    "data-ana": "on INDIVIDUAL <p> elements — read the [ana_xx] tag at the start of each paragraph in editor.md. Paragraph-level, NOT section-level. Each <p> gets only the IDs that paragraph actually uses.",
+    "data-det": "on <section> for section-level context, and on individual <p> when editor.md tags a paragraph with [det_xx].",
+    "data-des": "on EVERY visual element — charts, images, videos, interactives, stat callouts. No image or video may exist without it.",
+    "chart_id": "Every chart container's id attribute should be the des_xx ID.",
+    "editorial_paragraphs": "Paragraphs tagged [editorial] in editor.md get no data-ana — they are connective prose."
+  },
+  "example": [
+    "<!-- Section container — data-edt on section, data-det for detective context -->",
+    "<section data-edt=\"edt_01\" data-det=\"det_02,det_05\">",
+    "  <h2>Section Title</h2>",
+    "  <!-- editor.md says: [ana_01] 20.1% of people chose the Ace of Spades... -->",
+    "  <p data-ana=\"ana_01\">20.1% of people chose the Ace of Spades...</p>",
+    "  <!-- editor.md says: [ana_04, det_02] The second most popular choice... -->",
+    "  <p data-ana=\"ana_04\" data-det=\"det_02\">The second most popular choice...</p>",
+    "  <!-- editor.md says: [editorial] This pattern reveals something deeper... -->",
+    "  <p>This pattern reveals something deeper...</p>",
+    "  <!-- Chart — tagged with designer ID and data source -->",
+    "  <div id=\"des_01\" data-des=\"des_01\" data-ana=\"ana_01\" class=\"chart-container\"></div>",
+    "</section>",
+    "<!-- EVERY image must have data-des — no exceptions -->",
+    "<img data-des=\"des_05\" src=\"assets/hero.png\" alt=\"...\">",
+    "<!-- EVERY video must have data-des — no exceptions -->",
+    "<video data-des=\"des_02\" autoplay loop muted playsinline><source src=\"assets/teaser_hero.mp4\" type=\"video/mp4\"></video>",
+    "<!-- Stat callout — tagged with designer ID and data source -->",
+    "<div data-des=\"des_03\" data-ana=\"ana_01\" class=\"stat-callout\"><span class=\"stat-number\">20.1%</span><span class=\"stat-label\">chose the Ace of Spades</span></div>"
+  ]
+}

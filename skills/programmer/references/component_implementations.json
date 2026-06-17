@@ -1,0 +1,135 @@
+{
+  "_note": "Build recipes per visual component. Single self-contained HTML file, no build step, no framework. Allowed CDNs: Vega-Embed, Leaflet.js (plus PDF.js, D3.js where noted).",
+  "charts_vega_lite": {
+    "rules": [
+      "Inline data only (from analyst.json data_tables — no external fetches).",
+      "Style from designer.json — if unspecified: no gridlines, muted palette, \"width\": \"container\".",
+      "Highlight the key data point as specified in content.highlight.",
+      "Hover tooltips showing exact values.",
+      "Use column names from the data_table for encodings."
+    ],
+    "pitfalls": [
+      "Give the actual vegaEmbed() target a dedicated block-level mount element (width: 100%; min-width: 0; display: block). Do not embed into an anonymous shrink-to-fit child div.",
+      "For composite charts (facet, repeat, vconcat, hconcat, small multiples), specify child widths and spacing explicitly. columns belongs at the facet spec top level, not inside the facet object.",
+      "When a quantitative domain is clipped, negative-only, log-scaled, or otherwise should not include zero, do not trust the default baseline. Bars/areas usually need explicit x2/y2; year axes and bounded metrics usually need scale.zero = false plus an explicit domain.",
+      "labelExpr and other Vega expressions use Vega expression syntax, not full JavaScript. Prefer helpers like format(...); do not call JS methods such as .toFixed() inside Vega expressions."
+    ]
+  },
+  "interactive_elements": [
+    "Vanilla JS only, inline in the HTML.",
+    "Implement the interaction spec from designer.json step by step: initial state → trigger → transition → payoff.",
+    "Include a visible affordance (button, drag handle, etc.)."
+  ],
+  "instance_embeds": {
+    "_note": "When designer.json has an item with type 'instance', implement based on embed_type. Tag all instance embeds with data-des like any other visual element.",
+    "spotify": "<iframe src=\"{embed_url}\" width=\"100%\" height=\"152\" frameBorder=\"0\" allow=\"autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture\" loading=\"lazy\"></iframe>. Wrap in a styled container with rounded corners, subtle shadow, caption below.",
+    "youtube": "<iframe src=\"{embed_url}\" width=\"100%\" height=\"315\" frameBorder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen loading=\"lazy\"></iframe>.",
+    "image": "<img src=\"assets/{filename}\" alt=\"{label}\"> with caption below.",
+    "audio_url": "<audio controls src=\"{url}\"></audio> with label and caption."
+  },
+  "pdf_preview": [
+    "Use PDF.js via CDN: <script src=\"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.mjs\" type=\"module\"></script>.",
+    "Load the paper PDF from assets/paper.pdf (copy from DATA_DIR if needed).",
+    "Render specific pages into <canvas> elements. Add page navigation (prev/next) and zoom controls.",
+    "For 'page region' specs: render the full page and use CSS to highlight/crop the specified region.",
+    "Container responsive, max-width 720px, subtle drop shadow. Add a 'View full paper' link to the original URL."
+  ],
+  "citation_network_d3": [
+    "Use D3.js via CDN for force-directed graph layout. Inline the citation data from designer.json or analyst.json.",
+    "Nodes: circles sized by citation count, colored by type (this paper = accent, references = muted, citers = secondary).",
+    "Edges: lines with arrows showing citation direction.",
+    "Interaction: hover to see paper title + year, click to open link.",
+    "Force simulation: charge repulsion + link distance, with drag to reposition. Container full-width, 500px height, zoom/pan via d3-zoom."
+  ],
+  "review_visualizations": {
+    "radar_chart": "Inline SVG with <polygon> for each reviewer's scores. Axes = review dimensions. Overlay all reviewers with different colors + legend.",
+    "concern_treemap": "D3.js treemap layout. Each rectangle = a concern category, sized by count/severity. Color by category. Click to see reviewer quotes.",
+    "disagreement_heatmap": "HTML table with cells colored by score (green=high, red=low). Rows=reviewers, columns=dimensions."
+  },
+  "maps_leaflet": [
+    "Use Leaflet via CDN: <link> + <script> from unpkg.com/leaflet.",
+    "Tile layer: OpenStreetMap (free, no API key).",
+    "Inline GeoJSON or marker data directly in the HTML (from analyst.json data_tables). For choropleth: inline the geo boundaries + data join.",
+    "Markers should have popups with relevant info on click.",
+    "Map container responsive, ~400-500px height."
+  ],
+  "timelines": [
+    "Implement as a horizontal or vertical scrollable element. Each event is a node on the axis with date + label.",
+    "Click or hover to expand details. Vanilla JS + CSS, no library needed.",
+    "Avoid fixed-width absolute-positioned timelines inside the ~720px story column. If the sequence has many labels, switch to a responsive numbered-card timeline that stays readable on desktop and mobile."
+  ],
+  "paper_review_browser": [
+    "Implement as collapsible accordion panels (one per paper).",
+    "Each panel header: tag badge (accepted/rejected), paper title, subtitle with scores, chevron toggle.",
+    "Toggle via onclick=\"this.classList.toggle('open')\" + CSS max-height transition (0 → 2000px, 0.4s ease-out).",
+    "Panel body: score badges, audit verdict badge (color-coded by severity), key findings as <ul>, blockquote for auditor quotes, external link.",
+    "Badge colors: PASSED/accepted = teal, CRITICAL/HIGH = coral, LOW/PARTIAL = amber. Pure CSS animations + inline onclick handlers."
+  ],
+  "task_demo": [
+    "Interactive tabbed panel showing a concrete input→process→output example from the paper.",
+    "Structure: header (title + subtitle) → tab bar → tab panels.",
+    "Tab switching: vanilla JS toggling .active class on buttons and panels.",
+    "Panels scroll independently: max-height: 500px; overflow-y: auto with styled scrollbar.",
+    "Content uses monospace font (.demo-code) with semantic color classes. Pure CSS + inline onclick handlers."
+  ],
+  "scrollytelling": [
+    "Use IntersectionObserver to detect which step is in view.",
+    "Each step triggers a visual change (map zoom, chart filter, highlight).",
+    "Sticky visual panel + scrolling text column layout. Smooth CSS transitions between states."
+  ],
+  "before_after_slider": [
+    "Two overlapping elements with a draggable divider.",
+    "CSS clip-path or overflow:hidden + JS drag handler. Works on touch and mouse."
+  ],
+  "card_deck_swipe": [
+    "Horizontally scrollable container with snap points (scroll-snap-type).",
+    "Each card is a fixed-width element with key info. Swipe or arrow buttons to navigate. CSS scroll-snap-align: center."
+  ],
+  "stat_callouts": "Render the number at 48-72px with a short label below. Tag with data-des and data-ana.",
+  "assets": [
+    "Reference assets from PROJECT_DIR/assets/ with relative paths.",
+    "Videos: <video autoplay loop muted playsinline> with a poster image fallback.",
+    "Images: <img> with descriptive alt text.",
+    "Generated audio: <audio controls preload=\"metadata\"> or a custom click-to-play button; never autoplay sound.",
+    "Tag all assets with data-des=\"des_xx\"."
+  ],
+  "audio_music": {
+    "_note": "Implement audio according to content.audio_type and content.ui_form. Do not render every audio item as the same generic card; audio UI should inherit the surrounding section's visual language.",
+    "spotify_embeds": "Use the Spotify oEmbed iframe (track/ID or playlist/ID). Use a compact listening inset or native embed; don't restyle into the generic generated-audio card unless Designer asks.",
+    "generated_music": [
+      "Use the filename from designer.json as assets/{filename}.",
+      "Render a section-integrated mini-player with a clear label, caption, and <audio controls preload=\"metadata\" src=\"assets/{filename}\"></audio>.",
+      "Tag the audio wrapper and the <audio> element with data-des.",
+      "Match the ui_form (chapter-break player, scene overlay, timeline inset, map inset, quote/listening note). Render the visual fallback next to the controls.",
+      "Do not use generated audio as hidden background music. It must be reader-controlled."
+    ],
+    "data_sonification_web_audio": [
+      "Create an AudioContext on user interaction (click-to-play button — never autoplay audio with sound).",
+      "Map data values to oscillator frequency, gain, or playback rate per the designer spec. Use OscillatorNode for tones, GainNode for volume envelopes.",
+      "Provide a visible play/pause or step-through control. Sync visual animation with playback: highlight chart bars, timeline points, map markers, or cards as notes play.",
+      "Include a small legend explaining the mapping. Do not implement sonification as a detached tone card; attach it to the data visual it explains."
+    ],
+    "ambient_cues": [
+      "Use Web Audio API OscillatorNode for short synthetic tones (avoid loading external audio files).",
+      "Trigger on the specified event (scroll into view, hover, click). Keep sounds subtle: 100-500ms, low volume.",
+      "Include a mute toggle, remember state in sessionStorage. Put the mute toggle near the affected interaction, not in a central audio block."
+    ],
+    "general_rules": [
+      "NEVER autoplay audio with sound on page load — browsers block it and it annoys readers.",
+      "Always provide a visual play/pause control.",
+      "All audio must degrade gracefully: if Web Audio API is unavailable, the visual experience must still work fully.",
+      "Mobile: audio requires a user gesture to start — ensure the play button is touch-friendly (min 44x44px)."
+    ]
+  },
+  "visual_transitions": [
+    "Section entry: subtle fade-in on scroll (CSS @keyframes only, no JS).",
+    "Interactive state changes: CSS transitions (200-300ms ease)."
+  ],
+  "references_section": {
+    "_note": "Add a References section at the bottom of the page. Format as a simple list with hyperlinks. Keep it compact — a footer, not a bibliography page.",
+    "data_source": "name, URL (from detective.json items with category 'origin'), license if known.",
+    "studies_papers": "any academic sources from detective.json.",
+    "external_benchmarks": "any benchmark values from detective.json items with category 'benchmark'.",
+    "tools": "libraries used (e.g. Vega-Lite version)."
+  }
+}

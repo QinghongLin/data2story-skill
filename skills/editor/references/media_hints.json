@@ -1,0 +1,31 @@
+{
+  "media_placeholder_hints": {
+    "_note": "Use exactly one hint per section; never use boolean true. The Designer makes the final call — these are editorial signals, not mandates.",
+    "map": "data has a geographic dimension (locations, regions, routes, coordinates).",
+    "video": "section describes an event, action, transformation, or process.",
+    "image": "emotional beat, atmosphere, or scene that data alone cannot convey.",
+    "audio": "topic involves music, sound, or data that can be heard.",
+    "interactive": "reader should explore, discover, or participate (quiz, demo, slider, scrollytelling).",
+    "instance": "a concrete embeddable example from detective.json (inst_xx) should appear here."
+  },
+  "instance_placeholder": "[INSTANCE: inst_xx] — when a concrete real-world example (a song to listen to, a photo to see, a sound to hear) should appear. Reference an inst_xx ID from detective.json's instances array. Only use when the instance makes the reader experience the data point rather than just read about it.",
+  "multimodal_awareness": {
+    "geographic_data": "cities, countries, coordinates, routes → flag [MEDIA: map].",
+    "events_processes": "events, incidents, anecdotes, processes → flag [MEDIA: video].",
+    "sound": "music, sound, rhythm, acoustic data → flag [MEDIA: audio].",
+    "surprising": "surprising findings the reader should guess first → flag [MEDIA: interactive].",
+    "emotional": "emotional turning points, atmosphere shifts → flag [MEDIA: image]."
+  },
+  "media_opportunity_scan": {
+    "_principle": "Do not force a fixed media checklist. Before assigning [MEDIA: ...] hints, scan what the material naturally supports. Aim for richness and variety when the data supports it, but never add video, audio, maps, or generated assets merely to satisfy a quota. If a normally tempting medium would be forced or decorative, set media_placeholder to null and explain in editorial_notes.",
+    "time_or_sequence": "trend chart, timeline, scrollytelling, animation, or sonification if rhythm helps.",
+    "geography_or_routes": "map, flow view, route animation, or location cards.",
+    "hierarchy_ranking_distribution": "chart, treemap, sortable table, quiz, or stat callout.",
+    "network_relationships": "node-link view, Sankey, adjacency matrix, or interactive explorer.",
+    "individual_cases": "card deck, image, instance embed, quote browser, or annotated profile.",
+    "visual_subject_matter": "images or video when the subject is inherently seen: animals, places, art, food, fashion, objects, sports, architecture.",
+    "sound_speech_music": "audio only when hearing adds meaning, evidence, atmosphere, or embodied understanding.",
+    "abstract_interpretation": "text-only can be the right choice."
+  },
+  "audio_restraint": "Audio deserves special restraint. Use [MEDIA: audio] only when the topic has a meaningful sonic dimension or when a carefully specified sonification would help the reader understand a pattern. For generic social, geographic, animal, or policy datasets, audio is usually optional rather than expected."
+}

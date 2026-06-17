@@ -1,0 +1,27 @@
+{
+  "_note": "Since you cannot run a real browser, use code analysis to detect common layout issues.",
+  "check_1_unwrapped_visuals": {
+    "find": [
+      "grep -n '<img' PROJECT_DIR/index.html | head -20",
+      "grep -n '<video' PROJECT_DIR/index.html | head -20",
+      "grep -n 'class=\"chart' PROJECT_DIR/index.html | head -20"
+    ],
+    "pattern": "Visual elements (<img>, <video>, chart <div>) placed directly after <p> tags without a wrapper div."
+  },
+  "check_2_missing_spacing": [
+    "Images/videos should have margin: 2rem 0 or be wrapped in a container with that margin.",
+    "Chart containers should have vertical spacing.",
+    "Stat callouts should have spacing above and below."
+  ],
+  "check_3_centering": [
+    "Images should have display: block; margin-left: auto; margin-right: auto or be in a centered container.",
+    "Charts should be centered within their max-width constraint.",
+    "Full-bleed / breakout visuals should use viewport-based centering and must clear inherited max-width from wrappers like figure.visual-container."
+  ],
+  "check_4_responsive": [
+    "Images should have max-width: 100%; height: auto.",
+    "No fixed widths that exceed 720px (except full-width teasers).",
+    "Charts should use \"width\": \"container\" in Vega specs.",
+    "Timelines or step sequences should not rely on 1000px+ fixed-width absolute layouts inside the story column."
+  ]
+}

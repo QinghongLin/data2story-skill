@@ -15,7 +15,7 @@ Resolve paths before doing anything:
 
 - Never hard-code machine-local paths and never ask the user to export path variables.
 - Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills`)
-- Resolve `ARCHIVE_DIR` = parent of `SKILL_DIR`; it must contain `skills/` and `tools/`
+- Resolve `ARCHIVE_DIR` = parent of `SKILL_DIR`; it must contain `skills/`
 - Resolve `DATA2STORY_ROOT` = parent of `ARCHIVE_DIR`
 - Commands below use symbolic placeholders such as `ARCHIVE_DIR`; replace them with resolved, quoted paths before running Bash.
 - `DATA_NAME` = the dataset folder name (e.g. `pick_a_card`)
@@ -39,90 +39,14 @@ This preserves the exact skill versions used for this run.
 
 All media tools route through OpenRouter. Set `OPENROUTER_API_KEY` before any generation call.
 
-| Tool | Model (default) | Call |
-|---|---|---|
-| **text2image** | `openai/gpt-5.4-image-2` | `python3 ARCHIVE_DIR/tools/openrouter-text2image/scripts/generate_image.py --prompt "..." --download PROJECT_DIR/assets/filename.png` |
-| **text2video** | `bytedance/seedance-2.0` | `python3 ARCHIVE_DIR/tools/openrouter-text2video/scripts/generate_video.py --prompt "..." --duration 5 --aspect-ratio 16:9 --download PROJECT_DIR/assets/clip.mp4` |
-| **image2video** | `google/veo-3.1-fast` | `python3 ARCHIVE_DIR/tools/openrouter-image2video/scripts/generate_video_from_image.py --image PROJECT_DIR/assets/still.png --prompt "..." --duration 5 --download PROJECT_DIR/assets/clip.mp4` |
-| **text2music** | `google/lyria-3-pro-preview` (music, not TTS) | `python3 ARCHIVE_DIR/tools/openrouter-text2music/scripts/generate_music.py --prompt "..." --download PROJECT_DIR/assets/bg.wav` |
-| **embeddings** | `qwen/qwen3-embedding-8b` | `python3 ARCHIVE_DIR/tools/openrouter-embeddings/scripts/embed.py --jsonl in.jsonl --output out.jsonl` |
-
-Full docs: each tool's own `SKILL.md` under `ARCHIVE_DIR/tools/openrouter-*/`.
-
-Older tools (`text2image` via doubao, `paratera-text2video`) are preserved at `ARCHIVE_DIR/tools/archival/` for reference.
+Media generation is the Designer's job, so the media tools (text2image, text2video, image2video, text2music, embeddings) live under `SKILL_DIR/designer/scripts/openrouter-*/`. The full list — default models and exact `python3 ...` invocations — is in **[`designer/references/tools.json`](designer/references/tools.json)**; full per-tool docs are each tool's own `SKILL.md` under `SKILL_DIR/designer/scripts/openrouter-*/`.
 
 ## Pipeline Overview
 
-The pipeline is a single linear sequence (Detective → Inspector) that produces a traceable HTML blog from raw data.
+The pipeline is a single linear sequence that produces a traceable HTML blog from raw data:
 
 ```
-╔══════════════════════════════════════════════════════════════════════╗
-║  PIPELINE — BUILD & VERIFY  (data → traceable index.html)            ║
-╠══════════════════════════════════════════════════════════════════════╣
-║                                                                      ║
-║                      ┌──────────┐                                    ║
-║                      │   DATA   │                                    ║
-║                      └────┬─────┘                                    ║
-║                           │                                          ║
-║                           ▼                                          ║
-║                   ┌───────────────┐                                  ║
-║                   │   Detective   │                                  ║
-║                   │ external research                                ║
-║                   └───────┬───────┘                                  ║
-║                           │ detective.json                           ║
-║                           ▼                                          ║
-║             ┌─────────────────────────────┐                          ║
-║             │           Analyst           │                          ║
-║             │  data/ + detective.json     │                          ║
-║             │  → exhaustive analysis      │                          ║
-║             └─────────────┬───────────────┘                          ║
-║                           │ analyst.json                             ║
-║                           ▼                                          ║
-║             ┌─────────────────────────────┐                          ║
-║             │           Editor            │                          ║
-║             │  detective.json +           │                          ║
-║             │  analyst.json               │                          ║
-║             │  → narrative & priority     │                          ║
-║             │    (no visual design)       │                          ║
-║             └─────────────┬───────────────┘                          ║
-║                           │ editor.md + editor.json                  ║
-║                           ▼                                          ║
-║             ┌─────────────────────────────┐                          ║
-║             │          Designer           │                          ║
-║             │  editor.md + editor.json +  │                          ║
-║             │  analyst.json               │                          ║
-║             │  → visual creativity:       │                          ║
-║             │    images/video/interactive │                          ║
-║             └─────────────┬───────────────┘                          ║
-║                           │ designer.json + assets/                  ║
-║                           ▼                                          ║
-║             ┌─────────────────────────────┐                          ║
-║             │         Programmer          │                          ║
-║             │  editor.md + editor.json +  │                          ║
-║             │  analyst.json +             │                          ║
-║             │  designer.json              │                          ║
-║             │  → build final HTML         │                          ║
-║             │  (NO raw data access)       │                          ║
-║             └─────────────┬───────────────┘                          ║
-║                           │ index.html                               ║
-║                           ▼                                          ║
-║             ┌─────────────────────────────┐                          ║
-║             │           Auditor           │                          ║
-║             │  index.html → fix spacing,  │                          ║
-║             │  overlap, alignment issues  │                          ║
-║             └─────────────┬───────────────┘                          ║
-║                           │ index.html (fixed)                       ║
-║                           ▼                                          ║
-║             ┌─────────────────────────────┐                          ║
-║             │          Inspector          │                          ║
-║             │  index.html → evidence link │                          ║
-║             │  → inspector.json           │                          ║
-║             │  → viewer.html              │                          ║
-║             └─────────────┬───────────────┘                          ║
-║                           │ inspector.json + viewer.html             ║
-║                           ▼                                          ║
-║                    final index.html                                  ║
-╚══════════════════════════════════════════════════════════════════════╝
+DATA → Detective → Analyst → Editor → Designer → Programmer → Auditor → Inspector → final index.html + viewer.html
 ```
 
 Run each stage in order. Each stage reads the previous artifact(s) before starting. Do not proceed to the next stage until the current artifact is complete.
@@ -164,8 +88,8 @@ Input: `PROJECT_DIR/index.html`, all JSON files
 Output: `PROJECT_DIR/inspector.json`, `PROJECT_DIR/viewer.html`
 What: Runs sentence-level traceability verification and generates an interactive viewer. Two steps:
 ```bash
-python3 ARCHIVE_DIR/tools/inspector/verify.py PROJECT_DIR --log-errors
-python3 ARCHIVE_DIR/tools/inspector/generate_viewer.py PROJECT_DIR
+python3 SKILL_DIR/inspector/scripts/verify.py PROJECT_DIR --log-errors
+python3 SKILL_DIR/inspector/scripts/generate_viewer.py PROJECT_DIR
 ```
 Step 1 produces `inspector.json` (sentence→evidence mapping). Step 2 produces `viewer.html` (self-contained, works on `file://` — no server needed). See `skills/inspector/SKILL.md` for details.
 
@@ -180,7 +104,7 @@ det_02 ──┤
          └────────────────────────────────────┘
 ```
 
-Every value in the final HTML can be traced: `HTML data-des="des_01"` → `designer.json des_01.data_source="ana_01"` → `analyst.json ana_01.calculation.code` → reproducible.
+Every value in the final HTML can be traced: `HTML data-des="des_01"` → `designer.json des_01.data_source="ana_01"` → `analyst.json ana_01.calculation.code` → verifiable.
 
 ## Handoff rules
 

@@ -1,0 +1,37 @@
+{
+  "applies_to": ["spotify", "youtube"],
+  "why": "Spotify track IDs (22 base62 chars) and YouTube video IDs (11 chars) are opaque and impossible to recall reliably. Never write an ID from memory or pattern-completion. Past runs produced 4/7 dead Spotify IDs and 1/10 dead YouTube IDs because the ID looked plausibly real but was hallucinated.",
+  "workflow": [
+    {
+      "step": 1,
+      "name": "Source it from a real page",
+      "detail": "Not from prior knowledge. Use WebFetch against a Spotify search page, an artist/album page, the YouTube watch page, or a credible third-party listing. Copy the ID out of the actual HTML/URL you fetched. If you cannot retrieve a real page that contains the ID, do not invent one — drop the instance."
+    },
+    {
+      "step": 2,
+      "name": "Verify with oEmbed before writing",
+      "detail": "Run the matching command in Bash and confirm a 200 plus a sensible title.",
+      "commands": {
+        "youtube_status": "curl -s -o /dev/null -w \"%{http_code}\\n\" \"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<ID>&format=json\"",
+        "youtube_title": "curl -s \"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<ID>&format=json\" | python3 -c \"import json,sys;d=json.load(sys.stdin);print(d.get('title'),'—',d.get('author_name'))\"",
+        "spotify_status": "curl -s -o /dev/null -w \"%{http_code}\\n\" \"https://open.spotify.com/oembed?url=https://open.spotify.com/track/<ID>\"",
+        "spotify_title": "curl -s \"https://open.spotify.com/oembed?url=https://open.spotify.com/track/<ID>\" | python3 -c \"import json,sys;d=json.load(sys.stdin);print(d.get('title'))\""
+      },
+      "interpret": {
+        "200": "embeddable. Set verified: true and copy the returned title into verified_title.",
+        "404": "the ID does not exist. Drop this instance entirely — do not guess again with a similar ID.",
+        "403": "the video exists but the uploader disabled embedding (common for major-label music videos and brand ads). Drop the instance and find an alternative (an official VEVO upload, an artist's own channel, or a different illustrative clip)."
+      }
+    },
+    {
+      "step": 3,
+      "name": "Title sanity check",
+      "detail": "Compare verified_title against your label. If they refer to clearly different content (different song, artist, film), this is a wrong-ID hit — drop the instance and re-search. Do not paper over the mismatch by editing label to match the wrong track."
+    },
+    {
+      "step": 4,
+      "name": "Never write an unverified embed",
+      "detail": "If verification fails or you skipped it, omit the instance. A blog with 3 working embeds is far better than one with 7 where 4 show 'video unavailable'."
+    }
+  ]
+}

@@ -8,7 +8,7 @@ For every visible sentence in index.html <body>, produce:
   - raw_evidence: full evidence records pulled from role JSONs
 
 Usage:
-    python3 tools/inspector/verify.py PROJECT_DIR
+    python3 skills/inspector/scripts/verify.py PROJECT_DIR
 
 Output:
     PROJECT_DIR/verifier.json

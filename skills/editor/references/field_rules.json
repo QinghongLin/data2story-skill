@@ -1,0 +1,13 @@
+{
+  "items": "dict keyed by edt_01, edt_02, ... — one per section, in narrative order.",
+  "label": "short name for this section.",
+  "purpose": "one of hook, context, evidence, turn, close.",
+  "title": "section title for display (null if no title).",
+  "findings": "array of ana_xx IDs this section draws on, ordered by importance.",
+  "context": "array of det_xx IDs that provide background for this section.",
+  "triage": "maps each ana_xx used in this section to its role (lead / supporting / color).",
+  "chart_placeholder": "the ana_xx ID whose data_table should drive the main chart in this section (null if no chart).",
+  "media_placeholder": "media type hint — one of 'map', 'video', 'image', 'audio', 'interactive', 'instance', or null if no non-text media is genuinely useful. Never write boolean true or a vague string like 'media'.",
+  "editorial_notes": "constraints the Designer and Programmer must respect (exact numbers, visible caveats, etc.).",
+  "full_triage": "maps EVERY ana_xx ID from analyst.json to its editorial role (lead / supporting / color / cut). This ensures nothing is silently dropped."
+}

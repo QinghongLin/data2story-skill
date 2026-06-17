@@ -1,99 +1,112 @@
 # Data2Story
 
-<p align="center">
-        &nbsp&nbsp 🌐 <a href="https://data2story.github.io/">Website</a> &nbsp&nbsp 
-        | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2411.17465">Paper</a> &nbsp&nbsp 
-</p>
+A data-journalist agent skill that turns any dataset into a verifiable, evidence-grounded multimodal story — a self-contained HTML article where every sentence traces back to the data or source that justifies it.
 
-<!-- [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fshowlab%2FShowUI&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com) -->
+[![Website](https://img.shields.io/badge/🌐_Website-data2story.github.io-1a73e8)](https://data2story.github.io/)
+[![arXiv](https://img.shields.io/badge/arXiv-2606.11176-b31b1b?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2606.11176)
+[![License: MIT](https://img.shields.io/badge/License-MIT-3da639.svg)](LICENSE)
 
-<p align="center">
-<b>TL;DR:</b> A data-journalist agent that turns any dataset into a reproducible, evidence-grounded multimodal story.
-</p>
+## What it does
 
-<p align="center">
-<img src="assets/teaser.png" alt="Data2Story turns a dataset into a reproducible multimodal story" width="820">
-</p>
+- **Dataset → finished article.** Point it at a CSV, a folder of data, or a paper, and a fixed pipeline of seven roles produces a publishable HTML story end to end.
+- **Evidence-grounded.** Every sentence and visual links back to its source. The pipeline emits a `viewer.html` inspector where you can click any claim to see the data, code, or citation behind it.
+- **Multimodal by default.** Charts, images, video, audio, maps, and interactive elements — chosen from the data's actual properties, not a fixed checklist. Media generation routes through OpenRouter.
+- **Verifiable.** Each run writes to its own versioned project folder and snapshots the exact skill versions used, so every result can be traced and re-checked.
+- **Progressive disclosure.** Each role's `SKILL.md` holds only its instructions; bulky reference material (output schemas, field rules, lookup tables) lives in that role's `references/` folder as JSON and is loaded only when needed.
 
-> **Data Journalist Agent: Transforming Data into a Reproducible Multimodal Story**<br>
-> [Kevin Qinghong Lin](https://qhlin.me/), [Batu EI](https://ellabs.ai/#/works), [Yuhong Shi](https://www.linkedin.com/in/yuhong-shi-134a7b3b5/), [Pan Lu](https://lupantech.github.io/), [Philip Torr](https://eng.ox.ac.uk/people/philip-torr), [James Zou](https://www.james-zou.com/)
-> <br>University of Oxford, Stanford University<br>
+## Installation & usage
 
-## 🖼️ Gallery
+Data2Story is an agent skill. The orchestrator lives in `skills/SKILL.md` — it works first-class with Claude Code, and equally with Codex, Cursor, Gemini CLI, and other agents.
 
-Curious what it produces? Browse real example stories in the gallery on our [website](https://data2story.github.io/) before you start.
+1. Set your API key. Media generation routes through [OpenRouter](https://openrouter.ai/) by default:
 
-<p align="center">
-<a href="https://data2story.github.io/"><img src="assets/gallery.png" alt="Gallery of agent-generated stories" width="820"></a>
-</p>
+   ```bash
+   export OPENROUTER_API_KEY=sk-or-...
+   ```
 
-## 🚀 Quick Start
+2. Run the skill on a dataset:
 
-Data2Story is an agent skill. The orchestrator lives in [`skills/SKILL.md`](skills/SKILL.md) — point any coding agent at it. It works first-class with [Claude Code](https://claude.com/claude-code), and equally with [Codex](https://openai.com/codex/) and other agents (Cursor, Gemini CLI, etc.).
+   - **Claude Code** — make the skill available (place `skills/` under `~/.claude/skills/`, or run from inside this repo), then:
 
-```
-data2story-skill/
-├── assets/        # logo and shared assets
-├── skills/        # the agent: SKILL.md + one folder per role
-│   ├── detective/ analyst/ editor/ designer/
-│   └── programmer/ auditor/ inspector/
-└── tools/         # OpenRouter media tools (text→image/video/music, embeddings)
-```
+     ```
+     /data2story data/pick_a_card
+     ```
 
-**1. Set up your API key.** Media generation routes through [OpenRouter](https://openrouter.ai/) by default (you can swap in another provider):
+   - **Codex / other agents** — open the repo and ask the agent to follow the orchestrator:
 
-```bash
-export OPENROUTER_API_KEY=sk-or-...
-```
+     ```
+     Read skills/SKILL.md and run the Data2Story pipeline on data/pick_a_card
+     ```
 
-**2. Run the skill** by pointing your agent at a dataset:
+3. Open the output: `index.html` (the finished article) and `viewer.html` (the evidence inspector).
 
-- **Claude Code** — make the skill available to Claude Code (place `skills/` under `~/.claude/skills/`, or run from inside this repo), then invoke it:
-
-  ```
-  /data2story data/pick_a_card
-  ```
-
-- **Codex / other agents** — open the repo and ask the agent to follow the orchestrator:
-
-  ```
-  Read skills/SKILL.md and run the Data2Story pipeline on data/pick_a_card
-  ```
-
-**3. Open the output.** Each run writes a self-contained article and an evidence viewer:
-
-- `index.html` — the finished multimodal article
-- `viewer.html` — the evidence-grounded inspector, where every sentence traces back to its source
-
-Each run creates its own **versioned project folder** and snapshots the exact skill versions used, so results are reproducible.
-
----
-
-## 🏢 The Virtual Newsroom
+## The virtual newsroom
 
 Think of it as a small newsroom in a box. Each role reads what the previous one produced, then adds its own artifact — a fixed pipeline that runs once, end to end.
 
-<p align="center">
-<img src="assets/pipeline.png" alt="The Data2Story newsroom pipeline" width="900">
-</p>
-
+```mermaid
+flowchart LR
+    DATA[(dataset)] --> DET[Detective]
+    DET -->|detective.json| ANA[Analyst]
+    ANA -->|analyst.json + code| EDT[Editor]
+    EDT -->|editor.md + editor.json| DES[Designer]
+    DES -->|designer.json + assets| PRG[Programmer]
+    PRG -->|index.html| AUD[Auditor]
+    AUD -->|index.html| INS[Inspector]
+    INS -->|inspector.json + viewer.html| OUT([article + evidence viewer])
 ```
-   ┌──────┐
-   │ DATA │
-   └──┬───┘
-      ▼
-   Detective → Analyst → Editor → Designer → Programmer → Auditor → Inspector
-                                                                        │
-                                                                        ▼
-                                              final index.html  +  viewer.html (evidence-grounded)
+
+```python
+def data2story(dataset):
+    detective = research_context(dataset)                 # → detective.json
+    analyst   = analyze(dataset, detective)               # → analyst.json, code/*.py
+    editor    = write_narrative(detective, analyst)       # → editor.md, editor.json
+    designer  = design_visuals(editor, analyst)           # → designer.json, assets/
+    page      = build_html(editor, analyst, designer)     # programmer → index.html
+    page      = fix_layout(page)                          # auditor    → index.html
+    viewer    = verify_traceability(page, artifacts)      # inspector  → inspector.json, viewer.html
+    return page, viewer
 ```
 
 | # | Role | What it does | Produces |
 |---|------|--------------|----------|
-| 1 | 🕵️ **Detective** | Researches external context — domain background, history, why the data matters | `detective.json` |
-| 2 | 📊 **Analyst** | Exhaustively profiles the data — distributions, correlations, trends, anomalies | `analyst.json`, `code/*.py` |
-| 3 | ✍️ **Editor** | Decides the narrative — what the article argues and which findings matter | `editor.md`, `editor.json` |
-| 4 | 🎨 **Designer** | Chooses how to show each point — charts, images, video, interactives | `designer.json`, `assets/` |
-| 5 | 💻 **Programmer** | Builds the final HTML, tagging every element with its source IDs | `index.html` |
-| 6 | 🔧 **Auditor** | Fixes layout issues — overlap, spacing, alignment — without changing content | `index.html` (fixed), `auditor.json` |
-| 7 | 🔍 **Inspector** | Verifies every sentence traces to its evidence; builds an interactive viewer | `inspector.json`, `viewer.html` |
+| 1 | **Detective** | Researches external context — domain background, history, why the data matters | `detective.json` |
+| 2 | **Analyst** | Exhaustively profiles the data — distributions, correlations, trends, anomalies | `analyst.json`, `code/*.py` |
+| 3 | **Editor** | Decides the narrative — what the article argues and which findings matter | `editor.md`, `editor.json` |
+| 4 | **Designer** | Chooses how to show each point — charts, images, video, audio, interactives | `designer.json`, `assets/` |
+| 5 | **Programmer** | Builds the final HTML, tagging every element with its source IDs | `index.html` |
+| 6 | **Auditor** | Fixes layout issues — overlap, spacing, alignment — without changing content | `index.html` (fixed), `auditor.json` |
+| 7 | **Inspector** | Verifies every sentence traces to its evidence; builds an interactive viewer | `inspector.json`, `viewer.html` |
+
+## Project structure
+
+```
+data2story-skill/
+├── skills/   the agent: SKILL.md (orchestrator) + one folder per role
+│             each role = SKILL.md (instructions) + references/ (JSON) + scripts/ (the tools it runs)
+│               · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
+│               · inspector/scripts/ — verify.py + generate_viewer.py
+│               · detective/scripts/ — Wikimedia/Commons fetch helpers
+├── data/     example datasets
+└── assets/   shared images
+```
+
+The full, illustrated project overview is preserved in [`_README.md`](_README.md).
+
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+## Acknowledgement
+
+If you use Data2Story in your research, please kindly cite:
+
+```bibtex
+@article{lin2026data,
+  title   = {Data Journalist Agent: Transforming Data into Verifiable Multimodal Stories},
+  author  = {Lin, Kevin Qinghong and EI, Batu and Shi, Yuhong and Lu, Pan and Torr, Philip and Zou, James},
+  journal = {arXiv preprint arXiv:2606.11176},
+  year    = {2026}
+}
+```

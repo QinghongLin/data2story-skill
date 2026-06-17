@@ -1,0 +1,44 @@
+{
+  "activation": "When DATA_DIR contains paper.pdf and metadata.json, add these analysis categories.",
+  "paper_structure_analysis": {
+    "title": "Paper Structure Analysis",
+    "measure": [
+      "Section proportions: what % of the paper is intro, related work, method, experiments, discussion?",
+      "Figure/table density: how many figures and tables per page? What fraction of pages have visuals?",
+      "Equation density: how many equations? Concentrated in one section or spread throughout?",
+      "Citation density: how many references? Self-citation rate? Recency of citations (median year)?",
+      "Abstract vs claims: does the abstract accurately reflect what the experiments show?"
+    ]
+  },
+  "experimental_design_evaluation": {
+    "title": "Experimental Design Evaluation",
+    "per_experiment": [
+      "Baselines: how many? State-of-the-art or straw-men? Fairly tuned?",
+      "Datasets: how many? Standard benchmarks or custom? Size and diversity?",
+      "Ablation completeness: which components are ablated? Obvious missing ablations?",
+      "Statistical rigor: error bars? Confidence intervals? Multiple runs? Significance tests?",
+      "Improvement magnitude: marginal (< 1%) or substantial?",
+      "Reproducibility signals: code released? Hyperparameters fully specified? Random seeds?"
+    ]
+  },
+  "review_analysis": {
+    "title": "Review Analysis (if reviews.json exists)",
+    "quantify": [
+      "Score distribution: mean, min, max, std of ratings and confidence.",
+      "Reviewer agreement: do reviewers agree on strengths/weaknesses, or diverge?",
+      "Concern taxonomy: classify each weakness into novelty, experimental gaps, writing/clarity, theoretical, scalability/practicality, ethical.",
+      "Fatal vs fixable: which concerns could be addressed in a revision? Which are fundamental?",
+      "Rebuttal effectiveness (if rebuttal exists): did authors address key concerns? Did scores change?",
+      "Meta-reviewer reasoning: what tipped the decision? Which reviewer's opinion dominated?"
+    ]
+  },
+  "cross_paper_comparison": {
+    "title": "Cross-Paper Comparison (if multiple papers in DATA_DIR)",
+    "when_best_vs_rejected": [
+      "Side-by-side metrics: table density, baseline count, dataset count, ablation count, citation count.",
+      "Writing quality signals: abstract length, claim specificity, caveat frequency.",
+      "What the winner did that the loser didn't: identify the discriminating factors."
+    ]
+  },
+  "index_additions": "Tag paper-specific findings with additional types: structure / experimental-design / review-analysis / cross-paper."
+}
