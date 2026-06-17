@@ -69,12 +69,12 @@ What: Editorial decisions — which findings matter, what the narrative arc is, 
 ### Stage 4 — Designer
 Input: `PROJECT_DIR/editor.md`, `PROJECT_DIR/editor.json`, `PROJECT_DIR/analyst.json`
 Output: `PROJECT_DIR/designer.json`, `PROJECT_DIR/assets/*`
-What: Data-driven creative visual decisions — how to present each point using charts, images, video, audio, maps, interactives, stat callouts, instances, or text-only treatment when appropriate. The media mix should emerge from the dataset's properties, not from a fixed checklist. Each visual gets a `des_xx` ID with `data_source` pointing to `ana_xx` data_tables when data-driven. Generates selected assets. No HTML.
+What: Data-driven creative visual decisions — how to present each point using charts, images, video, audio, maps, interactives, stat callouts, instances, or text-only treatment when appropriate. The media mix should emerge from the dataset's properties, not from a fixed checklist. The page should be **multimedia-rich by default**: borrow the visual language from the shared [`frontend-design`](../frontend-design/) skill and use all five channels (chart, image, video, audio, interactive/map) unless a channel's documented fallback would be fabricated or purely decorative. Each visual gets a `des_xx` ID with `data_source` pointing to `ana_xx` data_tables when data-driven. Generates selected assets. No HTML.
 
 ### Stage 5 — Programmer
 Input: `PROJECT_DIR/editor.md`, `PROJECT_DIR/editor.json`, `PROJECT_DIR/analyst.json`, `PROJECT_DIR/designer.json`
 Output: `PROJECT_DIR/index.html`
-What: Implements the final blog in HTML. Resolves chart data from analyst.json data_tables (NO raw data access). Tags every element with `data-edt`, `data-ana`, `data-det`, `data-des` attributes for traceability.
+What: Implements the final blog in HTML. Applies the theme/accent recorded in `designer.json` `page_rhythm` and borrows component + token recipes from the [`frontend-design`](../frontend-design/) skill. Resolves chart data from analyst.json data_tables (NO raw data access). Tags every element with `data-edt`, `data-ana`, `data-det`, `data-des` attributes for traceability.
 
 ### Stage 6 — Auditor
 Input: `PROJECT_DIR/index.html`
@@ -91,7 +91,7 @@ What: Runs sentence-level traceability verification and generates an interactive
 python3 SKILL_DIR/inspector/scripts/verify.py PROJECT_DIR --log-errors
 python3 SKILL_DIR/inspector/scripts/generate_viewer.py PROJECT_DIR
 ```
-Step 1 produces `inspector.json` (sentence→evidence mapping). Step 2 produces `viewer.html` (self-contained, works on `file://` — no server needed). See `skills/inspector/SKILL.md` for details.
+Step 1 produces `inspector.json` (sentence→evidence mapping). Step 2 produces `viewer.html` (self-contained, works on `file://` — no server needed). See `inspector/SKILL.md` for details.
 
 ## Traceability: ID flow through the pipeline
 
@@ -110,5 +110,6 @@ Every value in the final HTML can be traced: `HTML data-des="des_01"` → `desig
 
 - Each artifact must be complete before the next stage starts.
 - If an artifact is missing required sections, fix it before proceeding.
+- **Media-richness gate (after Designer, before Programmer):** `designer.json` should exercise all five channels (chart, image, video, audio, interactive_or_map). For any channel marked `used:false`, confirm its documented fallback was genuinely tried and a data-grounded reason recorded in `meta.media_decisions`. If a channel was skipped for convenience rather than because the data can't support it, send it back to the Designer before the Programmer runs.
 - All generated assets go into `PROJECT_DIR/assets/` only.
 - Final deliverables: `PROJECT_DIR/index.html`, `PROJECT_DIR/detective.json`, `PROJECT_DIR/analyst.json`, `PROJECT_DIR/code/*.py`, `PROJECT_DIR/editor.md`, `PROJECT_DIR/editor.json`, `PROJECT_DIR/designer.json`, `PROJECT_DIR/inspector.json`, `PROJECT_DIR/viewer.html`.

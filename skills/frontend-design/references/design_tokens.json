@@ -1,0 +1,34 @@
+{
+  "principle": "Drive every color, size and shadow from CSS :root variables so the page is coherent and re-themeable. The Programmer copies the chosen theme's tokens into :root; components reference var(--token), never hard-coded values.",
+  "color_roles": {
+    "--bg": "page background (often near-black or off-white, not pure #000/#fff)",
+    "--surface": "raised panels, cards, callouts (a step from --bg)",
+    "--ink": "primary text (high contrast on --bg)",
+    "--muted": "secondary text, captions, axis labels",
+    "--line": "hairline borders, dividers",
+    "--accent": "one signature color for emphasis, links, highlighted data",
+    "--accent-2": "secondary accent, used sparingly",
+    "_rule": "Pick ONE dominant accent tied to the story's subject (heat=warm red/orange, climate=teal, finance=green). Do not use generic bootstrap blue or a purple gradient by default."
+  },
+  "data_color_scales": {
+    "sequential": "for a single quantity (e.g. temperature low->high). Example heat scale: #2c7fb8 -> #78c679 -> #ffd24d -> #fd8d3c -> #bd0026.",
+    "diverging": "for above/below a midpoint (e.g. vs baseline): cool hue <- neutral -> warm hue.",
+    "categorical": "for unordered groups: use a restrained 4-6 color set that harmonizes with --accent, not Vega defaults.",
+    "_rule": "Reuse the SAME data scale across map, bars and callouts so a color always means the same value. Color the highlighted datum with --accent; mute the rest."
+  },
+  "type_scale": {
+    "pairing": "Pair a display/serif for headlines + body with a clean system-ui/sans for UI, labels, stats. Or an expressive sans display + serif body. Avoid a single default system font everywhere.",
+    "fluid_sizes": {
+      "h1": "clamp(2.1rem, 5.4vw, 4rem)",
+      "h2": "clamp(1.5rem, 3.2vw, 2.1rem)",
+      "body": "18px / line-height 1.6-1.7",
+      "stat_number": "clamp(2.2rem, 6vw, 3.4rem), weight 800",
+      "kicker_caption": "0.72-0.85rem, letter-spacing for kickers"
+    },
+    "_rule": "One display family, one body family, one UI family at most. Set measure (max line length) ~66ch for body."
+  },
+  "space_scale": "Use a consistent step scale (e.g. 4,8,12,16,22,34,56px). Section vertical padding ~34-56px; visual blocks margin 2rem 0.",
+  "radius": { "card": "6-10px", "pill": "20px", "_rule": "pick one card radius and keep it consistent" },
+  "shadow": { "panel": "subtle, low-opacity, large-blur on dark; soft on light", "_rule": "use shadow OR border for elevation, rarely both" },
+  "implementation": ":root{ --bg:...; --ink:...; --accent:...; } then components use var(--accent). Provide a dark and light variant only if the story needs a toggle."
+}

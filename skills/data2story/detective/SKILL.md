@@ -45,9 +45,9 @@ Flag anything from your research that could:
 - Connect the data to something readers already know about
 - Change how a finding should be interpreted
 
-### 4. Collect Reference Media When It Helps
+### 4. Collect Reference Media (a default step for visual/geographic/event/sports datasets)
 
-Look for real-world media when it will help the Designer understand the subject, tone, examples, or visual truth of the dataset. This is strongly encouraged for visual, geographic, event-based, cultural, historical, product, animal, art, place, food, fashion, sports, and scientific datasets. For abstract, text-only, technical, privacy-sensitive, or purely statistical datasets, it is acceptable to collect little or no media if visuals would be generic or misleading.
+Real-world media helps the Designer build a multimedia-rich page, so collecting it is **a default part of your job, not optional**, for visual, geographic, event-based, cultural, historical, product, animal, art, place, food, fashion, sports, and scientific datasets. Use the helper scripts in this skill's `scripts/` folder — `fetch_images.py`, `fetch_logos.py`, `fetch_flags.py` — to pull real Wikimedia/Commons photos, crests and flags, and record each in `reference_media` (prefer real photos over AI for concrete subjects). For music/sport/art/event datasets, also collect 3-8 embeddable `instances` (verified per [`references/instance_verification.json`](references/instance_verification.json)). Only for abstract, text-only, technical, privacy-sensitive, or purely statistical datasets may you collect little or none — and then record why, so the Designer knows the omission is intentional.
 
 While researching, actively hunt for real-world media:
 

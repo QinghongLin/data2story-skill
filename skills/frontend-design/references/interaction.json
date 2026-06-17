@@ -1,0 +1,21 @@
+{
+  "motion": {
+    "scroll_reveal": "Fade/translate sections in on scroll via IntersectionObserver adding a .in class; CSS transition only. Keep subtle (8-16px, 300-500ms).",
+    "transitions": "State changes 200-300ms ease; hover lifts/underlines on interactive affordances.",
+    "hero": "Optional ambient motion (image2video, slow parallax, gentle particle/canvas); never distracting.",
+    "restraint": "Motion supports reading; avoid gratuitous parallax, bouncing, or autoplaying carousels."
+  },
+  "reduced_motion": "Respect @media (prefers-reduced-motion: reduce): disable non-essential transitions/animations and any autoplay motion; content must be fully usable static.",
+  "accessibility": {
+    "contrast": "Meet WCAG AA (>=4.5:1 body, >=3:1 large text) against --bg; check muted text and on-image text (use scrims).",
+    "focus": "Visible focus states on all interactive elements; logical tab order.",
+    "keyboard": "Buttons, sliders, card decks, quizzes operable by keyboard; use real <button>/<a> and aria where needed.",
+    "alt_text": "Meaningful alt for images; aria-labels for icon buttons and chart/map regions; caption charts.",
+    "audio": "Never autoplay sound; provide play/pause and a visual equivalent; mobile play targets >=44x44px."
+  },
+  "performance": [
+    "Inline data and styles; lazy-load images (loading=lazy) and heavy embeds.",
+    "Limit CDNs to what's used (Vega-Embed, Leaflet, optionally D3/PDF.js).",
+    "Keep the file self-contained and working on file:// (no fetch())."
+  ]
+}

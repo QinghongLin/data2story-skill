@@ -1,0 +1,40 @@
+{
+  "_note": "Ready-made distinctive visual identities. Pick ONE per story (or derive a new one), set its tokens in :root, and commit. Each is a starting point — tune the accent to the subject.",
+  "themes": {
+    "editorial_dark": {
+      "feel": "Premium data-journalism, cinematic. Good default for serious/analytical stories.",
+      "tokens": { "--bg": "#0e0f13", "--surface": "#16181f", "--ink": "#ece7df", "--muted": "#9aa0ab", "--line": "#2a2d36", "--accent": "subject-driven (e.g. #e2563a heat / #38b2ac climate)" },
+      "type": "serif display + serif body + system-ui UI", "tiles": "CARTO dark"
+    },
+    "newsprint_light": {
+      "feel": "Classic broadsheet: warm off-white paper, black ink, one ink-accent. Authoritative, text-forward.",
+      "tokens": { "--bg": "#f6f1e7", "--surface": "#fffdf8", "--ink": "#1a1a1a", "--muted": "#6b6357", "--line": "#ddd3c2", "--accent": "#b3322a" },
+      "type": "serif headlines + serif body", "tiles": "CARTO positron"
+    },
+    "neon_brutalist": {
+      "feel": "Bold, high-energy, chunky type and hard edges; for sport, music, culture, youth subjects.",
+      "tokens": { "--bg": "#0a0a0a", "--surface": "#141414", "--ink": "#f5f5f5", "--muted": "#8a8a8a", "--line": "#2a2a2a", "--accent": "#caff00", "--accent-2": "#ff2e63" },
+      "type": "heavy grotesk display + clean sans body", "radius": "0-2px, thick borders"
+    },
+    "warm_magazine": {
+      "feel": "Lifestyle/feature warmth: soft surfaces, generous imagery, rounded cards; for food, travel, people.",
+      "tokens": { "--bg": "#faf7f2", "--surface": "#ffffff", "--ink": "#23201c", "--muted": "#8c8378", "--line": "#ece3d6", "--accent": "#e07a3f" },
+      "type": "elegant serif display + humanist sans body", "radius": "12-16px"
+    }
+  },
+  "choosing": "Match the theme to the subject and tone; pick the accent from the data's meaning. Record the chosen theme + accent in designer.json page_rhythm so the Programmer applies it consistently.",
+  "anti_patterns": [
+    "Generic-AI look: bootstrap blue, a purple/indigo gradient hero, everything center-aligned, one default system font, evenly-spaced soulless cards.",
+    "Default chart colors (raw Vega/D3 palettes) instead of the story's tokens.",
+    "A 'tone card' audio widget bolted on with no link to the data.",
+    "Decorative stock-style images that say nothing; or AI images for concrete real subjects where a real photo exists.",
+    "Walls of equal-weight charts with no hierarchy, captions or annotation.",
+    "Hero with no clear focal point or a headline competing with a busy background (always use a scrim)."
+  ],
+  "make_it_distinctive": [
+    "Commit to one bold idea (a signature color, a recurring motif, an unusual but readable type pairing).",
+    "Give the page a clear focal centerpiece (the map, the lead interactive, a hero stat).",
+    "Use real-world texture (photos, embeds, maps) so it feels reported, not synthesized.",
+    "Vary rhythm and centerpiece between stories so outputs don't look templated."
+  ]
+}

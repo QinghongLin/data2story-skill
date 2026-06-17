@@ -1,0 +1,32 @@
+{
+  "_note": "Reusable component recipes. Each lists structure + the key CSS/JS so the Programmer can build it consistently. Tag every visual with data-des for traceability.",
+  "hero_teaser": {
+    "use": "Opening full-viewport moment before the headline.",
+    "build": "Full-bleed container; background = generated image OR muted autoplay-loop video OR an interactive. Gradient scrim (transparent -> --bg) bottom 60% for text legibility. Headline + dek overlaid bottom-left in the content column. A small kicker (uppercase, letter-spaced) above the headline.",
+    "rich_upgrade": "Prefer a subtly animated hero (image2video parallax, or a CSS/canvas ambient motion) over a flat still when motion suits the subject."
+  },
+  "stat_callout": {
+    "single": "Big numeral (var(--accent), weight 800, clamp ~2-3rem) + short label below; on a --surface panel with a left accent border for the marquee stat.",
+    "trio": "flex row of 3 numerals with captions, under the headline, to set scale fast.",
+    "rule": "Reserve stat callouts for the few most quotable numbers; don't turn every figure into one."
+  },
+  "pull_quote": "Oversized serif/italic quote, constrained width, accent rule or oversized quotation mark. For a striking sentence or a sourced quote.",
+  "card_deck": {
+    "use": "Many comparable items (venues, players, products) the reader browses.",
+    "build": "Horizontal scroll-snap row (scroll-snap-type:x mandatory; cards scroll-snap-align:center) OR responsive grid. Each card: image (real photo preferred) + title + 1-2 key stats. Arrow buttons + keyboard support.",
+    "rich_upgrade": "Use real fetched photos (Wikimedia/press) for concrete subjects rather than generic AI fills."
+  },
+  "chart_frame": "Chart in a block with margin:2rem auto, a short caption (var(--muted)) and a source note. Style the chart to the theme tokens (axis colors, accent highlight) — never ship default Vega colors. Annotate the key datum directly.",
+  "map_frame": "Leaflet with dark/muted tiles (e.g. CARTO dark/positron), custom circle markers colored by the shared data scale and sized by a second variable, popups in UI font, a small legend explaining color + size. Fixed height ~440-520px; disable scroll-wheel zoom to avoid scroll traps.",
+  "audio_player": {
+    "sonification": "A labeled 'play' button bound to a chart/timeline that lights up as it plays; Web Audio oscillators; never autoplay; visual fallback if muted.",
+    "generated": "Section-integrated mini-player (chapter break, scene overlay) with caption + <audio controls>; not a generic floating card.",
+    "embed": "Native Spotify/YouTube embed in a rounded, shadowed frame with a caption."
+  },
+  "scrollytelling": "Sticky visual + scrolling steps; IntersectionObserver swaps/höighlights the visual per step; smooth CSS transitions; stacks on mobile.",
+  "before_after": "Two layered images/maps with a draggable divider (clip-path or overflow); works on touch + mouse; labeled states.",
+  "guess_reveal": "Ask the reader to predict (slider/choice) before revealing the real value with a short animation; maximizes a surprising finding.",
+  "data_table": "For dense comparisons: sticky header, zebra/hover rows, right-aligned numerics, the winning cell highlighted with --accent; horizontally scrollable on mobile.",
+  "figure": "Images in <figure> margin:2rem auto, rounded corners, <figcaption> centered in --muted. Note when an image is an illustration vs a real photo.",
+  "references_footer": "Compact list (UI font, --muted) of data source + studies + tools, with links. A footer, not a bibliography page."
+}

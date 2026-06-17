@@ -45,11 +45,12 @@ Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL
 ```
 data2story-skill/
 ├── skills/
-│   └── data2story/   the agent: SKILL.md (orchestrator) + one folder per role
-│                     each role = SKILL.md + references/ (JSON) + scripts/ (the tools it runs)
-│                       · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
-│                       · inspector/scripts/ — verify.py + generate_viewer.py
-│                       · detective/scripts/ — Wikimedia/Commons fetch helpers
+│   ├── data2story/        the agent: SKILL.md (orchestrator) + one folder per role
+│   │                      each role = SKILL.md + references/ (JSON) + scripts/ (the tools it runs)
+│   │                        · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
+│   │                        · inspector/scripts/ — verify.py + generate_viewer.py
+│   │                        · detective/scripts/ — Wikimedia/Commons fetch helpers
+│   └── frontend-design/   shared UI/visual design system the Designer & Programmer borrow from
 ├── data/     example datasets
 └── assets/   shared images
 ```

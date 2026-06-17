@@ -16,6 +16,7 @@ Think like a creative director, not a developer. Your output is a precise visual
 - `PROJECT_DIR` = first argument
 - Resolve `SKILL_DIR` = the directory containing this `SKILL.md` (`.../skills/data2story/designer`). Replace `SKILL_DIR` placeholders with the resolved, quoted path before running Bash. Do not hard-code machine-local paths.
 - Read `PROJECT_DIR/editor.md`, `PROJECT_DIR/editor.json`, and `PROJECT_DIR/analyst.json` before doing anything
+- Read the shared design system in [`../../frontend-design/`](../../frontend-design/) (`SKILL.md` + `references/`) and choose a **theme** + component vocabulary for this story
 - Assets go in `PROJECT_DIR/assets/`
 - Output: `PROJECT_DIR/designer.json`
 
@@ -39,7 +40,7 @@ Write the teaser spec (type + why; full interaction/prompt/mood description) and
 
 For every `edt_xx` section in editor.json, decide the presentation. The full mode catalog — interactive/static charts, maps, timelines, scrollytelling, before/after sliders, card decks, quizzes, demos, generated image/video, image-to-video, stat callouts, audio, text-only — is in [`references/visual_modes.json`](references/visual_modes.json). Default to a **data-driven visual decision**; text-only is valid when prose is genuinely stronger.
 
-Apply the **multimodal diversity rules** in [`references/diversity_rules.json`](references/diversity_rules.json): default to all five channels (chart, image, video, audio, interactive_or_map), execute each in a data-driven way, avoid chart streaks and visual sameness across blogs, and skip a channel only with an explicit reason in `meta.media_decisions`.
+**Aim for a multimedia-rich page by default.** Apply the diversity rules in [`references/diversity_rules.json`](references/diversity_rules.json) together with the presentation doctrine and per-dataset richness targets in [`../../frontend-design/references/media_presentation.json`](../../frontend-design/references/media_presentation.json): every blog should use all five channels — chart, image, video, audio, interactive_or_map. Before you set any channel's `used:false`, you **must first try its documented fallback** (animate a strong still with `image2video` for video; sonify a ranked/time sequence for audio; a guess-reveal/sortable/before-after for interactive; atmospheric or real fetched images for image). Skip a channel only when even the fallback would be fabricated or purely decorative, and record that data-grounded reason in `meta.media_decisions`. Avoid chart streaks and visual sameness across blogs.
 
 Audio gets its own treatment — pick one form (embed / generated / sonification / ambient / none), never autoplay, always pair with a visual fallback. See [`references/audio_rules.json`](references/audio_rules.json).
 
@@ -49,13 +50,13 @@ When the blog is about a scientific paper, additional modes (PDF preview, paper 
 
 ## Step 3: Generate Assets When Selected
 
-Generated assets follow from the media decisions. **Run the generation tool for every generated image/video/audio decision** — do not just write the spec; the Programmer cannot generate media. Verify each file (`ls -la PROJECT_DIR/assets/`). Asset volume should match the dataset type, and you should reuse any `ref_*` images the Detective downloaded as visual context — see [`references/diversity_rules.json`](references/diversity_rules.json) (`asset_volume_by_dataset`, `before_generating`).
+Generated assets follow from the media decisions. **Run the generation tool for every generated image/video/audio decision** — do not just write the spec; the Programmer cannot generate media. Verify each file (`ls -la PROJECT_DIR/assets/`). Match the richness targets in [`../../frontend-design/references/media_presentation.json`](../../frontend-design/references/media_presentation.json) (`richness_targets`): e.g. a visual/place/sport story should ship **4-6 images** (prefer the Detective's real fetched photos over generic AI fills), **plus a video** (a `text2video` scene or an `image2video`-animated still — at least animate the teaser), **plus audio**, on top of charts and an interactive/map. Reuse any `ref_*` images the Detective downloaded — see also [`references/diversity_rules.json`](references/diversity_rules.json) (`asset_volume_by_dataset`, `before_generating`).
 
 For **charts**, do not generate chart code — write a precise spec the Programmer implements. For **interactive demos**, write a step-by-step interaction spec. Both spec shapes are in [`references/visual_modes.json`](references/visual_modes.json).
 
 ## Step 4: Page Visual Rhythm
 
-Describe the overall page feel: dominant visual tone (dark/light, editorial/playful, minimal/dense); how text and visuals alternate; which section is the visual centrepiece; how this page avoids looking like recent blogs; typography notes for the Programmer. Record these in `page_rhythm`.
+Pick a concrete theme from [`../../frontend-design/references/themes.json`](../../frontend-design/references/themes.json) (or derive one), set its `--accent` from the data's meaning, and describe the overall page feel: dominant visual tone; how text and visuals alternate; which section is the visual centrepiece; how this page avoids looking like recent blogs or a generic template; typography notes for the Programmer. Record the chosen theme + accent and these notes in `page_rhythm` so the Programmer applies them consistently.
 
 ## Output
 

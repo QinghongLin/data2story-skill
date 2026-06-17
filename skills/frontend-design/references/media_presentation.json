@@ -1,0 +1,28 @@
+{
+  "doctrine": "A finished story should use MULTIPLE media channels with craft, not lean on charts alone. Default to all five: chart, image, video, audio, interactive/map. Skip a channel only with a genuine, data-grounded reason recorded in designer.json media_decisions — and try the documented fallback first.",
+  "channel_fallbacks_before_skipping": {
+    "video": "If no native event/process, animate the strongest still with image2video (parallax/ambient motion) or generate a short scene/chapter-break clip. Almost every story has at least one image worth animating.",
+    "audio": "If no real track, sonify a key ranked/time sequence (in-browser Web Audio, synced to its chart); or embed a relevant real recording (interview, archival, anthem) when one exists.",
+    "image": "Generate atmospheric/metaphorical images even for abstract data (>=2-3); for visual subjects (places, people, sport, food, nature) aim for 4-6 and prefer real fetched photos.",
+    "interactive_or_map": "If no geography, use a guess-reveal, scrubber, before/after, sortable table or mini-demo on a key finding."
+  },
+  "presenting_each_channel": {
+    "image": "Full-bleed for impact or framed in-column; consistent treatment (duotone/grade to theme); real photos for concrete subjects, generated for atmosphere/metaphor; always captioned; mark illustration vs real.",
+    "video": "Muted, loop, playsinline, with a poster; use as hero or chapter break; keep short (<=6s) and purposeful; pair with a caption.",
+    "audio": "Integrated, reader-controlled, never autoplay sound; sonification bound to its visual; always a visual fallback.",
+    "chart": "Themed tokens, annotated, highlight the key datum with --accent, tooltips with exact values; vary chart types across the page; no 3-in-a-row without a break.",
+    "map": "Dark/muted tiles, custom markers on the shared data scale, legend, popups; don't fake a map without real coordinates.",
+    "instance": "Embed real, oEmbed-verified Spotify/YouTube/audio that lets the reader experience a data point; framed and captioned; copy IDs verbatim from the detective's verified instances."
+  },
+  "variety_rules": [
+    "Vary which channel is the centerpiece from story to story.",
+    "Don't reuse the same teaser structure, audio-card pattern or chart rhythm every time.",
+    "Let the dataset choose the mix; richness should feel earned, never quota-filled or decorative."
+  ],
+  "richness_targets": {
+    "visual_subject_datasets": "4-6 images (prefer real photos) + a video (or animated still) + an interactive/map + audio.",
+    "geographic_datasets": "an interactive map is near-mandatory; add real place photos and a video/animated still.",
+    "abstract_or_statistical": "2-3 atmospheric images + a sonification + at least one interactive (guess-reveal/sortable); video via animated still if nothing else.",
+    "_note": "Targets, not quotas: if a channel would be fabricated or purely decorative, skip it with a recorded reason."
+  }
+}

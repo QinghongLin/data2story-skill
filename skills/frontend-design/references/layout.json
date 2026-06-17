@@ -1,0 +1,26 @@
+{
+  "content_column": "Single centered reading column, max-width 680-760px, side padding 20-24px. Body prose, stat callouts and most charts live here.",
+  "full_bleed": {
+    "when": "Teaser/hero, signature map or chart, chapter-break image/video. Use sparingly for impact.",
+    "css": "width:100vw; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); max-width:none. Never use the old left:50% hack. Clear inherited max-width on any wrapper.",
+    "hero": "Full viewport (height:100vh, min-height ~560px) for the opening teaser only."
+  },
+  "section_rhythm": {
+    "structure": "Teaser (full-bleed) -> headline+dek -> alternating prose/visual sections, each <section> a distinct beat -> references footer.",
+    "dividers": "Hairline top-border (var(--line)) between sections; generous vertical padding.",
+    "pacing": "Vary the visual mode between consecutive sections; never 3 charts in a row without a non-chart beat (image, map, stat, quote, interactive)."
+  },
+  "visual_blocks": {
+    "rule": "Every non-text element sits in its own block container with margin:2rem 0, display:block, clear:both. Images/charts centered with max-width:100%.",
+    "cross_ref": "Matches the Programmer's layout_rules.json; this file is the design intent, that one is the enforcement detail."
+  },
+  "grid": {
+    "cards": "Responsive card decks: CSS grid (repeat(auto-fit, minmax(220px,1fr))) or horizontal scroll-snap for swipeable decks.",
+    "stat_trio": "flex row, wraps to stack on mobile."
+  },
+  "sticky": "For scrollytelling: sticky visual panel (position:sticky; top:...) beside a scrolling text column; collapse to stacked on mobile.",
+  "responsive": {
+    "breakpoints": "design mobile-first; key breakpoint ~560-640px.",
+    "rules": ["no horizontal scroll", "charts use width:container", "maps keep an explicit height", "reduce column padding and stat sizes on small screens", "card grids collapse to 1-2 columns"]
+  }
+}
