@@ -56,18 +56,6 @@ flowchart LR
     INS -->|inspector.json + viewer.html| OUT([article + evidence viewer])
 ```
 
-```python
-def data2story(dataset):
-    detective = research_context(dataset)                 # → detective.json
-    analyst   = analyze(dataset, detective)               # → analyst.json, code/*.py
-    editor    = write_narrative(detective, analyst)       # → editor.md, editor.json
-    designer  = design_visuals(editor, analyst)           # → designer.json, assets/
-    page      = build_html(editor, analyst, designer)     # programmer → index.html
-    page      = fix_layout(page)                          # auditor    → index.html
-    viewer    = verify_traceability(page, artifacts)      # inspector  → inspector.json, viewer.html
-    return page, viewer
-```
-
 | # | Role | What it does | Produces |
 |---|------|--------------|----------|
 | 1 | **Detective** | Researches external context — domain background, history, why the data matters | `detective.json` |
@@ -91,8 +79,6 @@ data2story-skill/
 └── assets/   shared images
 ```
 
-The full, illustrated project overview is preserved in [`_README.md`](_README.md).
-
 
 ## License
 
@@ -103,7 +89,7 @@ Released under the [MIT License](LICENSE).
 If you use Data2Story in your research, please kindly cite:
 
 ```bibtex
-@article{lin2026data,
+@article{data2story,
   title   = {Data Journalist Agent: Transforming Data into Verifiable Multimodal Stories},
   author  = {Lin, Kevin Qinghong and EI, Batu and Shi, Yuhong and Lu, Pan and Torr, Philip and Zou, James},
   journal = {arXiv preprint arXiv:2606.11176},
