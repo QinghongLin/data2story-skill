@@ -21,7 +21,7 @@
   "audio_player": {
     "sonification": "A labeled 'play' button bound to a chart/timeline that lights up as it plays; Web Audio oscillators; never autoplay; visual fallback if muted.",
     "generated": "Section-integrated mini-player (chapter break, scene overlay) with caption + <audio controls>; not a generic floating card.",
-    "embed": "Native Spotify/YouTube embed in a rounded, shadowed frame with a caption."
+    "embed": "Native Spotify embed in a rounded, shadowed frame with a caption. For YouTube/video on a file:// page, prefer a click-through thumbnail FACADE (thumbnail https://img.youtube.com/vi/{ID}/hqdefault.jpg + play overlay, linking to the watch page in a new tab): a live YouTube iframe fails with a player 'configuration error' (Error 150/153) from a null file:// origin. Only embed a live YouTube iframe when the page is served over http(s)."
   },
   "scrollytelling": "Sticky visual + scrolling steps; IntersectionObserver swaps/höighlights the visual per step; smooth CSS transitions; stacks on mobile.",
   "before_after": "Two layered images/maps with a draggable divider (clip-path or overflow); works on touch + mouse; labeled states.",

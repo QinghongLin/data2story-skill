@@ -22,8 +22,9 @@
   ],
   "instance_embeds": {
     "_note": "When designer.json has an item with type 'instance', implement based on embed_type. Tag all instance embeds with data-des like any other visual element.",
-    "spotify": "<iframe src=\"{embed_url}\" width=\"100%\" height=\"152\" frameBorder=\"0\" allow=\"autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture\" loading=\"lazy\"></iframe>. Wrap in a styled container with rounded corners, subtle shadow, caption below.",
-    "youtube": "<iframe src=\"{embed_url}\" width=\"100%\" height=\"315\" frameBorder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen loading=\"lazy\"></iframe>.",
+    "file_origin_caveat": "CRITICAL: Data2Story pages open from file:// (no server). A live YouTube iframe player then has a null origin/referrer and fails with 'Video player configuration error' (Error 150/153, with a 'Watch on YouTube' overlay) — oEmbed returning 200 only means embedding is allowed, NOT that it plays on a null origin. So DEFAULT YouTube/video instances to a click-through thumbnail facade, not a live iframe.",
+    "youtube": "Default = thumbnail FACADE (robust on file:// and http): <a class=\"ytfacade\" href=\"https://www.youtube.com/watch?v={ID}\" target=\"_blank\" rel=\"noopener\" data-des=\"des_xx\"><img src=\"https://img.youtube.com/vi/{ID}/hqdefault.jpg\" alt=\"{label}\" loading=\"lazy\"><span class=\"ytplay\">&#9654;</span><span class=\"ytlbl\">Watch on YouTube — {label}</span></a> + a caption. Style the facade 16:9 with a centered play overlay. Take {ID} from the instance's source_url/embed_url. Only use a live <iframe src=\"https://www.youtube-nocookie.com/embed/{ID}?rel=0\"> when the output is GUARANTEED to be served over http(s).",
+    "spotify": "<iframe src=\"{embed_url}\" width=\"100%\" height=\"152\" frameBorder=\"0\" allow=\"autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture\" loading=\"lazy\"></iframe>. Spotify embeds tolerate file:// better than YouTube; if one misbehaves, fall back to a facade linking to the track. Wrap in a styled container with rounded corners, subtle shadow, caption below.",
     "image": "<img src=\"assets/{filename}\" alt=\"{label}\"> with caption below.",
     "audio_url": "<audio controls src=\"{url}\"></audio> with label and caption."
   },
