@@ -14,6 +14,11 @@ A data-journalist agent skill that turns any dataset into a verifiable, evidence
 - **Verifiable.** Each run writes to its own versioned project folder and snapshots the exact skill versions used, so every result can be traced and re-checked.
 - **Progressive disclosure.** Each role's `SKILL.md` holds only its instructions; bulky reference material (output schemas, field rules, lookup tables) lives in that role's `references/` folder as JSON and is loaded only when needed.
 
+## Updates
+* [ ] [2026.6] Version 0.0.1: Optimized visual effects.
+* [x] [2026.6.9] Released the arXiv paper, GitHub repository.
+* [x] [2026.5.11] Data2Story was accepted as a Spotlight paper at the [ACM Conference on AI and Agentic Systems workshop](https://www.caisconf.org/).
+
 ## Installation & usage
 
 Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL.md` — it works first-class with Claude Code, and equally with Codex, Cursor, Gemini CLI, and other agents.
