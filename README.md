@@ -8,6 +8,8 @@ A data-journalist agent skill that turns any dataset into a verifiable, evidence
 
 ## What it does
 
+https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
+
 - **Dataset → finished article.** Point it at a CSV, a folder of data, or a paper, and a fixed pipeline of seven roles produces a publishable HTML story end to end.
 - **Evidence-grounded.** Every sentence and visual links back to its source. The pipeline emits a `viewer.html` inspector where you can click any claim to see the data, code, or citation behind it.
 - **Multimodal by default.** Charts, images, video, audio, maps, and interactive elements — chosen from the data's actual properties, not a fixed checklist. Media generation routes through OpenRouter.
