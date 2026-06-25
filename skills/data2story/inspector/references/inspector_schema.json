@@ -1,5 +1,5 @@
 {
-  "_note": "verify.py produces PROJECT_DIR/verifier.json in this shape (format v3). raw_evidence holds the full resolved evidence objects (omitted from the lite version inlined into the in-page panel islands).",
+  "_note": "verify.py produces PROJECT_DIR/inspector.json in this shape (format v3). raw_evidence holds the full resolved evidence objects (omitted from the lite version inlined into viewer.html).",
   "format": "v3",
   "stats": {
     "total_sentences": 145,

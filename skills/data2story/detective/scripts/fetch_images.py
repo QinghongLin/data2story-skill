@@ -10,13 +10,6 @@ can be credited in a journalism context:
     P18   image (photo)
     P41   flag image
 
-NOTE: Wikidata image properties (P18/P154/P94/P41) are sometimes mis-mapped to the
-wrong subject, and this fetcher takes the first claim value without checking it. It is
-a deterministic, no-LLM download — it does NOT verify the image depicts the requested
-subject. Any real-subject image it returns MUST be vision-confirmed (vlm_view) before
-it reaches the page: the Detective records the asset; the Scout/Auditor verify the
-subject.
-
 Usage:
     # explicit QIDs
     python3 fetch_images.py --qids Q81087,Q805285 --outdir ASSETS --props P154,P94,P18
@@ -37,9 +30,7 @@ import argparse, csv, json, os, re, sys, time, urllib.parse, urllib.request, url
 
 WD_API = "https://www.wikidata.org/w/api.php"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
-# Polite User-Agent contact, configurable so no personal address ships in the code.
-CONTACT = os.environ.get("DATA2STORY_CONTACT", "data2story@users.noreply.github.com")
-UA = f"Data2Story-WikimediaFetch/1.0 (academic research; contact: {CONTACT})"
+UA = "Data2Story-WikimediaFetch/1.0 (academic research; contact: qinghong.lin@eng.ox.ac.uk)"
 
 PROP_KIND = {"P154": "logo", "P94": "coat_of_arms", "P18": "photo", "P41": "flag"}
 
@@ -145,8 +136,6 @@ def main():
                     help="merge into an existing manifest in outdir instead of overwriting")
     ap.add_argument("--no-download", action="store_true",
                     help="don't fetch image bytes; only (re)build manifest entries for files already present")
-    ap.add_argument("--prefix", default="",
-                    help="filename prefix for downloaded files, e.g. 'scout_' (default: none)")
     args = ap.parse_args()
 
     props = [p.strip() for p in args.props.split(",") if p.strip()]
@@ -155,7 +144,7 @@ def main():
     if args.qids:
         qids = [q.strip() for q in args.qids.split(",") if q.strip()]
     elif args.csv:
-        with open(args.csv, newline="", encoding="utf-8") as f:
+        with open(args.csv, newline="") as f:
             for row in csv.DictReader(f):
                 q = (row.get(args.id_col) or "").strip()
                 if q:
@@ -192,7 +181,7 @@ def main():
             url_path = urllib.parse.urlparse(url).path
             ext = os.path.splitext(url_path)[1].lower() or os.path.splitext(fn)[1].lower() or ".png"
             kind = PROP_KIND.get(prop, prop)
-            local = os.path.join(args.outdir, f"{args.prefix}{slugify(label)}__{kind}{ext}")
+            local = os.path.join(args.outdir, f"{slugify(label)}__{kind}{ext}")
             if args.no_download:
                 status = "ok" if os.path.exists(local) else "MISSING (no-download)"
             else:
@@ -205,7 +194,7 @@ def main():
                     status = f"FAILED: {e}"
             rec = {
                 "qid": qid, "label": label, "prop": prop, "kind": kind,
-                "commons_file": fn, "local_path": os.path.relpath(local, args.outdir),
+                "commons_file": fn, "local_path": os.path.relpath(local),
                 "license": m.get("license", ""), "artist": m.get("artist", ""),
                 "credit": m.get("credit", ""),
                 "descriptionurl": m.get("descriptionurl", ""),
@@ -218,7 +207,7 @@ def main():
     mpath = os.path.join(args.outdir, "wikimedia_manifest.json")
     if args.append and os.path.exists(mpath):
         try:
-            with open(mpath, encoding="utf-8") as f:
+            with open(mpath) as f:
                 existing = json.load(f)
         except Exception:
             existing = []
@@ -226,7 +215,7 @@ def main():
         merged = manifest + [r for r in existing
                              if (r.get("local_path"), r.get("prop")) not in have]
         manifest = merged
-    with open(mpath, "w", encoding="utf-8") as f:
+    with open(mpath, "w") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
     ok = sum(1 for r in manifest if r["status"] == "ok")
     print(f"\nDone: {ok}/{len(manifest)} images downloaded. Manifest: {mpath}", file=sys.stderr)

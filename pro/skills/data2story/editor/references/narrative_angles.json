@@ -1,0 +1,37 @@
+{
+  "activation": "When analyst.json contains paper structure analysis or review analysis. Choose the narrative angle that creates the most tension. These are not mutually exclusive — combine as needed.",
+  "angles": {
+    "the_verdict_explained": {
+      "summary": "Why was this paper accepted or rejected? Lead with the decision, then unpack the evidence.",
+      "core_tension": "the gap between what the authors claim and what reviewers saw.",
+      "best_for": "papers with interesting review dynamics."
+    },
+    "the_best_paper_autopsy": {
+      "summary": "What made this paper stand out? Lead with a specific, surprising quality (not 'it was good'). Use quantitative comparisons to other papers at the same venue.",
+      "best_for": "award-winning papers, especially when the reasons aren't obvious."
+    },
+    "the_reviewers_war": {
+      "summary": "When reviewers dramatically disagree. Lead with the most extreme divergence in opinion; show what each reviewer saw differently in the same paper.",
+      "best_for": "controversial papers, borderline decisions."
+    },
+    "the_missing_experiment": {
+      "summary": "What reviewers wanted but didn't get. Lead with what the paper could have shown but didn't; frame as a gap the reader can now understand.",
+      "best_for": "rejected papers where the core idea had merit."
+    },
+    "the_method_behind_the_breakthrough": {
+      "summary": "Technical deep-dive made accessible. Lead with the real-world impact, then explain how it works; use analogies and progressive disclosure.",
+      "best_for": "genuinely novel methods a data-literate reader can appreciate."
+    },
+    "before_and_after": {
+      "summary": "How this paper changed the field. Lead with what people believed before, contrast with after; show the citation trail as evidence of influence.",
+      "best_for": "influential papers with clear downstream impact."
+    }
+  },
+  "paper_specific_writing_rules": [
+    "When discussing reviews, quote specific reviewer language — don't paraphrase into blandness.",
+    "Present both sides of reviewer disagreements before revealing the outcome.",
+    "Use paper figures directly when they tell the story better than words.",
+    "Frame technical contributions in terms of what they enable, not just what they are.",
+    "If the paper was rejected, maintain analytical respect — explain why the concerns mattered, don't mock."
+  ]
+}

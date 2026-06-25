@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "role": "detective",
+    "version": "2.0"
+  },
+  "items": {
+    "det_01": {
+      "label": "Short human-readable name",
+      "content": "Full prose paragraph — as detailed as you would write in a markdown section. This is the primary content that downstream roles will read.",
+      "category": "origin | background | related_work | why_it_matters | controversy | interpretive_hook | benchmark | scope_suggestion",
+      "sources": [
+        {
+          "url": "https://...",
+          "title": "Title of the source",
+          "facts": ["specific fact from THIS source", "another fact with number from THIS source"]
+        }
+      ],
+      "calculation": {
+        "method": "arithmetic | lookup | conversion",
+        "formula": "1/52",
+        "result": "1.92%"
+      }
+    }
+  },
+  "reference_media": [
+    {
+      "id": "det_media_01",
+      "filename": "ref_example.png",
+      "url": "https://...",
+      "license": "CC BY-SA 4.0",
+      "source": "Wikimedia Commons",
+      "description": "What this image shows and why it's relevant",
+      "relates_to": ["det_01", "det_03"]
+    }
+  ],
+  "instances": [
+    {
+      "id": "inst_01",
+      "type": "spotify",
+      "label": "Blinding Lights — The Weeknd",
+      "embed_url": "https://open.spotify.com/embed/track/0VjIjW4GlUZAMYd2vXMi4b",
+      "relates_to": ["det_04"],
+      "why": "Minor key + high danceability — the sad-dance paradox in one song"
+    },
+    {
+      "id": "inst_02",
+      "type": "image",
+      "label": "Roy Lichtenstein's Times Square Mural",
+      "filename": "inst_times_square.jpg",
+      "source_url": "https://...",
+      "license": "Fair use",
+      "relates_to": ["det_01"],
+      "why": "Most photographed permanent artwork in the NYC subway"
+    }
+  ]
+}

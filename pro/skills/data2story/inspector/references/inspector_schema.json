@@ -1,0 +1,21 @@
+{
+  "_note": "verify.py produces PROJECT_DIR/verifier.json in this shape (format v3). raw_evidence holds the full resolved evidence objects (omitted from the lite version inlined into the in-page panel islands).",
+  "format": "v3",
+  "stats": {
+    "total_sentences": 145,
+    "traced": 145,
+    "untraced": 0,
+    "unique_ids_referenced": 45,
+    "unused_ids": 37
+  },
+  "sentences": [
+    {
+      "context": "The sentence text as it appears in the HTML.",
+      "html_line": 665,
+      "summary": "Actionable provenance: what data, what method, what result, or what source.",
+      "retrieve": ["ana_03", "det_05", "edt_01"],
+      "raw_evidence": [{ "id": "ana_03", "role": "analyst", "content": "the full resolved evidence object for this id" }]
+    }
+  ],
+  "unused_ids": ["ana_12", "det_08"]
+}

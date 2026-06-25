@@ -1,0 +1,56 @@
+{
+  "content_column": "Single centered reading column, max-width 680-760px, side padding 20-24px. Body prose, stat callouts and most charts live here.",
+  "full_bleed": {
+    "when": "Teaser/hero, signature map or chart, chapter-break image/video. Use sparingly for impact.",
+    "css": "width:100vw; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); max-width:none. Never use the old left:50% hack. Clear inherited max-width on any wrapper.",
+    "hero": "Full viewport (height:100vh, min-height ~560px) for the opening teaser only."
+  },
+  "immersive_cinematic_layout": {
+    "_what": "The full-bleed immersive layout system proven on a high-end cinematic data-blog (prose over photographic backgrounds, charts/tables/maps/card-decks breaking out wider than the reading column). These are the concrete, reusable rules so ANY future blog can reproduce the same legibility and fit. The cinematic stage is MANDATORY and unconditional — there is no off path and no toggle (see cinematic_mandatory_no_toggle); the cinematographer.json meta.mode only selects WHICH mode (photographic / generative / data_driven), never whether the stage exists. Companion to the Programmer's cinematic_background recipe in ../../data2story/programmer/references/component_implementations.json — this file is the layout/legibility intent, that one is the build.",
+    "readable_prose_column": {
+      "rule": "Keep PROSE in a readable centered column (~760-860px; clamp(0px,92vw,820px) is a good default), side padding 20-24px — even in cinematic mode. Long lines over a photo are unreadable; the narrow measure is what keeps the story legible. Charts, tables, maps and card-decks are the things that BREAK OUT wider (see break_out_wider), NOT the prose.",
+      "helper": "Give the prose column one class (e.g. `.col`/`.prose`) with `max-width:clamp(0px,92vw,820px); margin-inline:auto`. margin-inline:auto centers it correctly here ONLY because it is narrower than its parent — the moment a child is WIDER than the parent, auto stops centering (see break_out_wider._why)."
+    },
+    "break_out_wider": {
+      "_what": "A `.wbleed`-style helper that lets a single block (chart card, wide table, map, card deck) extend past the prose column to a controlled wider width WITHOUT touching the prose measure. This is NOT the same as full_bleed above (which goes edge-to-edge at 100vw); break-out is a bounded wider width like min(1100px,94vw).",
+      "css": "width:min(1100px, 94vw); margin-inline:calc((100% - min(1100px, 94vw)) / 2); max-width:none;",
+      "_why_THIS_is_the_critical_rule": "margin:auto and margin-inline:auto CANNOT center an element that is WIDER than its containing block. When the child is wider than the parent, the CSS spec resolves auto side-margins to 0, so the element pins to the LEFT edge of its container and OVERFLOWS to the right (this is exactly the odds-table-overflow / 'some charts are off-center' bug). The fix is to compute the side margin yourself: `margin-inline:calc((100% - TARGET) / 2)` where TARGET is the SAME width expression used for the element (here min(1100px,94vw)). 100% is the parent's content width, so (100% - TARGET)/2 is the exact negative-or-positive inset needed to center the wider child. Keep the two `min(...)` expressions IDENTICAL or the centering drifts.",
+      "do_NOT": "Do NOT center a break-out block with `transform:translateX(-50%)` (the old left:50% hack) — it ignores scrollbars, fights sticky/parallax layers, breaks `position` containing blocks, and mis-centers under RTL. Do NOT rely on `margin-inline:auto` for any element wider than its parent — it silently left-aligns + overflows (see _why above). Use the calc() margin-inline rule for bounded break-outs; use full_bleed's `margin-left:calc(50% - 50vw)` only for true 100vw edge-to-edge."
+    },
+    "readability_over_photos": {
+      "uniform_dark_filter": "Readability over photographic backgrounds = ONE uniform full-screen dark filter, NOT per-section scrim gradients. Implement it as a single `position:fixed; inset:0;` overlay (e.g. `background:rgba(8,10,14,.46)` — tune .35-.6 to the imagery) that sits ABOVE the background-image layer and BELOW the content layer (z-index: bg < this overlay < content). Because it is one fixed element covering the whole viewport, the darkening is perfectly even as the reader scrolls.",
+      "_why_not_per_section_scrims": "Per-section scrim gradients (a darkening gradient inside each <section>) BAND: where one section's gradient ends and the next begins, the darkness steps, producing a visible horizontal SEAM between sections. The single fixed overlay has no seams because it is continuous across the whole page. (Per-scene scrims still belong INSIDE the cinematographer's crossfade engine for the image transitions themselves, but the global readability darkening is this one uniform overlay.)",
+      "text_shadow": "On prose and headings that sit over a photo, add a strong `text-shadow` (e.g. headings `0 2px 18px rgba(0,0,0,.6)`, body `0 1px 8px rgba(0,0,0,.55)`) so glyphs hold their edge over bright or busy regions even with the uniform overlay. The overlay handles the average luminance; the text-shadow handles local hotspots."
+    },
+    "visuals_over_photos_frosted_backing": {
+      "rule": "Charts, tables, maps and stat blocks over a photo sit on a SOFT FROSTED backing: semi-transparent dark fill + `backdrop-filter:blur(...)` (e.g. `background:rgba(14,17,22,.62); backdrop-filter:blur(10px) saturate(120%); border-radius:14px; padding:clamp(16px,3vw,28px)`). NO hard box outline, NO gold/accent border — the frosted blur alone separates the visual from the imagery. This is the softer cinematic surface; the Programmer's opaque `.chart-card` is the maximum-legibility fallback for very busy backgrounds. Cross-ref: component_implementations.json charts_vega_lite.fit_and_legibility and cinematic_background.chart_card_DEFAULT_in_cinematic_mode.",
+      "backing_must_cover_the_chart": "CRITICAL: the frosted backing must ALWAYS be >= the chart it sits behind (same width or wider, same height or taller). If the chart/SVG renders wider than its backing, it spills OUTSIDE the dark frosted area onto the bare photo and becomes illegible at the edges. Enforce this two ways: (1) the backing is the break-out container and the chart fits INSIDE it (`.chart-card svg{max-width:100%!important}` — see component_implementations.json fit_and_legibility), and (2) never give the chart a fixed px width larger than the backing's content box. The backing sizes the region; the chart is clamped to fit within it."
+    },
+    "no_horizontal_scrolling": {
+      "rule": "NO horizontal scrolling anywhere in the article — not on the page, not inside any component. ALL browsing is vertical scroll.",
+      "implications": "Do NOT use horizontal carousels, swipe-decks, or `scroll-snap-type:x` strips for browsing (override grid.cards' horizontal-scroll option and the card_deck_swipe recipe in cinematic mode). Card decks become a vertical-flowing responsive GRID (repeat(auto-fit,minmax(...,1fr))) that wraps, never a horizontal rail. Wide tables fit via the break-out width + `max-width:100%` on inner content, NOT an `overflow-x:auto` scroller. Guard against accidental overflow globally with `html,body{overflow-x:hidden}` and make sure every break-out uses the calc() centering above (a mis-centered wide block is the usual source of a stray horizontal scrollbar)."
+    },
+    "cinematic_mandatory_no_toggle": {
+      "rule": "The immersive cinematic stage is MANDATORY and NON-switchable — never emit an on/off control, a `.cinematic-off`/`html.cinematic` class gate, or sessionStorage state; cinematic styling is unconditional. The photographic backgrounds + uniform dark overlay + frosted visual backings + text-shadow are always on (the only adaptation is `prefers-reduced-motion`, which freezes motion but keeps the imagery, never strips the stage).",
+      "how": "Apply all cinematic styling unconditionally (do NOT scope it under `html.cinematic ...` and do NOT gate it on `html:not(.cinematic-off)`): the fixed background layer, the fixed `.overlay`, the frosted `.chart-card` fill, and the over-photo text-shadow are always present. There is no degraded plain-editorial fallback class — the page always ships the cinematic layer. Honor `prefers-reduced-motion` by holding the active image still (no crossfade/ken-burns), not by removing the stage."
+    }
+  },
+  "section_rhythm": {
+    "structure": "Teaser (full-bleed) -> headline+dek -> alternating prose/visual sections, each <section> a distinct beat -> references footer.",
+    "dividers": "Hairline top-border (var(--line)) between sections; generous vertical padding.",
+    "pacing": "Vary the visual mode between consecutive sections; never 3 charts in a row without a non-chart beat (image, map, stat, quote, interactive)."
+  },
+  "visual_blocks": {
+    "rule": "Every non-text element sits in its own block container with margin:2rem 0, display:block, clear:both. Images/charts centered with max-width:100%.",
+    "cross_ref": "Matches the Programmer's layout_rules.json; this file is the design intent, that one is the enforcement detail."
+  },
+  "grid": {
+    "cards": "Responsive card decks: CSS grid (repeat(auto-fit, minmax(220px,1fr))) or horizontal scroll-snap for swipeable decks.",
+    "stat_trio": "flex row, wraps to stack on mobile."
+  },
+  "sticky": "For scrollytelling: sticky visual panel (position:sticky; top:...) beside a scrolling text column; collapse to stacked on mobile.",
+  "responsive": {
+    "breakpoints": "design mobile-first; key breakpoint ~560-640px.",
+    "rules": ["no horizontal scroll", "charts use width:container", "maps keep an explicit height", "reduce column padding and stat sizes on small screens", "card grids collapse to 1-2 columns"]
+  }
+}

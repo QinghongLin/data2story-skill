@@ -8,7 +8,7 @@ For every visible sentence in index.html <body>, produce:
   - raw_evidence: full evidence records pulled from role JSONs
 
 Usage:
-    python3 skills/data2story/inspector/scripts/verify.py PROJECT_DIR
+    python3 skills/inspector/scripts/verify.py PROJECT_DIR
 
 Output:
     PROJECT_DIR/verifier.json
@@ -19,15 +19,10 @@ import json
 import os
 import re
 import sys
+from collections import defaultdict
+from datetime import date
 from html.parser import HTMLParser
-
-
-# Windows/GBK consoles cannot encode non-ASCII diagnostics; force UTF-8 stdout.
-try:
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-except Exception:
-    pass
+from pathlib import Path
 
 
 VOID_ELEMENTS = {
@@ -58,7 +53,7 @@ class SentenceExtractor(HTMLParser):
 
         d = dict(attrs)
         trace = {}
-        for k in ('data-edt', 'data-ana', 'data-det', 'data-des', 'data-sct', 'data-cin', 'data-int'):
+        for k in ('data-edt', 'data-ana', 'data-det', 'data-des'):
             if d.get(k):
                 trace[k] = [x.strip() for x in d[k].split(',') if x.strip()]
         if tag not in VOID_ELEMENTS:
@@ -91,11 +86,11 @@ class SentenceExtractor(HTMLParser):
                         if i not in merged[k]:
                             merged[k].append(i)
 
-        raw_sentences = re.split(r'(?<=[.!?])\s+|(?<=[。！？])', text)
+        raw_sentences = re.split(r'(?<=[.!?])\s+', text)
         split2 = []
         for chunk in raw_sentences:
             if len(chunk) > 200:
-                parts = re.split(r'(?<=[.!?])\s*(?=[A-Z])|(?<=[。！？])', chunk)
+                parts = re.split(r'(?<=[.!?])\s*(?=[A-Z])', chunk)
                 split2.extend(parts)
             else:
                 split2.append(chunk)
@@ -103,11 +98,10 @@ class SentenceExtractor(HTMLParser):
             sent = sent.strip()
             if len(sent) < 5:
                 continue
-            if (len(sent) < 20 and not re.search(r'\d', sent)
-                    and not re.search(r'[一-鿿]', sent)):
+            if len(sent) < 20 and not re.search(r'\d', sent):
                 continue
             source_ids = []
-            for k in ('data-det', 'data-ana', 'data-edt', 'data-des', 'data-sct', 'data-cin', 'data-int'):
+            for k in ('data-det', 'data-ana', 'data-edt', 'data-des'):
                 source_ids.extend(merged.get(k, []))
 
             self.sentences.append({
@@ -115,6 +109,200 @@ class SentenceExtractor(HTMLParser):
                 'html_line': line,
                 'source_ids': source_ids,
             })
+
+
+class ErrorPatternDetector(HTMLParser):
+    """Detect recurring verifier-known error patterns directly from HTML."""
+
+    def __init__(self):
+        super().__init__()
+        self.patterns = defaultdict(list)
+        self._stack = []
+        self._seen = set()
+
+    def _record(self, pattern, line, detail):
+        key = (pattern, line, detail)
+        if key in self._seen:
+            return
+        self._seen.add(key)
+        self.patterns[pattern].append({
+            'line': line,
+            'detail': detail,
+        })
+
+    def handle_starttag(self, tag, attrs):
+        line, _ = self.getpos()
+        d = dict(attrs)
+        class_name = (d.get('class') or '').lower()
+        elem_id = (d.get('id') or '').lower()
+        has_data_des = bool(d.get('data-des'))
+        has_data_edt = bool(d.get('data-edt'))
+        parent_has_data_des = any(frame.get('has_data_des') for frame in self._stack)
+        label = d.get('id') or d.get('class') or tag
+
+        if tag in ('img', 'video', 'audio', 'iframe') and not has_data_des:
+            self._record('missing_traceability', line, label)
+
+        if _is_chartish(tag, class_name, elem_id) and not has_data_des:
+            self._record('missing_traceability', line, label)
+            if parent_has_data_des:
+                self._record('nested_chart_missing_data_des', line, label)
+
+        if tag == 'section' and _is_special_section(class_name, elem_id) and not has_data_edt:
+            self._record('missing_data_edt_special_sections', line, label)
+            self._record('missing_traceability', line, label)
+
+        node = {
+            'tag': tag,
+            'line': line,
+            'label': label,
+            'has_data_des': has_data_des,
+            'figure_with_data_des': tag == 'figure' and has_data_des,
+            'figure_missing_img_data_des': False,
+        }
+
+        if (
+            tag == 'img'
+            and self._stack
+            and self._stack[-1].get('tag') == 'figure'
+            and self._stack[-1].get('figure_with_data_des')
+            and not has_data_des
+        ):
+            self._stack[-1]['figure_missing_img_data_des'] = True
+
+        if tag not in VOID_ELEMENTS:
+            self._stack.append(node)
+
+    def handle_endtag(self, tag):
+        if not self._stack:
+            return
+
+        idx = None
+        for i in range(len(self._stack) - 1, -1, -1):
+            if self._stack[i].get('tag') == tag:
+                idx = i
+                break
+
+        if idx is None:
+            return
+
+        node = self._stack.pop(idx)
+        if node.get('tag') == 'figure' and node.get('figure_missing_img_data_des'):
+            self._record('data_des_on_figure_not_img', node.get('line'), node.get('label'))
+
+
+def _is_chartish(tag, class_name, elem_id):
+    if tag not in ('div', 'svg', 'canvas'):
+        return False
+    haystack = ' '.join(x for x in (class_name, elem_id) if x)
+    return bool(
+        re.search(
+            r'(chart|graph|plot|vega|viz|visual|heatmap|treemap|radar|histogram|scatter|linechart|barchart)',
+            haystack,
+        )
+    )
+
+
+def _is_special_section(class_name, elem_id):
+    haystack = ' '.join(x for x in (class_name, elem_id) if x)
+    return bool(re.search(r'(teaser|references|reference|refs?)', haystack))
+
+
+ERROR_CASE_FILES = {
+    'missing_traceability': 'missing_traceability_001.md',
+    'data_des_on_figure_not_img': 'data_des_on_figure_not_img_001.md',
+    'nested_chart_missing_data_des': 'nested_chart_missing_data_des_001.md',
+    'missing_data_edt_special_sections': 'missing_data_edt_special_sections_001.md',
+}
+
+
+def detect_error_patterns(html):
+    detector = ErrorPatternDetector()
+    detector.feed(html)
+    return dict(detector.patterns)
+
+
+def _update_case_frontmatter(case_path, today):
+    text = case_path.read_text(encoding='utf-8')
+    match = re.match(r'^(---\n)(.*?)(\n---\n)(.*)$', text, re.S)
+    if not match:
+        return False
+
+    frontmatter = match.group(2).splitlines()
+    body = match.group(4)
+    new_frontmatter = []
+    found_frequency = False
+    found_last_seen = False
+
+    for line in frontmatter:
+        if line.startswith('frequency:'):
+            value = line.split(':', 1)[1].strip()
+            try:
+                value_int = int(value)
+            except ValueError:
+                value_int = 0
+            new_frontmatter.append(f'frequency: {value_int + 1}')
+            found_frequency = True
+        elif line.startswith('last_seen:'):
+            new_frontmatter.append(f'last_seen: {today}')
+            found_last_seen = True
+        else:
+            new_frontmatter.append(line)
+
+    if not found_frequency:
+        new_frontmatter.append('frequency: 1')
+    if not found_last_seen:
+        new_frontmatter.append(f'last_seen: {today}')
+
+    case_path.write_text(
+        '---\n' + '\n'.join(new_frontmatter) + '\n---\n' + body,
+        encoding='utf-8',
+    )
+    return True
+
+
+def _update_error_index(errors_root, today):
+    index_path = errors_root / 'index.md'
+    if not index_path.exists():
+        return
+    text = index_path.read_text(encoding='utf-8')
+    updated = re.sub(r'Last updated:\s*\d{4}-\d{2}-\d{2}', f'Last updated: {today}', text)
+    if updated != text:
+        index_path.write_text(updated, encoding='utf-8')
+
+
+def log_recurring_errors(html, errors_root):
+    if not errors_root.exists():
+        return []
+
+    detected = detect_error_patterns(html)
+    if not detected:
+        return []
+
+    today = date.today().isoformat()
+    logged = []
+
+    for pattern, occurrences in sorted(detected.items()):
+        case_name = ERROR_CASE_FILES.get(pattern)
+        if not case_name:
+            continue
+
+        case_path = errors_root / 'cases' / case_name
+        updated = False
+        if case_path.exists():
+            updated = _update_case_frontmatter(case_path, today)
+
+        logged.append({
+            'pattern': pattern,
+            'occurrences': len(occurrences),
+            'case_file': str(case_path.relative_to(errors_root.parent)) if case_path.exists() else case_name,
+            'updated': updated,
+        })
+
+    if logged:
+        _update_error_index(errors_root, today)
+
+    return logged
 
 
 # ---------------------------------------------------------------------------
@@ -136,20 +324,11 @@ def _read_code_lines(proj, filepath, lines):
         return f'# Error reading {filepath}: {e}'
 
 
-def resolve_evidence(source_ids, analyst, detective, designer, editor, scout=None,
-                     cinematographer=None, interaction=None, proj=''):
+def resolve_evidence(source_ids, analyst, detective, designer, editor, proj=''):
     ana_items = analyst.get('items', analyst.get('findings', {}))
     det_items = detective.get('items', {})
     des_items = designer.get('items', {})
     edt_items = editor.get('items', {})
-    sct_items = (scout or {}).get('items', {})
-    cin_items = (cinematographer or {}).get('scenes', {})
-    # interaction.json carries a SINGLE centerpiece object (not an items dict);
-    # key it by its own id so an int_ source resolves like the other roles.
-    int_items = {}
-    _cp = (interaction or {}).get('centerpiece')
-    if isinstance(_cp, dict) and _cp.get('id'):
-        int_items[_cp['id']] = _cp
 
     evidence = []
     seen = set()
@@ -225,58 +404,6 @@ def resolve_evidence(source_ids, analyst, detective, designer, editor, scout=Non
                     'editorial_notes': item.get('editorial_notes', ''),
                 })
 
-        elif sid.startswith('sct_'):
-            item = sct_items.get(sid)
-            if item:
-                lic = item.get('license', {}) or {}
-                idn = item.get('identity', {}) or {}
-                evidence.append({
-                    'id': sid,
-                    'role': 'scout',
-                    'label': item.get('label', ''),
-                    'kind': item.get('kind', ''),
-                    'caption': item.get('caption', ''),
-                    'source_url': item.get('source_url', item.get('embed_url', '')),
-                    'license': lic.get('spdx', ''),
-                    'permits_republication': lic.get('permits_republication'),
-                    'attribution_text': lic.get('attribution_text', ''),
-                    'identity_method': idn.get('method', ''),
-                    'identity_verified': idn.get('verified'),
-                    'subject': idn.get('subject', ''),
-                })
-
-        elif sid.startswith('cin_'):
-            item = cin_items.get(sid)
-            if item:
-                bg = item.get('background', {}) or {}
-                evidence.append({
-                    'id': sid,
-                    'role': 'cinematographer',
-                    'backs': item.get('backs', ''),
-                    'kind': bg.get('kind', ''),
-                    'media_ref': bg.get('media_ref', ''),
-                    'treatment': bg.get('treatment', ''),
-                    'purpose': item.get('purpose', ''),
-                })
-
-        elif sid.startswith('int_'):
-            item = int_items.get(sid)
-            if item:
-                cm = item.get('client_model', {}) or {}
-                evidence.append({
-                    'id': sid,
-                    'role': 'interaction',
-                    'title': item.get('title', ''),
-                    'mechanism': item.get('mechanism', ''),
-                    'based_on': item.get('based_on', []),
-                    'section': item.get('section', ''),
-                    'client_model': {
-                        'file': cm.get('file', ''),
-                        'fn': cm.get('fn', ''),
-                        'data_file': cm.get('data_file', ''),
-                    },
-                })
-
     return evidence
 
 
@@ -323,7 +450,7 @@ def _describe_operation(code):
         ops.append('count unique values')
     if re.search(r'[\+\-\*/].*100', code):
         ops.append('compute percentage')
-    if 'findall' in code_lower or 'regex' in code_lower or 're.' in code_lower:
+    if 'findall' in code_lower or 'regex' in code_lower or 're\.' in code_lower:
         ops.append('regex extraction')
     if not ops:
         # Fallback: extract the key computation line
@@ -408,8 +535,6 @@ def make_summary(sentence_text, evidence, dataset_files=None):
         for e in det_ev:
             s = f"{e['id']}: {e['label']}."
             for src in e.get('sources', []):
-                if isinstance(src, str):
-                    src = {'url': src, 'title': src, 'facts': []}
                 s += f" Source: {src.get('title', '')} ({src.get('url', '')[:80]})"
                 if src.get('facts'):
                     s += f" Facts: {'; '.join(src['facts'][:2])}"
@@ -423,42 +548,6 @@ def make_summary(sentence_text, evidence, dataset_files=None):
                 s += f" Uses data from {e['data_source']}."
             parts.append(s)
 
-    # Scout-sourced media (license + identity provenance)
-    sct_ev = [e for e in evidence if e['role'] == 'scout']
-    if sct_ev:
-        for e in sct_ev:
-            s = f"{e['id']}: {e['label']} ({e.get('kind','media')})."
-            if e.get('license'):
-                ok = 'verified' if e.get('permits_republication') else 'UNVERIFIED'
-                s += f" License: {e['license']} ({ok})."
-            if e.get('identity_method'):
-                idok = 'ok' if e.get('identity_verified') else 'UNVERIFIED'
-                s += f" Identity: {e['identity_method']} [{idok}]"
-                if e.get('subject'):
-                    s += f" -> {e['subject']}"
-                s += '.'
-            if e.get('source_url'):
-                s += f" Source: {e['source_url'][:80]}"
-            parts.append(s)
-
-    # Interaction centerpiece (reader-driven recompute over the analyst's findings)
-    int_ev = [e for e in evidence if e['role'] == 'interaction']
-    if int_ev:
-        for e in int_ev:
-            s = f"{e['id']}: {e.get('title', '')} (interaction"
-            if e.get('mechanism'):
-                s += f", {e['mechanism']}"
-            s += ').'
-            if e.get('based_on'):
-                s += f" Recomputes from {', '.join(e['based_on'])}."
-            cm = e.get('client_model', {}) or {}
-            if cm.get('file'):
-                s += f" Client model: {cm['file']}"
-                if cm.get('fn'):
-                    s += f" ({cm['fn']})"
-                s += '.'
-            parts.append(s)
-
     return ' | '.join(parts)
 
 
@@ -469,8 +558,11 @@ def make_summary(sentence_text, evidence, dataset_files=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('project_dir')
-    parser.add_argument('--strict', action='store_true',
-                        help='Exit nonzero if any visible sentence is untraced.')
+    parser.add_argument(
+        '--log-errors',
+        action='store_true',
+        help='Update skills/errors metadata for recurring HTML error patterns detected by verifier.',
+    )
     args = parser.parse_args()
 
     proj = args.project_dir.rstrip('/')
@@ -485,7 +577,7 @@ def main():
     def load_json(name):
         p = os.path.join(proj, name)
         if os.path.exists(p):
-            with open(p, encoding='utf-8') as fh:
+            with open(p) as fh:
                 return json.load(fh)
         return {}
 
@@ -493,9 +585,6 @@ def main():
     detective = load_json('detective.json')
     designer = load_json('designer.json')
     editor = load_json('editor.json')
-    scout = load_json('scout.json')
-    cinematographer = load_json('cinematographer.json')
-    interaction = load_json('interaction.json')
 
     # Extract dataset file list for fallback in summaries
     dataset_files = analyst.get('dataset', {}).get('files', [])
@@ -509,8 +598,7 @@ def main():
 
     for sent in extractor.sentences:
         raw_evidence = resolve_evidence(
-            sent['source_ids'], analyst, detective, designer, editor, scout,
-            cinematographer, interaction, proj
+            sent['source_ids'], analyst, detective, designer, editor, proj
         )
         summary = make_summary(sent['context'], raw_evidence, dataset_files)
         has_evidence = len(raw_evidence) > 0
@@ -537,19 +625,12 @@ def main():
     det_items = detective.get('items', {})
     des_items = designer.get('items', {})
     edt_items = editor.get('items', {})
-    sct_items = scout.get('items', {})
-    cin_items = cinematographer.get('scenes', {})
 
     all_available = set()
     all_available.update(ana_items.keys())
     all_available.update(det_items.keys())
     all_available.update(des_items.keys())
     all_available.update(edt_items.keys())
-    all_available.update(sct_items.keys())
-    all_available.update(cin_items.keys())
-    _cp = interaction.get('centerpiece') if isinstance(interaction, dict) else None
-    if isinstance(_cp, dict) and _cp.get('id'):
-        all_available.add(_cp['id'])
 
     unused_ids = sorted(all_available - all_referenced)
 
@@ -566,6 +647,12 @@ def main():
         'unused_ids': unused_ids,
     }
 
+    logged_patterns = []
+    if args.log_errors:
+        errors_root = Path(__file__).resolve().parents[2] / 'skills' / 'errors'
+        logged_patterns = log_recurring_errors(html, errors_root)
+        output['logged_error_patterns'] = logged_patterns
+
     out_path = os.path.join(proj, 'verifier.json')
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
@@ -573,6 +660,16 @@ def main():
     print(f'verifier.json written to {out_path}')
     print(f'Sentences: {len(records)} total, {traced_count} traced, {untraced_count} untraced')
     print(f'IDs: {len(all_referenced)} referenced, {len(unused_ids)} unused')
+    if args.log_errors:
+        if logged_patterns:
+            print('\nLogged recurring error patterns:')
+            for item in logged_patterns:
+                print(
+                    f'  - {item["pattern"]}: {item["occurrences"]} occurrence(s) '
+                    f'-> {item["case_file"]}'
+                )
+        else:
+            print('\nNo recurring error patterns logged.')
 
     if untraced_count:
         print(f'\nUntraced:')
@@ -580,11 +677,6 @@ def main():
             if not r['raw_evidence']:
                 ctx = r['context'][:70]
                 print(f'  L{r["html_line"]}: "{ctx}..."')
-
-    if unused_ids:
-        print(f'\nUnused IDs ({len(unused_ids)}): {", ".join(unused_ids)}')
-    if args.strict and untraced_count:
-        sys.exit(1)
 
 
 if __name__ == '__main__':

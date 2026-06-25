@@ -1,42 +1,26 @@
 {
-  "applies_to": ["spotify", "youtube", "vimeo"],
-  "why": "Spotify track IDs (22 base62 chars), YouTube video IDs (11 chars), and Vimeo clip IDs (numeric, 7-10+ digits) are opaque and impossible to recall reliably. Never write an ID from memory or pattern-completion. Past runs produced 4/7 dead Spotify IDs and 1/10 dead YouTube IDs because the ID looked plausibly real but was hallucinated.",
-  "video_note": "Video on a Data2Story page may be EITHER (a) a verified oEmbed embed — YouTube or Vimeo — where the platform player carries the license and you re-host nothing, OR (b) best-effort, a CC-licensed clip fetched from Wikimedia Commons / Openverse and passed through the Scout license+identity gate. Prefer an embed for rights-encumbered footage; only re-host a clip whose license is on the allowlist.",
+  "applies_to": ["spotify", "youtube"],
+  "why": "Spotify track IDs (22 base62 chars) and YouTube video IDs (11 chars) are opaque and impossible to recall reliably. Never write an ID from memory or pattern-completion. Past runs produced 4/7 dead Spotify IDs and 1/10 dead YouTube IDs because the ID looked plausibly real but was hallucinated.",
   "workflow": [
     {
       "step": 1,
       "name": "Source it from a real page",
-      "detail": "Not from prior knowledge. Use WebFetch against a Spotify search page, an artist/album page, the YouTube watch page, the Vimeo clip page, or a credible third-party listing. Copy the ID out of the actual HTML/URL you fetched. If you cannot retrieve a real page that contains the ID, do not invent one — drop the instance."
+      "detail": "Not from prior knowledge. Use WebFetch against a Spotify search page, an artist/album page, the YouTube watch page, or a credible third-party listing. Copy the ID out of the actual HTML/URL you fetched. If you cannot retrieve a real page that contains the ID, do not invent one — drop the instance."
     },
     {
       "step": 2,
       "name": "Verify with oEmbed before writing",
-      "detail": "Run the matching command in Bash and confirm a 200 plus a sensible title. The oEmbed path is the single source of truth for an embed's validity: it must (a) return HTTP 200 AND (b) parse as JSON with a non-empty `title`. Treat any non-200, any non-JSON body, OR an empty/garbage title as a FAIL and drop the instance — never write an embed you could not parse. YouTube and Vimeo both accept the plain watch/clip URL (no manual ID extraction needed); Spotify needs the track/album/playlist URL. Use the *-json status helpers below: they fold the HTTP-200 check, the JSON-parse check, and the title sanity check into one command so a silent failure cannot slip through.",
+      "detail": "Run the matching command in Bash and confirm a 200 plus a sensible title.",
       "commands": {
         "youtube_status": "curl -s -o /dev/null -w \"%{http_code}\\n\" \"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<ID>&format=json\"",
         "youtube_title": "curl -s \"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<ID>&format=json\" | python3 -c \"import json,sys;d=json.load(sys.stdin);print(d.get('title'),'—',d.get('author_name'))\"",
-        "vimeo_status": "curl -s -o /dev/null -w \"%{http_code}\\n\" \"https://vimeo.com/api/oembed.json?url=https://vimeo.com/<ID>\"",
-        "vimeo_title": "curl -s \"https://vimeo.com/api/oembed.json?url=https://vimeo.com/<ID>\" | python3 -c \"import json,sys;d=json.load(sys.stdin);print(d.get('title'),'—',d.get('author_name'))\"",
         "spotify_status": "curl -s -o /dev/null -w \"%{http_code}\\n\" \"https://open.spotify.com/oembed?url=https://open.spotify.com/track/<ID>\"",
-        "spotify_title": "curl -s \"https://open.spotify.com/oembed?url=https://open.spotify.com/track/<ID>\" | python3 -c \"import json,sys;d=json.load(sys.stdin);print(d.get('title'))\"",
-        "robust_oembed_any": "For any provider: first run the *_status command (must print 200), THEN run the matching *_title command (must print a non-empty, sensible title that parses as JSON). Pass ONLY if both hold. Substitute the provider endpoint from the `endpoints` map above into <full-oembed-endpoint-URL>."
-      },
-      "endpoints": {
-        "youtube": "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<ID>&format=json",
-        "vimeo": "https://vimeo.com/api/oembed.json?url=https://vimeo.com/<ID>",
-        "spotify": "https://open.spotify.com/oembed?url=https://open.spotify.com/track/<ID>"
-      },
-      "embed_url": {
-        "youtube": "https://www.youtube.com/embed/<ID>",
-        "vimeo": "https://player.vimeo.com/video/<ID>",
-        "spotify": "https://open.spotify.com/embed/track/<ID>"
+        "spotify_title": "curl -s \"https://open.spotify.com/oembed?url=https://open.spotify.com/track/<ID>\" | python3 -c \"import json,sys;d=json.load(sys.stdin);print(d.get('title'))\""
       },
       "interpret": {
         "200": "embeddable. Set verified: true and copy the returned title into verified_title.",
         "404": "the ID does not exist. Drop this instance entirely — do not guess again with a similar ID.",
-        "403": "the video exists but the uploader disabled embedding (common for major-label music videos and brand ads). Drop the instance and find an alternative (an official VEVO upload, an artist's own / Vimeo channel, or a different illustrative clip).",
-        "401": "Vimeo: the owner restricted embedding to specific domains (domain-level privacy). Drop the instance and find a publicly embeddable clip.",
-        "non_json_or_empty_title": "Even on a 200, if the body does not parse as JSON or the title is empty, treat it as a FAIL — the player will not render reliably. Drop the instance."
+        "403": "the video exists but the uploader disabled embedding (common for major-label music videos and brand ads). Drop the instance and find an alternative (an official VEVO upload, an artist's own channel, or a different illustrative clip)."
       }
     },
     {

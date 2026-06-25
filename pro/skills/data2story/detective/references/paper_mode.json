@@ -1,0 +1,94 @@
+{
+  "activation": "When DATA_DIR contains paper.pdf and metadata.json, activate academic investigation.",
+  "steps": {
+    "paper_positioning": {
+      "title": "Paper Positioning",
+      "research": [
+        "Novelty assessment: is this opening a new direction, advancing an existing line, or an incremental contribution?",
+        "Lineage: the 3-5 most important prior works this builds on, and what each contributed.",
+        "Competitor landscape: the main alternative approaches to the same problem, and how they compare.",
+        "Timeline: when the research area emerged and its major milestones."
+      ]
+    },
+    "extract_task_demo": {
+      "title": "Extract Task Demo Example",
+      "detail": "When the paper describes a system, model, or pipeline, find ONE concrete example that shows what the system actually does. This powers the Designer's 'Task Demo' visualization. Look in: case studies (usually Section 4/5 or supplementary), running examples in methods, GitHub README examples, supplementary tables with full model outputs.",
+      "pick_example_that_is": [
+        "the most surprising or impressive result",
+        "understandable without deep domain expertise",
+        "structured enough to fill three tabs (input, reasoning, output)"
+      ],
+      "save_to": "PROJECT_DIR/task_demo.json",
+      "schema": {
+        "title": "Example title (e.g., protein name, sentence, image)",
+        "subtitle": "Brief context (e.g., organism, domain, source)",
+        "input": {
+          "fields": [
+            {"label": "Field Name", "value": "...", "type": "sequence|text|number|list"},
+            {"label": "Detected Features", "value": "...", "type": "annotation"}
+          ]
+        },
+        "reasoning": "The intermediate reasoning/processing text (chain-of-thought, attention, steps)",
+        "output": {
+          "fields": [
+            {"label": "Prediction", "value": "...", "type": "text"},
+            {"label": "Classification", "value": "...", "type": "tag"}
+          ],
+          "highlights": ["key novel finding 1", "key novel finding 2"],
+          "comparison": {"ground_truth": "...", "verdict": "preferred/correct/wrong"}
+        }
+      }
+    },
+    "venue_and_review_context": {
+      "title": "Venue & Review Context",
+      "if_reviews_json_exists": [
+        "Venue profile: acceptance rate, reputation, typical paper profile.",
+        "Review culture: does the venue favor novelty, rigor, or impact? Constructive or adversarial?",
+        "Best paper criteria: what has won best paper here before? What patterns emerge?",
+        "Reviewer concern calibration: are the raised weaknesses common at this venue, or unusual?",
+        "Community reception: social media discussion, blog posts, follow-up work citing this paper."
+      ],
+      "if_reviews_not_available": [
+        "Still research the venue and community reception.",
+        "Look for informal reviews (blog posts, Twitter/X threads, Reddit discussions)."
+      ]
+    },
+    "impact_assessment": {
+      "title": "Impact Assessment",
+      "research": [
+        "Citation velocity: how quickly is this being cited relative to its age?",
+        "Downstream adoption: has anyone built on this work? Open-source implementations? Industry adoption?",
+        "Media coverage: tech press, science journalism, policy discussions?",
+        "Reproducibility: are code/data available? Has anyone attempted reproduction?"
+      ]
+    },
+    "fetch_review_and_audit_deep_dive": {
+      "title": "Fetch Review & Audit Deep-Dive Content",
+      "when": "The dataset is about a conference/venue with multiple papers (e.g. Agents4Science, CAFA, workshop proceedings) and review or audit data is accessible.",
+      "detail": "Fetch 2-4 representative paper reviews/audits for the Designer's 'Paper + Review Browser' mode. Pick papers that illustrate the blog's narrative: the best, the worst, the most controversial, the most ironic. For each, extract title, scores, verdict/decision, key findings (3-5 bullets), a notable auditor/reviewer quote, and the external link.",
+      "save_to": "PROJECT_DIR/paper_previews.json",
+      "schema": [
+        {
+          "title": "...",
+          "link": "https://...",
+          "status": "accepted/rejected",
+          "scores": {"ai_avg": 4.7, "human": 5},
+          "audit_result": "CRITICAL/PASSED/...",
+          "findings": ["bullet 1", "bullet 2"],
+          "strengths": ["bullet 1"],
+          "quote": "auditor quote...",
+          "quote_source": "Code Audit Report"
+        }
+      ],
+      "sources": "OpenReview API, venue audit pages, conference websites, Semantic Scholar. If reviews are behind authentication, note this in the JSON and skip."
+    }
+  },
+  "output_additions": {
+    "_description": "Add these items to detective.json with appropriate categories.",
+    "paper_positioning": "category: background or related_work",
+    "venue_and_review_context": "category: background",
+    "impact_assessment": "category: why_it_matters",
+    "key_figures_and_tables": "category: interpretive_hook",
+    "paper_previews_summary": "category: related_work"
+  }
+}

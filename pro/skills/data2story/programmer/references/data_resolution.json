@@ -1,0 +1,20 @@
+{
+  "rule": "You do NOT have access to raw data files. All chart data comes from analyst.json data_tables.",
+  "for_each_chart": [
+    "For every des_xx item of type 'chart' in designer.json, read content.data_source — this is an ana_xx ID (or array of IDs).",
+    "Look up the ana_xx item in analyst.json.",
+    "Read the data_table field — it contains chart-ready data: { columns: [...], rows: [[...], ...] }.",
+    "Convert to Vega-Lite inline values format.",
+    "If data_source is an array (e.g. ['ana_02','ana_03']), combine data from both findings as appropriate for the chart type."
+  ],
+  "conversion_snippet": [
+    "// data_table.columns + data_table.rows → Vega-Lite values",
+    "const values = rows.map(row =>",
+    "  Object.fromEntries(columns.map((col, i) => [col, row[i]]))",
+    ");",
+    "// Result: [{\"year\": 2015, \"count\": 70, \"growth_pct\": null}, ...]"
+  ],
+  "stat_callouts": "read content.value directly — no data_table needed.",
+  "interactives_with_data_source": "same process as charts — resolve the ana_xx data_table.",
+  "missing_data_table": "If a data_table is missing or insufficient, log a warning comment in the HTML (<!-- WARNING: des_XX references ana_XX which has no data_table -->) and do your best with the scalar value from content."
+}

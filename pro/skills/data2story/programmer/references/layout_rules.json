@@ -1,0 +1,40 @@
+{
+  "principle": "All non-text elements (images, videos, audio, charts, interactives, maps) must follow these layout rules to prevent misalignment and overlap with text content.",
+  "container_structure": "Text content first (<p>), then the visual element in its own container (<div class=\"visual-container\" data-des=\"des_xx\">...), then the next text content. Never place images/videos directly adjacent to <p> tags without a wrapper div.",
+  "css_requirements_for_visual_containers": [
+    "margin: 2rem 0 — vertical spacing above and below to separate from text",
+    "display: block — force block layout, never inline",
+    "clear: both — prevent float interference",
+    "images/videos: max-width: 100%; height: auto; display: block; margin-left: auto; margin-right: auto — center and prevent overflow",
+    "charts: width: 100%; max-width: 720px; margin-left: auto; margin-right: auto — constrain width and center",
+    "full-width elements (teaser, hero): width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); max-width: none (or a separate wrapper). Do not rely on old left: 50% breakout hacks."
+  ],
+  "aspect_orientation_sizing": {
+    "_why": "A WIDTH cap alone (the rule below) sizes a portrait/standard image correctly but mis-sizes a LANDSCAPE or PANORAMA shot: a 3.19:1 stadium photo capped only on width renders as a thin full-width strip (~175px tall — the gold-blog bug), and an uncapped tall image can tower past the screen. So every in-body image is bounded on BOTH axes, matched to its intrinsic aspect: a width cap AND a height band / max-height ceiling, with a dual-bound belt-and-suspenders so neither axis runs away.",
+    "orientation_classes": "Class each in-body <figure>/<img> by the asset's intrinsic aspect ratio (width/height) and apply the matching band: `is-portrait` (ratio < ~0.9 — tall) → keep the WIDTH cap (max-width:100%/column cap) so it never towers; a modest `max-height` (e.g. 80vh) is the safety ceiling. `is-landscape` (ratio ~0.9–2.4 — the common case) → anchor to a height BAND with a `max-height` ceiling near the column-width band (e.g. height:auto but `max-height: clamp(220px, 42vh, 520px)`) so a wide shot fills the column at a readable height, never a thin strip. `is-pano` (ratio > ~2.4 — panorama / ultrawide, e.g. a 3.19:1 floodlit-stadium strip) → the PANO height band: a scoped override at >= `figure.framed img` specificity that lifts it to ~column width and anchors a taller-than-strip `max-height` (e.g. `min-height: 200px; max-height: 320px; object-fit: cover`), so the ultrawide reads as a banner, not a sliver.",
+    "dual_bound_rule": "Always set BOTH a max-width AND (for is-landscape/is-pano) a height band / max-height. The width cap stops column overflow (the existing rule); the height band stops the thin-strip / towering failure. The orientation class MUST match the asset's real aspect — `is-portrait` on a 3:1 image (or `is-pano` on a tall image) is a misclassing bug. Pair with the auditor `check_12` (asserts both bounds + the orientation/aspect match) and the validate.py §11 note below.",
+    "validate_py_note": "inspector/scripts/validate.py §11 (`image_no_maxwidth_cap`) is extended from 'has a max-width' to ALSO assert, for a wide/pano in-body <figure><img>, a height-band/`max-height` rule (a sibling WARN `image_no_height_band`) and that the orientation class (`is-landscape`/`is-pano`/`is-portrait`) is present and consistent with the asset's intrinsic aspect — kept consistent with the existing width-cap rule (additive, the width check is unchanged)."
+  },
+  "specific_element_rules": {
+    "images": "wrap in <figure> with margin: 2rem auto, center the <img> inside. Class the figure/img by intrinsic aspect (`is-landscape`/`is-pano`/`is-portrait`) and apply the matching width-cap + height-band per `aspect_orientation_sizing` so a wide/pano shot fills the column at a readable height (never a thin strip) and a tall shot never towers. If an image sits inside a framed card or colored block, add inner padding and overflow: hidden so edge details stay inside.",
+    "videos": "wrap in <div class=\"video-container\"> with margin: 2rem 0, apply max-width: 100% to the <video>.",
+    "generated_audio": "wrap in <div class=\"audio-container\"> with margin: 2rem 0, include a title/caption, visible controls, and a muted visual fallback.",
+    "charts_vega_lite": "container div with margin: 2rem auto, set \"width\": \"container\" in the Vega spec.",
+    "interactive_elements": "wrap in <div class=\"interactive-container\"> with margin: 2rem 0, all controls inside this container.",
+    "maps_leaflet": "fixed height (400-500px), margin: 2rem 0, max-width: 100%.",
+    "stat_callouts": "margin: 2rem 0, text-align: center, display: block."
+  },
+  "prevent_common_bugs": [
+    "Never place images/videos directly adjacent to <p> tags without a wrapper div.",
+    "Never use float on visual elements — use margin: auto for centering instead.",
+    "Always set explicit height for map containers (Leaflet requires it).",
+    "For responsive images: width: 100%; height: auto; max-width: [original-width]px.",
+    "Test that text never wraps around or overlaps visual elements."
+  ],
+  "teaser_exception": "The teaser is full-viewport and appears before the headline — it does NOT follow the 720px content-width constraint. Use width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); max-width: none; height: 100vh to break out. If the teaser lives inside a figure or visual wrapper, clear any inherited max-width there too.",
+  "base_layout": [
+    "Max content width: 720px, centered. Charts and teasers may break out to full width.",
+    "Georgia or system-serif for body text, system-ui for labels and UI elements.",
+    "Responsive, no horizontal scroll on mobile."
+  ]
+}

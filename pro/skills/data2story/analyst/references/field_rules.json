@@ -1,0 +1,23 @@
+{
+  "items": "dict keyed by ana_01, ana_02, ... — sequential IDs. Each item is one discrete finding.",
+  "label": "short name (under 60 chars).",
+  "content": "full prose paragraph describing the finding. Include actual numbers. Write complete, readable prose — the Editor reads this to understand each finding.",
+  "type": "one of distribution, ranking, group-diff, correlation, anomaly, trend.",
+  "strength": "one of strong, moderate, weak.",
+  "calculation": {
+    "_description": "object with file, lines, and output. Every finding MUST have this.",
+    "file": "path to the script in code/ (e.g., 'code/answer_distribution.py').",
+    "lines": "[start_line, end_line] — the line range in that script that produces this finding (1-indexed, inclusive).",
+    "output": "the verbatim terminal output that the claim is drawn from."
+  },
+  "data_table": "chart-ready aggregated data. See data_table_rules.json.",
+  "based_on": "array of upstream det_xx IDs from detective.json that this finding references. Empty array [] if none.",
+  "notable_instance": {
+    "_description": "optional. Add only when a finding has one standout data point that a concrete example would make felt, not just understood. Most findings don't need this.",
+    "name": "the specific item (e.g., 'Ace of Spades', 'Blinding Lights').",
+    "value": "the metric that makes it notable (e.g., '20.1%', 'F minor + 0.51 danceability').",
+    "instance_ref": "reference to a detective inst_xx ID if one was collected for this item (or omit if none).",
+    "why": "why this specific example is the best illustration of the finding."
+  },
+  "caveats": "array of data quality warnings. Each has an id (ana_caveat_01, ...) and content."
+}

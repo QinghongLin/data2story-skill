@@ -49,8 +49,6 @@ Flag anything from your research that could:
 
 Real-world media helps the Designer build a multimedia-rich page, so collecting it is **a default part of your job, not optional**, for visual, geographic, event-based, cultural, historical, product, animal, art, place, food, fashion, sports, and scientific datasets. Use the helper scripts in this skill's `scripts/` folder — `fetch_images.py`, `fetch_logos.py`, `fetch_flags.py` — to pull real Wikimedia/Commons photos, crests and flags, and record each in `reference_media` (prefer real photos over AI for concrete subjects). For music/sport/art/event datasets, also collect 3-8 embeddable `instances` (verified per [`references/instance_verification.json`](references/instance_verification.json)). Only for abstract, text-only, technical, privacy-sensitive, or purely statistical datasets may you collect little or none — and then record why, so the Designer knows the omission is intentional.
 
-> ⚠ Wikidata P18/P154/etc. are sometimes mis-mapped, and `fetch_images.py` does NOT check the subject. Any real-subject image MUST be vision-confirmed (`vlm_view`) before it reaches the page — the Scout/Auditor gate Scouted media, and a Detective-sourced `ref_` image needs the same check.
-
 While researching, actively hunt for real-world media:
 
 - **Photos**: relevant real-world images (Creative Commons, public domain, or press photos with source attribution)
@@ -80,7 +78,7 @@ For each useful piece of media found:
 - Check if the dataset source provides sample images or thumbnails
 - Use WebSearch with `site:commons.wikimedia.org` or `site:unsplash.com` for topic-specific photos
 - For scientific datasets: check the paper's figures, supplementary materials, or the project website
-- Reusable, dataset-agnostic fetch helpers live in this skill's `scripts/` folder — `fetch_images.py` (Wikimedia Commons photos by Wikidata QID/CSV), `fetch_flags.py` (national flags by country name), `fetch_logos.py` (org logos by name), and `fetch_openverse.py` (keyword image search across the Openverse aggregator — Flickr-CC, museums, Wikimedia — with license + attribution). For license-clean audio/BGM, use the Scout's `../scout/scripts/fetch_music.py`. Run any with `python3 SKILL_DIR/scripts/<script>.py`, where `SKILL_DIR` is this skill's directory. (Dataset-specific worked examples — e.g. `fetch_hle_images.py`, `fetch_venue_weather.py` — live under `examples/`; they are NOT general-purpose, so do not invoke them on unrelated datasets.)
+- Reusable Wikimedia/Commons fetch helpers live in this skill's `scripts/` folder — `fetch_images.py`, `fetch_logos.py`, `fetch_flags.py`, `fetch_hle_images.py`, `fetch_venue_weather.py` (run with `python3 SKILL_DIR/scripts/<script>.py`, where `SKILL_DIR` is this skill's directory)
 
 This is not about generating visuals — that is the Designer's job. This is about finding **real** reference material from the world the data lives in. If you find zero useful media, note why in detective.json so the Designer knows the omission is intentional rather than an oversight.
 
@@ -110,28 +108,8 @@ Write `PROJECT_DIR/detective.json` **incrementally** — do not wait until the e
 
 This ensures that if the process is interrupted, all completed research is preserved. Every item is saved as soon as it is ready — do not batch them.
 
-**Shape (validator-enforced):** `items` is a dict keyed by `det_xx` id (NOT an array), and each item's `sources` is a list of `{url, title, facts}` dicts (NOT bare strings). `validate.py`/`verify.py` read these shapes:
-
-```json
-{
-  "meta": {...},
-  "items": {
-    "det_01": {
-      "label": "...", "content": "...", "category": "...",
-      "sources": [ { "url": "...", "title": "...", "facts": ["..."] } ]
-    }
-  },
-  "reference_media": []
-}
-```
-
-**Resolved `topic_profile` is MANDATORY.** Write a resolved `topic_profile` object into `detective.json` (per [`../references/topic_profile.json`](../references/topic_profile.json)) with explicit `is_visual` + `is_computational` booleans and a `tags[]` list — it is the S3 classifier every downstream role (Scout, Imagineer, Designer, Cinematographer) keys its behaviour off. The honest-abstract case is an **explicit `{"is_visual": false, "is_computational": false}` value**, NOT an omission: an ABSENT profile now hard-errors at the contract gate (`topic_profile_unresolved`), so even a dry/abstract topic must carry the resolved object with both booleans set to `false`.
-
-**Resolve `ai_face_policy` when the topic involves real people.** When real people are subjects of the story (a profiled person, an athlete, a politician), also write the optional `ai_face_policy` object into `topic_profile` (fields in [`../references/topic_profile.json`](../references/topic_profile.json)). The **default for a real-person subject is animate-the-real-photo**: a fetched, identity-verified photo is animated into a **subtle cinemagraph** (faces held enough to avoid warping, but subtle natural motion allowed on top of moving atmosphere) **with proportionate disclosure** — so set `real_person_subject:true`, `animate_real_photo:"subtle_cinemagraph"`, `disclosure:"required_proportionate"`. **Do NOT emit a blanket "no AI face" `det_` item** — generating a real face *from scratch* (photoreal OR illustration) is what's disallowed; animating a real fetched photo is allowed. When **no usable real photo** of the person exists, route to the **theme-first NON-PERSON fallback** (`no_photo_fallback:"theme_first_no_person"` — real scene/object → data-as-cover → conceptual/typographic → abstract atmospheric): **never an AI-generated person, never an illustration of the person.** Attach a **non-blocking** `sensitivity_advisory` (a one-line "is animating this likeness tasteful here?" the user can ignore) ONLY for genuinely sensitive contexts (deceased persons, minors, criminal allegations); leave it `null` otherwise — there is no hard gate. Omit the whole object when the topic has no real-person subject. The Hero realizes this policy when it builds the cover — see [`../hero/SKILL.md`](../hero/SKILL.md) (the source-ladder rungs honor `topic_profile.ai_face_policy`).
-
 **References:**
 - **[`references/schema.json`](references/schema.json)** — the full output structure (`items`, `reference_media`, `instances`).
-- **[`../references/topic_profile.json`](../references/topic_profile.json)** — the shared S3 `topic_profile` shape (`is_visual` / `is_computational` / `tags[]`) you must resolve into `detective.json`.
 - **[`references/field_rules.json`](references/field_rules.json)** — field-by-field semantics, including the one-fact-one-source traceability rule and instance fields.
 - **[`references/categories.json`](references/categories.json)** — the eight `category` values and what goes in each.
 - **[`references/instance_verification.json`](references/instance_verification.json)** — mandatory ID provenance + oEmbed verification for spotify/youtube instances.
@@ -141,13 +119,3 @@ This ensures that if the process is interrupted, all completed research is prese
 When `DATA_DIR` contains `paper.pdf` and `metadata.json`, activate academic investigation: paper positioning, task-demo extraction, venue & review context, impact assessment, and review/audit deep-dives. The full steps, the `task_demo.json` schema, the `paper_previews.json` schema, and which detective categories each addition maps to are in **[`references/paper_mode.json`](references/paper_mode.json)**.
 
 Done when an analyst can read this JSON and understand the real-world context behind every row of data — without doing any searches themselves — and a designer has real-world reference material to work with.
-
-## Team coordination — Detective team
-
-You are the **lead of the Detective team**. Your member is the **Scout** (verified rich media + live status). You produce the context; the Scout turns the subjects you surface into license-clean, identity-checked media the downstream roles can safely place.
-
-- **Member call (mirrored from the orchestrator):** the orchestrator runs `Skill scout DATA_DIR PROJECT_DIR` at **Stage 1.5, after your `detective.json` is complete**. The Scout reads your `detective.json`, so finish and save it first.
-- **The `scout_brief` contract.** After writing `detective.json`, hand the Scout a brief so it sources the *right* media and doesn't re-fetch what you already covered. Record it in `detective.json` `meta.scout_brief` (or a short note alongside `meta`): name the **subjects/moments that need verified media** (the people, places, teams, species, events the story will lean on — and which are load-bearing vs nice-to-have), and list **what `reference_media`/`instances` you already covered** (their subjects + ids), so the Scout fills the gaps instead of duplicating your photos. Keep it short — it's a routing hint, not a second research pass.
-- **Escalate an unlicensable load-bearing subject.** If the Scout reports it cannot license a subject the narrative depends on (no republication-safe image/clip exists, or identity can't be confirmed), surface that gap to the **Editor** — so the narrative is reframed to not hinge on an image that can't legally or honestly appear. A load-bearing claim must never depend on an asset the media verifier would reject.
-
-This is coordination prose, not a new gate: the Scout's own license/identity checks and the contract gate stay exactly as they are. Your `det_xx` ids, `sources` shape, and `reference_media` outputs are unchanged.

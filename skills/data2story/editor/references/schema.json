@@ -39,26 +39,5 @@
     "ana_03": "color",
     "ana_04": "supporting",
     "ana_05": "cut"
-  },
-  "interactives": {
-    "hero": {
-      "concept_ref": "img_01",
-      "finding": "ana_01",
-      "purpose": "INFORM",
-      "section": "edt_03",
-      "archetype": "explorable_recompute",
-      "why_hero": "the single contestable headline number — the reader must produce it"
-    },
-    "supporting": [
-      {
-        "concept_ref": "img_02",
-        "finding": "ana_05",
-        "purpose": "IMMERSE",
-        "section": "edt_05",
-        "archetype": "guess_then_reveal",
-        "rank": 1,
-        "earns_place": "distinct finding (the gap); not a duplicate of the hero or any other supporting"
-      }
-    ]
   }
 }

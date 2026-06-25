@@ -2,11 +2,11 @@
   "rules": [
     {
       "name": "Default to all five channels",
-      "detail": "chart, image, video, audio, and interactive_or_map should each be CONSIDERED in every blog. Use a channel when an asset in it earns a clear purpose — INFORM (data/information the prose cannot carry) or IMMERSE (mood/atmosphere that aids reading); skip it (with a recorded reason in meta.media_decisions) when neither holds. The bar is 'this asset earns a purpose', not 'tick the channel'. Breadth is good only when every asset is purposeful — never add media just to cover a channel."
+      "detail": "chart, image, video, audio, and interactive_or_map should each be used in every blog by default. Each meta.media_decisions[channel].used is true unless the data genuinely cannot support that channel — and skipping requires an explicit reason in the same block. The bar for skipping is 'this channel would be decorative or fabricated', not 'it isn't the easiest option'."
     },
     {
       "name": "Channel-specific defaults when no obvious fit exists",
-      "detail": "video: if no event/process/transformation jumps out, animate the strongest still with image2video. audio: default to a REAL background track the Scout sourced, presented as a now-playing cover-art card (first-click autostart, never AI-composed); embed the official player for a referenced copyrighted recording; sonify only when a pattern is decodable by ear and synced to its chart; for a needed sound with no findable real recording, use an opt-in sound_design SFX (text2music), never the front BGM. interactive_or_map: if no geography, default to a guess-first quiz, scrubber, or before/after slider on a key finding."
+      "detail": "video: if no event/process/transformation jumps out, animate the strongest still with image2video. audio: if no real track and no ambience, sonify a key ranked data sequence; if too abstract even for that, embed a relevant real recording when one exists. interactive_or_map: if no geography, default to a guess-first quiz, scrubber, or before/after slider on a key finding."
     },
     {
       "name": "Data-first execution within each channel",
@@ -22,7 +22,7 @@
     },
     {
       "name": "Image richness for visual-heavy datasets",
-      "detail": "EVERY topic sources a relevant REAL-image set to back the mandatory cinematic scroll background — aim for a SOFT target of around 5-6 distinct cover-able images (target, not a quota). For animals, insects, art, nature, food, sports, places, artifacts, source the obvious strong subject photos. For an ABSTRACT / historical / economic / statistical topic (economics, elections, public-health stats, finance, history) — which the classifier may mark non-visual — STILL source a relevant real set: real HISTORICAL / ARCHIVAL / atmospheric photos of the era and subject (real factory / loom / mill-worker / steam-engine / trading-floor photos for an industrial-revolution piece; polling-station / ballot-box archival photos for an elections piece). These are abundant in the public domain and on Commons, are RELEVANT (not decorative), and back the mandatory cinematic. PREFER real fetched photos (the Scout's verified scout_* or the Detective's ref_*) for any concrete real subject. AI-generate ONLY abstract/atmospheric/metaphorical images, and NEVER AI-generate a specific real object/place/person (a real trophy, named stadium, real player) — use a real photo or skip it. What stays banned is PURELY-DECORATIVE stock that says nothing about the story (a random smiling-businessperson stock photo on an inflation piece) — the Critic penalizes decorative stock — NOT relevant historical/archival real photos, which are exactly the real-image set the cinematic needs. Only a privacy-sensitive topic stays light on imagery (no real-person photos)."
+      "detail": "For animals, insects, art, nature, food, sports, places, artifacts, etc., generate 4-5+ images. Even abstract datasets benefit from at least 2-3 atmospheric or metaphorical images."
     },
     {
       "name": "Video opportunity scan",
@@ -30,7 +30,7 @@
     },
     {
       "name": "Audio that earns its slot",
-      "detail": "BGM is MANDATORY on every blog, including sober/computational and privacy_sensitive topics — by default a REAL sourced background track (a now-playing cover-art card, never AI-composed) that fits the story's tone (immersion), including a restrained pensive / ambient / minimal / orchestral track on a sober/computational topic (the right BGM there, not silence) and a quiet, non-intrusive classical recording on a privacy_sensitive topic; use an opt-in sound_design SFX (text2music) only for a needed sound with no findable real recording, never the front BGM; reach for a sonification only when it would EXPLAIN a genuinely decodable pattern the visual cannot. Always reader-controlled with a visual fallback; the BGM autostarts on the reader's first gesture. Avoid the generic 'click-to-play tone card'. There is NO audio.used=false outcome on any topic: the Scout's rung-C license-clean classical-recording floor is the guaranteed terminal rung (it never fails), so a fitting BGM always exists — a missing one is the hard bgm_missing error, not restraint."
+      "detail": "Audio is included by default but must explain or evoke something the visual cannot. Always pair audio with a visual fallback and never autoplay. Avoid the generic 'click-to-play tone card' pattern unless the data exactly fits it."
     },
     {
       "name": "Map preference",
@@ -43,20 +43,15 @@
     {
       "name": "Text-only sections remain valid",
       "detail": "Some sections are best as prose — conceptual explanation, narrative transition, caveats, interpretive synthesis. 'Default to all five channels' applies at the page level, not the section level."
-    },
-    {
-      "name": "Every asset is web-weight",
-      "detail": "Breadth never means heaviness. Before finalizing designer.json, run `python3 SKILL_DIR/scripts/optimize_assets.py PROJECT_DIR/assets/` and reference the optimized `_web` copies. Budgets (shared with the Auditor weight-gate): audio < 3 MB, single image < 600 KB, video < 3 MB. A multi-MB lossless BGM (e.g. a Scout WAV/FLAC) MUST be transcoded to ~128 kbps mp3/opus first. The helper uses ffmpeg/Pillow if present and skips gracefully (with a warning, no crash) if a tool is missing — if it skipped a file, note the original is over budget rather than shipping it heavy."
     }
   ],
   "respect_editor_hints": "Read the editor's media_placeholder hints — they signal which sections have multimodal potential. Respect the hint direction unless you have a stronger creative reason to choose differently.",
   "asset_volume_by_dataset": {
-    "visual_heavy": "(animals, insects, art, nature, food, sports, places, artifacts) lean toward a richer set — around 4-5+ images or videos as a soft target (targets not quotas), preferring real fetched photos.",
+    "visual_heavy": "(animals, insects, art, nature, food, sports, places, artifacts) strongly prefer 4-5+ generated images or videos.",
     "narrative_event": "strongly consider video, image-to-video, reenactments, timelines, or scrollytelling.",
     "film_imaging_visual_media": "strongly consider a short video teaser, image-to-video transformation, or chapter break visualizing a format shift, tool workflow, material texture, or before/after era contrast.",
-    "abstract_analytical": "STILL sources a relevant real-image set for the mandatory cinematic — real historical / archival / atmospheric photos of the era and subject (around 5-6 cover-able, a soft target). These relevant real photos are NOT decorative; skip only generated assets that would feel forced.",
-    "technical_chart_led": "prioritize precise charts, tables, demos, and diagrams as the data vocabulary, AND still source a relevant real-image set (historical / archival / atmospheric real photos of the subject) to back the mandatory cinematic. Do NOT scrape PURELY-DECORATIVE stock that says nothing about the story — the Critic penalizes that — but relevant historical/archival real photos are expected, not banned."
+    "abstract_analytical": "1-2 atmospheric/metaphorical images may be enough; skip generated assets if they would feel forced.",
+    "technical_chart_led": "prioritize precise charts, tables, demos, and diagrams over decorative images."
   },
-  "before_generating": "Check PROJECT_DIR/assets/ for any scout_* images (the Scout — already license + identity verified) or ref_* images (the Detective) downloaded. Use these as context for your generated images — match the visual tone and subject matter. Run the generation tool for every generated image/video/audio decision — do not just write the spec and skip generation; the Programmer cannot generate media. Verify each file was created (ls -la PROJECT_DIR/assets/).",
-  "after_generating": "Once assets exist, make them web-weight before referencing them: run `python3 SKILL_DIR/scripts/optimize_assets.py PROJECT_DIR/assets/` and point each item's filename at the optimized `_web` copy (audio < 3 MB, image < 600 KB, video < 3 MB). Also: any ref_*/scout_* photo you route downstream (a section image OR a Cinematographer background) must be REGISTERED as a des_ item so it has a des_ id, gets data-des, and resolves in the cinematic contract gate — the Cinematographer only picks backgrounds from registered sct_/des_ ids."
+  "before_generating": "Check PROJECT_DIR/assets/ for any ref_* images the Detective downloaded. Use these as context for your generated images — match the visual tone and subject matter. Run the generation tool for every generated image/video/audio decision — do not just write the spec and skip generation; the Programmer cannot generate media. Verify each file was created (ls -la PROJECT_DIR/assets/)."
 }

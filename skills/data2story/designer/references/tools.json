@@ -14,10 +14,8 @@
       "call": "python3 SKILL_DIR/scripts/openrouter-image2video/scripts/generate_video_from_image.py --image PROJECT_DIR/assets/still.png --prompt \"...\" --duration 5 --download PROJECT_DIR/assets/clip.mp4"
     },
     "text2music": {
-      "purpose": "Atmospheric sound-design / SFX (NOT the BGM). Generates ambient beds for sounds with no findable real recording — drones, textures, room tone; sharp foley (e.g. bullet-on-glass) is best-effort. The front-of-blog BGM must be a SOURCED real track (sourced_bgm via Scout), never generated here. Reader-controlled, event/section-bound, opt-in.",
-      "default_model": "google/lyria-3-pro-preview (sound-design / SFX, not TTS, not the front BGM)",
-      "prompt_guidance": "Describe the texture, not a song: e.g. \"low rumbling tension drone, sub-bass swell, no melody\" or \"sharp glass-shatter texture, brittle high transients\".",
-      "call": "python3 SKILL_DIR/scripts/openrouter-text2music/scripts/generate_music.py --prompt \"low rumbling tension drone, no melody\" --download PROJECT_DIR/assets/sfx.wav"
+      "default_model": "google/lyria-3-pro-preview (music, not TTS)",
+      "call": "python3 SKILL_DIR/scripts/openrouter-text2music/scripts/generate_music.py --prompt \"...\" --download PROJECT_DIR/assets/bg.wav"
     },
     "embeddings": {
       "default_model": "qwen/qwen3-embedding-8b",

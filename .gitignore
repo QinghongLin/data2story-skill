@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Secrets — API keys are read from the environment / ~/.env, never from the repo
+.env
+.env.local
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
