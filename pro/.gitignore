@@ -10,6 +10,9 @@ __pycache__/
 
 # Generated per-run audit output
 skills/**/audit/
+# ...but DO ship the eval fixtures' audit/ payloads — they are test INPUTS, not run output
+!skills/data2story/evals/fixtures/**/audit/
+!skills/data2story/evals/fixtures/**/audit/**
 
 # Generated eval reports (the reports/ dir itself is kept via .gitkeep)
 skills/data2story/evals/reports/*.json

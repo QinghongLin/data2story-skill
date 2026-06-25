@@ -1,0 +1,13 @@
+{
+  "_fixture": "scenario 06 GREEN — same HARD playtest send-back on int_02 as the RED fixture. The difference is purely in auditor.json (the matching blocker_recorded+reason entry), proving the gate is about the auditor RESOLUTION, not about the playtest fail disappearing.",
+  "playgrounds": [
+    {
+      "id": "int_02",
+      "checks": { "verify_coexist": "FAIL" },
+      "send_backs": [
+        { "severity": "hard", "type": "verify_coexist_broken", "detail": "Verify-on still recomputes the interactive (no early-return guard)." }
+      ]
+    }
+  ],
+  "summary": { "hard_fails": 1 }
+}

@@ -1,0 +1,13 @@
+{
+  "_fixture": "scenario 06 RED — a HARD playtest send-back on int_02 with NO matching auditor.json resolution (the silent-ship case). §15c raises playtest_hard_unresolved on int_02.",
+  "playgrounds": [
+    {
+      "id": "int_02",
+      "checks": { "verify_coexist": "FAIL" },
+      "send_backs": [
+        { "severity": "hard", "type": "verify_coexist_broken", "detail": "Verify-on still recomputes the interactive (no early-return guard)." }
+      ]
+    }
+  ],
+  "summary": { "hard_fails": 1 }
+}
