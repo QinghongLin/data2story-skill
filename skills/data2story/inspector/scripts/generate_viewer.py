@@ -1,361 +1,518 @@
 #!/usr/bin/env python3
 """
-Generate viewer.html from index.html + verifier.json + designer.json.
+Inspector emitter: inline the authored verify/* islands into the panel shell.
 
-- Content: tagged via verifier.json html_line + context matching
-- Assets: tagged via data-des attributes already in HTML + designer.json metadata
+The Programmer authors verify/verify_map.json + verify/run_cells.json + a
+reproducible notebook upstream, and copies the canonical panel shell
+(inspector/references/inspector_panel_reference.html) verbatim into index.html
+— including two EMPTY <script type="application/json"> islands (id="verifyMap"
+and id="runCells") and the IIFE constant `var NB_PATH = "...";`.
+
+This script is deterministic (no LLM, no network). It:
+  - validates the authored islands against the schemas + the page's data-* ids;
+  - injects each verify/*.json byte-identically into its island
+    (inline == file_text.rstrip("\\n"), raw UTF-8, escaping </script> only if
+    present — never re-serialised, so the on-disk file stays the auditable copy);
+  - wires the publish constant NB_PATH (the Download-notebook target; run
+    locally — there is no Colab branch);
+  - derives verify/cell_registry.json (mechanical inversion of
+    verify_map[id].cell_id + analyst calculation.file -> cell_<stem>), written
+    only if absent or --refresh so hand-attached backs[] survive.
+
+It transforms / checks / injects — it never invents provenance.
 
 Usage:
-    python3 skills/inspector/scripts/generate_viewer.py PROJECT_DIR
+    python3 skills/data2story/inspector/scripts/generate_viewer.py PROJECT_DIR
 """
 
+import argparse
 import json
 import os
 import re
 import sys
+from pathlib import Path
 
 
-def find_sentence_positions(html_lines, sentences):
-    """Use html_line to find exact line, then find context within that line."""
-    line_offsets = [0]
-    for line in html_lines:
-        line_offsets.append(line_offsets[-1] + len(line))
-
-    results = []
-    missed = []
-
-    for i, s in enumerate(sentences):
-        ctx = s['context']
-        ln = s['html_line']
-
-        if ln < 1 or ln > len(html_lines):
-            missed.append((i, ctx[:50], f'line {ln} out of range'))
-            continue
-
-        line_text = html_lines[ln - 1]
-        col = line_text.find(ctx)
-
-        if col != -1:
-            char_pos = line_offsets[ln - 1] + col
-            results.append((char_pos, len(ctx), i))
-            continue
-
-        found = False
-        for delta in range(-3, 4):
-            check_ln = ln + delta
-            if check_ln < 1 or check_ln > len(html_lines) or delta == 0:
-                continue
-            line_text = html_lines[check_ln - 1]
-            col = line_text.find(ctx)
-            if col != -1:
-                char_pos = line_offsets[check_ln - 1] + col
-                results.append((char_pos, len(ctx), i))
-                found = True
-                break
-
-        if not found:
-            short = ctx[:50]
-            line_text = html_lines[ln - 1]
-            col = line_text.find(short)
-            if col != -1:
-                char_pos = line_offsets[ln - 1] + col
-                results.append((char_pos, len(short), i))
-            else:
-                missed.append((i, ctx[:50], f'not found near line {ln}'))
-
-    return results, missed
+# Windows/GBK consoles cannot encode non-ASCII diagnostics; force UTF-8 stdout.
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 
 
-def extract_assets_from_html(html):
-    """Find all data-des elements and their tag/attributes."""
-    assets = []
-    seen = set()
-    for m in re.finditer(r'<(\w+)\s[^>]*data-des="([^"]+)"[^>]*>', html):
-        tag = m.group(1)
-        des_id = m.group(2)
-        if des_id in seen:
-            continue
-        seen.add(des_id)
+# Element-id prefixes that may carry provenance, namespaced by producing role:
+#   ana_ analyst   det_ detective   des_ designer   sct_ scout
+#   cin_ cinematographer            int_ interaction centerpiece
+ID_PREFIX_RE = re.compile(r'^(ana|det|des|sct|cin|int)_[A-Za-z0-9_]+$')
 
-        # Extract other useful attrs
-        src = ''
-        src_m = re.search(r'src="([^"]*)"', m.group(0))
-        if src_m:
-            src = src_m.group(1)
-        cls = ''
-        cls_m = re.search(r'class="([^"]*)"', m.group(0))
-        if cls_m:
-            cls = cls_m.group(1)
-        ana = ''
-        ana_m = re.search(r'data-ana="([^"]*)"', m.group(0))
-        if ana_m:
-            ana = ana_m.group(1)
+# data-* attributes the panel scans, in the same priority order as the shell IIFE.
+PAGE_ATTRS = ('ana', 'det', 'des', 'sct', 'cin', 'int')
 
-        # Determine visual type
-        vtype = 'visual'
-        if tag == 'img':
-            vtype = 'image'
-        elif tag == 'video':
-            vtype = 'video'
-        elif 'stat' in cls:
-            vtype = 'stat'
-        elif 'chart' in cls or 'chart' in des_id:
-            vtype = 'chart'
+# Per-kind required keys (schema-lite mirror of verify_map.schema.json $defs).
+# NOTE: validate.py mirrors this same per-kind dict (its verify_map kind-key checks);
+# keep the two definitions in lock-step — a change to the required keys here must be
+# made identically in validate.py, or the two gates will disagree.
+VERIFY_MAP_REQUIRED = {
+    'computation': ('kind', 'title', 'claim', 'cell_id', 'code_file', 'code', 'run'),
+    'media': ('kind', 'title', 'media_type', 'preview', 'source_url', 'license',
+              'author', 'identity'),
+    'generated': ('kind', 'title', 'media_type', 'preview', 'tool', 'model',
+                  'prompt', 'purpose', 'disclosure', 'role'),
+    'fact': ('kind', 'title', 'claim', 'category', 'sources'),
+    'credits': ('kind', 'title', 'claim', 'category', 'sources'),
+}
 
-        line_num = html[:m.start()].count('\n') + 1
-
-        assets.append({
-            'des_id': des_id,
-            'tag': tag,
-            'type': vtype,
-            'src': src,
-            'ana': ana,
-            'line': line_num,
-        })
-    return assets
+# Required keys for every run_cells entry (mirror of run_cells.schema.json).
+RUN_CELLS_REQUIRED = ('runnable', 'reduced_n', 'lang', 'code', 'expected_stdout',
+                      'needs_network', 'full_ref')
 
 
-def inject_tags(html, positions):
-    """Insert sentence ID tags. Process bottom to top."""
-    positions.sort(key=lambda x: x[0], reverse=True)
-    for char_pos, length, idx in positions:
-        sid = idx + 1
-        tag = (
-            f'<span class="_ev" id="_s{sid}" '
-            f'style="display:none;font-size:8px;font-family:monospace;font-weight:700;'
-            f'color:#6ee7b7;background:#064e3b;padding:0 3px;border-radius:2px;'
-            f'margin-right:3px;vertical-align:super;cursor:pointer" '
-            f'data-i="{idx}">{sid}</span>'
+class EmitError(Exception):
+    """Fatal contract violation (panel shell not copied, dangling id, etc.)."""
+
+
+# --- byte-identical island injection ------------------------------------------
+
+def _inline_payload(text):
+    """The exact inline form of a verify/*.json file: drop the trailing newline(s),
+    then escape a literal </script> only if one is present (so the JSON island
+    cannot terminate the surrounding <script>). Never re-serialises — the on-disk
+    file remains the byte-source of truth."""
+    payload = text.rstrip('\n')
+    if '</script>' in payload:
+        payload = payload.replace('</script>', '<\\/script>')
+    return payload
+
+
+def _replace_island(html, island_id, payload):
+    """Replace ONLY the inner text of <script type="application/json" id="island_id">
+    ... </script> with payload. Non-greedy + DOTALL so multi-line JSON is matched.
+    Raises EmitError if the island tag is absent (the panel shell was not copied)."""
+    pat = re.compile(
+        r'(<script[^>]*\btype="application/json"[^>]*\bid="'
+        + re.escape(island_id)
+        + r'"[^>]*>)(.*?)(</script>)',
+        re.S,
+    )
+    if not pat.search(html):
+        raise EmitError(
+            f'panel shell not copied: <script type="application/json" '
+            f'id="{island_id}"> island not found in index.html'
         )
-        html = html[:char_pos] + tag + html[char_pos:]
+    # Escape backslashes in the replacement so re.sub does not treat \1 etc. in payload.
+    repl = lambda m: m.group(1) + payload + m.group(3)
+    return pat.sub(repl, html, count=1)
+
+
+def _set_publish_constants(html, nb_path):
+    """Anchored, idempotent rewrite of the IIFE publish constant.
+
+    Rewrites `var NB_PATH = "...";` in place. It is rewritten only when a new value
+    is supplied (None => leave the shell's value). Idempotent: re-running with the
+    same value is a no-op. (NB_PATH is the only publish constant — the panel links
+    to the notebook for local download-and-run; there is no Colab branch.)"""
+    def _rewrite(html, name, value):
+        if value is None:
+            return html
+        pat = re.compile(r'(var\s+' + re.escape(name) + r'\s*=\s*)"[^"]*"(\s*;)')
+        if not pat.search(html):
+            raise EmitError(
+                f'panel shell not copied: `var {name} = "...";` constant not found'
+            )
+        esc = value.replace('\\', '\\\\').replace('"', '\\"')
+        return pat.sub(lambda m: m.group(1) + '"' + esc + '"' + m.group(2), html, count=1)
+
+    html = _rewrite(html, 'NB_PATH', nb_path)
     return html
 
 
-def inject_asset_badges(html, assets, designer_items):
-    """Inject yellow badges on data-des elements. Badge shows index number matching right panel."""
-    # Build ordered list of des_ids matching designer_items key order
-    des_order = list(designer_items.keys())
+# --- schema-lite validation (no jsonschema dependency) ------------------------
 
-    replacements = []
-    for asset in assets:
-        des_id = asset['des_id']
-        pattern = f'data-des="{des_id}"'
-        pos = html.find(pattern)
-        if pos == -1:
+def validate_islands(verify_map, run_cells):
+    """Schema-lite checks against the three reference schemas. Returns a list of
+    error strings (empty == clean). No jsonschema dependency."""
+    errors = []
+
+    vm_keys = [k for k in verify_map if not k.startswith('_')]
+    rc_keys = [k for k in run_cells if not k.startswith('_')]
+
+    computation_ids = set()
+    for key in vm_keys:
+        if not ID_PREFIX_RE.match(key):
+            errors.append(f'verify_map: id "{key}" does not match '
+                          '^(ana|det|des|sct|cin|int)_...')
             continue
-        tag_end = html.find('>', pos)
-        if tag_end == -1:
+        entry = verify_map[key]
+        if not isinstance(entry, dict):
+            errors.append(f'verify_map["{key}"]: not an object')
             continue
-        # Get index in designer items (1-based)
-        idx = des_order.index(des_id) + 1 if des_id in des_order else 0
-        label = str(idx) if idx > 0 else des_id
-        replacements.append((tag_end + 1, des_id, label))
+        kind = entry.get('kind')
+        if kind not in VERIFY_MAP_REQUIRED:
+            errors.append(f'verify_map["{key}"]: unknown/absent kind {kind!r} '
+                          '(expected computation|media|generated|fact|credits)')
+            continue
+        for req in VERIFY_MAP_REQUIRED[kind]:
+            if req not in entry:
+                errors.append(f'verify_map["{key}"] ({kind}): missing required key "{req}"')
+        if kind == 'computation':
+            computation_ids.add(key)
+            run = entry.get('run')
+            if isinstance(run, dict):
+                if 'type' not in run:
+                    errors.append(f'verify_map["{key}"].run: missing "type"')
+                if 'needs_network' not in run:
+                    errors.append(f'verify_map["{key}"].run: missing "needs_network"')
 
-    replacements.sort(key=lambda x: x[0], reverse=True)
-    for insert_pos, des_id, label in replacements:
-        badge = (
-            f'<span class="_eva" '
-            f'style="display:none;position:absolute;top:4px;left:4px;font-size:9px;'
-            f'font-family:monospace;font-weight:700;color:#fbbf24;'
-            f'background:rgba(120,53,15,.85);padding:2px 6px;border-radius:4px;'
-            f'z-index:100;cursor:pointer;backdrop-filter:blur(4px)" '
-            f'data-des="{des_id}">{label}</span>'
-        )
-        html = html[:insert_pos] + badge + html[insert_pos:]
-    return html
+    for key in rc_keys:
+        if not ID_PREFIX_RE.match(key):
+            errors.append(f'run_cells: id "{key}" does not match '
+                          '^(ana|det|des|sct|cin|int)_...')
+            continue
+        entry = run_cells[key]
+        if not isinstance(entry, dict):
+            errors.append(f'run_cells["{key}"]: not an object')
+            continue
+        for req in RUN_CELLS_REQUIRED:
+            if req not in entry:
+                errors.append(f'run_cells["{key}"]: missing required key "{req}"')
+        # run_cells keys must be a subset of verify_map computation ids.
+        if key not in computation_ids:
+            errors.append(f'run_cells["{key}"]: no matching "computation" entry in verify_map')
+        # network/runnable invariants.
+        needs_network = entry.get('needs_network')
+        runnable = entry.get('runnable')
+        if needs_network is True and runnable is not False:
+            errors.append(f'run_cells["{key}"]: needs_network==true requires runnable==false')
+        if runnable is True and not entry.get('expected_stdout'):
+            errors.append(f'run_cells["{key}"]: runnable==true requires a non-empty expected_stdout')
 
-
-def inject_style(html):
-    """Inject CSS into <head>."""
-    css = '''<style id="_ev_styles">
-#_ev_bulb{position:fixed;bottom:24px;right:24px;z-index:99999;width:48px;height:48px;border-radius:50%;background:#1a1a2e;color:#6ee7b7;border:2px solid #6ee7b7;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:all 0.2s}
-#_ev_bulb:hover{transform:scale(1.1)}
-#_ev_bulb.on{background:#6ee7b7;color:#1a1a2e;right:460px}
-#_ev_side{position:fixed;top:0;right:0;width:0;height:100vh;overflow:hidden;background:#111827;border-left:2px solid #0f3460;color:#e0e0e0;transition:width 0.3s;z-index:99998;font-family:system-ui,sans-serif;font-size:13px}
-#_ev_side.open{width:440px;overflow-y:auto}
-body._ev_open{margin-right:440px;transition:margin-right 0.3s}
-#_ev_side::-webkit-scrollbar{width:6px}#_ev_side::-webkit-scrollbar-thumb{background:#334;border-radius:3px}
-._ev_hdr{position:sticky;top:0;z-index:1;background:#16213e;border-bottom:1px solid #0f3460}
-._ev_bar{padding:10px 16px;font-size:11px;color:#8899aa}._ev_bar b{color:#6ee7b7}
-._ev_tabs{display:flex;border-top:1px solid #0f3460}
-._ev_tab{flex:1;padding:8px 0;text-align:center;font-size:11px;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s}
-._ev_tab:hover{color:#e0e0e0}
-._ev_tab.on{color:#6ee7b7;border-bottom-color:#6ee7b7}
-._ev_ls{padding:8px 12px}
-._ev_row{padding:6px 10px;margin-bottom:2px;border-radius:6px;cursor:pointer;border-left:3px solid #0f3460;background:#16213e;display:flex;gap:8px;align-items:flex-start;transition:all 0.15s}
-._ev_row:hover{background:#1e293b;border-left-color:#60a5fa}._ev_row.on{border-left-color:#6ee7b7;background:#1e293b}
-._ev_row.asset{border-left-color:#78350f}._ev_row.asset:hover{border-left-color:#fbbf24}._ev_row.asset.on{border-left-color:#fbbf24;background:#1e293b}
-._ev_rid{flex-shrink:0;font-size:9px;font-family:monospace;font-weight:700;color:#6ee7b7;background:#064e3b;padding:1px 5px;border-radius:3px;margin-top:2px;min-width:22px;text-align:center}
-._ev_rid.asset{color:#fbbf24;background:#78350f}
-._ev_rtxt{flex:1;font-size:12px;color:#d1d5db;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-._ev_rmeta{font-size:9px;color:#4b5563;font-family:monospace;margin-top:2px}
-._ev_chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px}
-._ev_c{font-size:9px;padding:0 4px;border-radius:2px;font-family:monospace;font-weight:600}
-._ev_c.ana{background:#064e3b;color:#6ee7b7}._ev_c.det{background:#4a1d6e;color:#c4b5fd}._ev_c.des{background:#78350f;color:#fbbf24}._ev_c.edt{background:#1e3a5f;color:#93c5fd}
-._ev_det{display:none;padding:8px 10px;background:#1a2332;border-radius:0 0 6px 6px;margin:-2px 0 4px 34px}._ev_det.open{display:block}
-._ev_ctx{font-size:13px;color:#e0e0e0;line-height:1.6;margin-bottom:8px;border-left:3px solid #60a5fa;padding-left:10px}
-._ev_ctx.asset{border-left-color:#fbbf24}
-._ev_sum{background:#16213e;border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:#93c5fd;line-height:1.5}
-._ev_atype{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;margin-right:6px}
-._ev_atype.chart{background:#1e3a5f;color:#93c5fd}._ev_atype.image{background:#4a1d6e;color:#c4b5fd}._ev_atype.video{background:#78350f;color:#fbbf24}._ev_atype.stat{background:#064e3b;color:#6ee7b7}._ev_atype.visual{background:#374151;color:#d1d5db}
-</style>'''
-    return html.replace('<head>', '<head>\n' + css, 1)
+    return errors
 
 
-def inject_script(html, verifier_json_str, designer_json_str):
-    """Inject button + side panel + JS before </body>."""
-    script = '''<button id="_ev_bulb">&#128269;</button>
-<div id="_ev_side">
-  <div class="_ev_hdr">
-    <div class="_ev_bar" id="_ev_bar"></div>
-    <div class="_ev_tabs"><div class="_ev_tab on" id="_tab_s" onclick="_evTab('s')">Content</div><div class="_ev_tab" id="_tab_a" onclick="_evTab('a')">Assets</div></div>
-  </div>
-  <div class="_ev_ls" id="_ev_ls_s"></div>
-  <div class="_ev_ls" id="_ev_ls_a" style="display:none"></div>
-</div>
-<script>
-try{
-var _evOn=false;
-var V=''' + verifier_json_str + ''';
-var D=''' + designer_json_str + ''';
-document.getElementById("_ev_bulb").addEventListener("click",function(){
-  _evOn=!_evOn;
-  document.getElementById("_ev_bulb").classList.toggle("on",_evOn);
-  document.getElementById("_ev_side").classList.toggle("open",_evOn);
-  document.body.classList.toggle("_ev_open",_evOn);
-  var t=document.querySelectorAll("._ev");for(var j=0;j<t.length;j++)t[j].style.display=_evOn?"inline":"none";
-  t=document.querySelectorAll("._eva");for(var j=0;j<t.length;j++)t[j].style.display=_evOn?"inline":"none";
-});
-document.addEventListener("click",function(e){
-  if(e.target.classList.contains("_ev")){e.stopPropagation();if(!_evOn)document.getElementById("_ev_bulb").click();_evTab("s");_evOpenRow(parseInt(e.target.getAttribute("data-i")),"s");}
-  if(e.target.classList.contains("_eva")){e.stopPropagation();if(!_evOn)document.getElementById("_ev_bulb").click();var did=e.target.getAttribute("data-des");_evTab("a");_evOpenAsset(did);}
-});
-(function(){
-  document.getElementById("_ev_bar").innerHTML="<b>"+V.stats.traced+"</b>/"+V.stats.total_sentences+" sentences &middot; <b>"+Object.keys(D).length+"</b> assets";
-  var h="";
-  for(var i=0;i<V.sentences.length;i++){var s=V.sentences[i];var chips="";
-    for(var k=0;k<s.retrieve.length;k++){var rid=s.retrieve[k];chips+='<span class="_ev_c '+rid.split("_")[0]+'">'+rid+"</span>";}
-    h+='<div class="_ev_row" id="_r'+i+'" onclick="_evOpenRow('+i+',\\'s\\')"><span class="_ev_rid">'+(i+1)+'</span><div style="flex:1;min-width:0"><div class="_ev_rtxt">'+_evEsc(s.context)+'</div><div class="_ev_rmeta">L'+s.html_line+'</div><div class="_ev_chips">'+chips+'</div></div></div>';
-    h+='<div class="_ev_det" id="_d'+i+'"><div class="_ev_ctx">'+_evEsc(s.context)+'</div><div class="_ev_sum">'+_evEsc(s.summary)+'</div></div>';}
-  document.getElementById("_ev_ls_s").innerHTML=h;
-  var ha="";var dkeys=Object.keys(D);
-  for(var i=0;i<dkeys.length;i++){var did=dkeys[i];var a=D[did];
-    var chips='<span class="_ev_c des">'+did+'</span>';
-    if(a.data_source){var ds=a.data_source;if(typeof ds==="string")ds=[ds];for(var k=0;k<ds.length;k++)chips+='<span class="_ev_c ana">'+ds[k]+'</span>';}
-    if(a.based_on)for(var k=0;k<a.based_on.length;k++)chips+='<span class="_ev_c ana">'+a.based_on[k]+'</span>';
-    ha+='<div class="_ev_row asset" id="_ra_'+did+'" onclick="_evOpenAsset(\\''+did+'\\')"><span class="_ev_rid asset">'+(i+1)+'</span><div style="flex:1;min-width:0"><span class="_ev_atype '+a.type+'">'+a.type+'</span><span class="_ev_rtxt">'+_evEsc(a.label)+'</span><div class="_ev_chips">'+chips+'</div></div></div>';
-    ha+='<div class="_ev_det" id="_da_'+did+'"><div class="_ev_ctx asset">'+_evEsc(a.label)+'</div><div class="_ev_sum">'+_evEsc(a.brief||"")+'</div><div class="_ev_rmeta">type: '+a.type+(a.data_source?" | data: "+a.data_source:"")+'</div></div>';}
-  document.getElementById("_ev_ls_a").innerHTML=ha;
-})();
-}catch(err){document.getElementById("_ev_bar").innerHTML="<span style=color:red>"+err.message+"</span>"}
-function _evTab(t){
-  document.getElementById("_tab_s").classList.toggle("on",t==="s");
-  document.getElementById("_tab_a").classList.toggle("on",t==="a");
-  document.getElementById("_ev_ls_s").style.display=t==="s"?"block":"none";
-  document.getElementById("_ev_ls_a").style.display=t==="a"?"block":"none";
-}
-function _evOpenRow(i){
-  var r=document.getElementById("_r"+i),d=document.getElementById("_d"+i);
-  var wasOpen=d&&d.classList.contains("open");
-  var a=document.querySelectorAll("._ev_det.open");for(var j=0;j<a.length;j++)a[j].classList.remove("open");
-  a=document.querySelectorAll("._ev_row.on");for(var j=0;j<a.length;j++)a[j].classList.remove("on");
-  if(!wasOpen&&r&&d){r.classList.add("on");d.classList.add("open");r.scrollIntoView({behavior:"smooth",block:"center"});
-    var t=document.getElementById("_s"+(i+1));if(t)t.scrollIntoView({behavior:"smooth",block:"center"});}
-}
-function _evOpenAsset(did){
-  var r=document.getElementById("_ra_"+did),d=document.getElementById("_da_"+did);
-  var wasOpen=d&&d.classList.contains("open");
-  var a=document.querySelectorAll("._ev_det.open");for(var j=0;j<a.length;j++)a[j].classList.remove("open");
-  a=document.querySelectorAll("._ev_row.on");for(var j=0;j<a.length;j++)a[j].classList.remove("on");
-  if(!wasOpen&&r&&d){r.classList.add("on");d.classList.add("open");r.scrollIntoView({behavior:"smooth",block:"center"});
-    var el=document.querySelector('[data-des="'+did+'"]');if(el)el.scrollIntoView({behavior:"smooth",block:"center"});}
-}
-function _evEsc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-</script>'''
-    return html.replace('</body>', script + '\n</body>', 1)
+def _page_ids(html):
+    """Every data-{ana,det,des,sct,cin,int} id present on the page, by attr -> set."""
+    out = {a: set() for a in PAGE_ATTRS}
+    for attr in PAGE_ATTRS:
+        for m in re.finditer(r'data-' + attr + r'="([^"]*)"', html):
+            for tok in m.group(1).split(','):
+                tok = tok.strip()
+                if tok:
+                    out[attr].add(tok)
+    return out
+
+
+def cross_check_page(html, verify_map):
+    """Reconcile the page's data-* ids with the verify_map keys.
+
+    Returns (errors, warnings). FATAL (error): a data-* id on the page that is not
+    a verify_map key (dangling -> the panel would have nothing to render). WARN: a
+    verify_map key with no matching on-page element (orphan entry)."""
+    errors = []
+    warnings = []
+    vm_keys = {k for k in verify_map if not k.startswith('_')}
+    page = _page_ids(html)
+
+    on_page = set()
+    for attr in PAGE_ATTRS:
+        for tok in page[attr]:
+            on_page.add(tok)
+            if tok not in vm_keys:
+                errors.append(f'page: data-{attr}="{tok}" has no verify_map entry (dangling)')
+
+    for key in sorted(vm_keys):
+        if key not in on_page:
+            warnings.append(f'verify_map["{key}"]: no element on the page carries this id')
+
+    return errors, warnings
+
+
+# --- cell_registry derivation -------------------------------------------------
+
+def derive_cell_registry(verify_map, analyst):
+    """Derive cell_registry.json by inverting verify_map[id].cell_id and folding the
+    analyst calculation.file -> cell_<stem> tag for ana_* ids. needs_network is the
+    OR over the backed ids' run.needs_network. Setup/utility cells with no backed id
+    are not synthesised here (they are authored in the notebook).
+
+    Dedupe: when an ana_* id already carries an authored verify_map cell_id, that key
+    is canonical for the claim — do NOT also emit the auto-derived cell_<stem> alias,
+    which would map a second registry key to the same notebook cell. The analyst
+    calculation.file -> cell_<stem> fold only applies to an ana_* id that has NO
+    authored cell_id (so the claim would otherwise have no registry coverage)."""
+    ana_items = analyst.get('items', analyst.get('findings', {})) or {}
+
+    # cell_id -> set of backed ids, and cell_id -> needs_network (OR).
+    backs = {}
+    needs_net = {}
+
+    def _add(cell_id, claim_id, network):
+        if not cell_id:
+            return
+        backs.setdefault(cell_id, set()).add(claim_id)
+        needs_net[cell_id] = needs_net.get(cell_id, False) or bool(network)
+
+    for cid, entry in verify_map.items():
+        if cid.startswith('_') or not isinstance(entry, dict):
+            continue
+        cell_id = entry.get('cell_id')
+        run = entry.get('run') or {}
+        network = bool(run.get('needs_network')) if isinstance(run, dict) else False
+        _add(cell_id, cid, network)
+
+        # For an analyst-backed id WITHOUT an authored cell_id, fold its
+        # calculation.file -> cell_<stem> so the claim still gets registry coverage.
+        # When an authored cell_id exists it is canonical — skip the alias to avoid a
+        # duplicate registry key pointing at the same cell.
+        if cid.startswith('ana_') and not cell_id:
+            item = ana_items.get(cid)
+            if isinstance(item, dict):
+                calc = item.get('calculation') or {}
+                cfile = calc.get('file')
+                if cfile:
+                    stem = Path(cfile).stem
+                    if stem:
+                        _add('cell_' + stem, cid, network)
+
+    registry = {}
+    for cell_id in sorted(backs):
+        registry[cell_id] = {
+            'computes': _computes_for(sorted(backs[cell_id]), verify_map, ana_items),
+            'backs': sorted(backs[cell_id]),
+            'needs_network': needs_net.get(cell_id, False),
+        }
+    return registry
+
+
+def _computes_for(backed_ids, verify_map, ana_items):
+    """A short human-readable label of what a cell computes, for cell_registry.
+
+    Cosmetic only (the binding substance check is run_cells). Picks the first
+    available description across the cell's backed ids, in order: the analyst
+    item's `label`, then the verify_map entry's `title`, then a truncated
+    `claim`. Returns '' if none resolves."""
+    for cid in backed_ids:
+        item = ana_items.get(cid)
+        if isinstance(item, dict):
+            label = (item.get('label') or '').strip()
+            if label:
+                return label
+        entry = verify_map.get(cid)
+        if isinstance(entry, dict):
+            title = (entry.get('title') or '').strip()
+            if title:
+                return title
+            claim = (entry.get('claim') or '').strip()
+            if claim:
+                return claim if len(claim) <= 120 else claim[:117].rstrip() + '...'
+    return ''
+
+
+# --- redirect -----------------------------------------------------------------
+
+# --- optional scaffolding -----------------------------------------------------
+
+def scaffold_missing(verify_map, html, analyst):
+    """For any data-ana id on the page absent from verify_map, synthesise a skeleton
+    computation entry from analyst.json with a "_todo" marker. Opt-in (--scaffold);
+    mutates verify_map in place and returns the list of synthesised ids."""
+    ana_items = analyst.get('items', analyst.get('findings', {})) or {}
+    page = _page_ids(html)
+    vm_keys = {k for k in verify_map if not k.startswith('_')}
+    added = []
+    for aid in sorted(page['ana']):
+        if aid in vm_keys:
+            continue
+        item = ana_items.get(aid) or {}
+        calc = item.get('calculation') or {}
+        cfile = calc.get('file', '')
+        verify_map[aid] = {
+            '_todo': 'auto-scaffolded skeleton — author claim/code/data_preview/'
+                     'expected_output, then remove this marker',
+            'kind': 'computation',
+            'title': item.get('label', aid),
+            'claim': item.get('claim', item.get('content', '')),
+            'cell_id': ('cell_' + Path(cfile).stem) if cfile else '',
+            'code_file': cfile,
+            'code_lines': calc.get('lines'),
+            'code': calc.get('code', ''),
+            'data_preview': None,
+            'expected_output': calc.get('output', ''),
+            'run': {'type': 'derived', 'needs_network': False},
+        }
+        added.append(aid)
+    return added
+
+
+# --- main ---------------------------------------------------------------------
+
+def _run_profile(proj):
+    """Committed run profile ('premium' | 'fast') from PROJECT_DIR/run_config.json;
+    absent/unknown => 'premium'. In 'fast' the Programmer authors verify_map.json (the
+    traceability panel) but NOT run_cells.json / a notebook, so this emitter tolerates
+    their absence (empty runCells island; NB_PATH left at the shell default)."""
+    try:
+        with open(os.path.join(proj, 'run_config.json'), encoding='utf-8') as f:
+            p = (json.load(f) or {}).get('run_profile')
+        return p if p in ('premium', 'fast') else 'premium'
+    except Exception:
+        return 'premium'
 
 
 def main():
-    proj = sys.argv[1].rstrip('/')
+    ap = argparse.ArgumentParser(
+        description='Inline authored verify/* islands into the panel shell + emit '
+                    'the cell_registry (deterministic).')
+    ap.add_argument('project_dir')
+    ap.add_argument('--scaffold', action='store_true',
+                    help='Synthesise skeleton verify_map computation entries from '
+                         'analyst.json for any data-ana id on the page that lacks one '
+                         '(marked _todo). Opt-in; does not overwrite existing entries.')
+    ap.add_argument('--refresh', action='store_true',
+                    help='Rewrite verify/cell_registry.json even if it already exists '
+                         '(otherwise it is only written when absent, to preserve '
+                         'hand-attached backs[]).')
+    ap.add_argument('--strict', action='store_true',
+                    help='Exit nonzero if cross_check_page produced any warnings too.')
+    args = ap.parse_args()
+
+    proj = args.project_dir.rstrip('/\\')
+
+    # Stage-7 finalize step (FIRST, before inlining islands):
+    # relocate heavy UNREFERENCED media masters out of assets/ into provenance/, and
+    # drop the provenance/_relocated.json sentinel. That sentinel flips validate.py
+    # Section 16 from a WARN (asset_unreferenced_pending) at the pre-Stage-7 contract
+    # gate to a hard ERROR (asset_unreferenced_heavy) on the FINAL shipped folder, so a
+    # heavy orphan that survives finalize is caught. Best-effort + logged: a relocate
+    # failure must NOT crash Stage 7 (the page still ships), so we catch + print and
+    # carry on; relocate writes the sentinel itself on success.
+    try:
+        import relocate_unreferenced
+        relocate_unreferenced.main(proj)
+    except Exception as _reloc_err:  # never fatal — finalize must not die on cleanup
+        print(f'  [warn] relocate_unreferenced skipped ({_reloc_err}) — heavy '
+              f'unreferenced assets, if any, were left in assets/', file=sys.stderr)
+
+    profile = _run_profile(proj)
 
     html_path = os.path.join(proj, 'index.html')
-    verifier_path = os.path.join(proj, 'verifier.json')
-    designer_path = os.path.join(proj, 'designer.json')
+    vm_path = os.path.join(proj, 'verify', 'verify_map.json')
+    rc_path = os.path.join(proj, 'verify', 'run_cells.json')
+
+    if not os.path.exists(html_path):
+        print(f'ERROR: {html_path} not found', file=sys.stderr)
+        sys.exit(1)
+    if not os.path.exists(vm_path):
+        print(f'ERROR: {vm_path} not found (the Programmer must author it)',
+              file=sys.stderr)
+        sys.exit(1)
+    # FAST profile ships traceability only (verify_map + panel shell), with no
+    # run_cells.json; PREMIUM requires it. Tolerate its absence only under fast.
+    rc_present = os.path.exists(rc_path)
+    if not rc_present and profile != 'fast':
+        print(f'ERROR: {rc_path} not found (the Programmer must author it)',
+              file=sys.stderr)
+        sys.exit(1)
 
     with open(html_path, encoding='utf-8') as f:
         html = f.read()
-    html_lines = html.splitlines(keepends=True)
+    # Read the verify payloads as RAW TEXT — never json.load -> json.dump, so the
+    # bytes injected into the islands stay identical to the on-disk source of truth.
+    with open(vm_path, encoding='utf-8') as f:
+        vm_text = f.read()
+    if rc_present:
+        with open(rc_path, encoding='utf-8') as f:
+            rc_text = f.read()
+    else:
+        rc_text = '{}'  # fast profile: empty runCells island (traceability panel only)
 
-    with open(verifier_path, encoding='utf-8') as f:
-        V = json.load(f)
+    try:
+        verify_map = json.loads(vm_text)
+    except json.JSONDecodeError as e:
+        print(f'ERROR: verify/verify_map.json is not valid JSON: {e}', file=sys.stderr)
+        sys.exit(1)
+    try:
+        run_cells = json.loads(rc_text)
+    except json.JSONDecodeError as e:
+        print(f'ERROR: verify/run_cells.json is not valid JSON: {e}', file=sys.stderr)
+        sys.exit(1)
 
-    # Load designer.json for asset metadata
-    designer = {}
-    if os.path.exists(designer_path):
-        with open(designer_path, encoding='utf-8') as f:
-            designer = json.load(f)
+    # analyst.json is optional (only needed to fold calculation.file tags / scaffold).
+    analyst = {}
+    ana_path = os.path.join(proj, 'analyst.json')
+    if os.path.exists(ana_path):
+        with open(ana_path, encoding='utf-8') as f:
+            try:
+                analyst = json.load(f)
+            except json.JSONDecodeError:
+                analyst = {}
 
-    sentences = V['sentences']
+    if args.scaffold:
+        added = scaffold_missing(verify_map, html, analyst)
+        if added:
+            # Re-serialise only the scaffolded file (intentional rewrite); the inline
+            # payload below is then taken from the updated bytes for byte-parity.
+            vm_text = json.dumps(verify_map, ensure_ascii=False, indent=2) + '\n'
+            with open(vm_path, 'w', encoding='utf-8') as f:
+                f.write(vm_text)
+            print(f'Scaffolded {len(added)} skeleton verify_map entr(y/ies): '
+                  f'{", ".join(added)}')
 
-    # Step 1: Find sentence positions
-    positions, missed = find_sentence_positions(html_lines, sentences)
-    print(f'Content matched: {len(positions)}/{len(sentences)}')
-    if missed:
-        print(f'Missed: {len(missed)}')
-        for idx, ctx, reason in missed[:5]:
-            print(f'  #{idx+1}: "{ctx}" — {reason}')
+    # 1. validate.
+    schema_errors = validate_islands(verify_map, run_cells)
+    page_errors, page_warnings = cross_check_page(html, verify_map)
+    fatal = schema_errors + page_errors
 
-    # Step 2: Extract assets from HTML
-    assets = extract_assets_from_html(html)
-    print(f'Assets found: {len(assets)}')
+    for w in page_warnings:
+        print(f'  [warn] {w}')
+    if fatal:
+        print(f'ERROR: {len(fatal)} contract violation(s):', file=sys.stderr)
+        for e in fatal:
+            print(f'  [ERROR] {e}', file=sys.stderr)
+        sys.exit(1)
+    if args.strict and page_warnings:
+        print(f'ERROR (--strict): {len(page_warnings)} warning(s)', file=sys.stderr)
+        sys.exit(1)
 
-    # Step 3: Inject sentence tags (bottom-up)
-    html = inject_tags(html, positions)
+    # 2. inject both islands byte-identically.
+    try:
+        html = _replace_island(html, 'verifyMap', _inline_payload(vm_text))
+        html = _replace_island(html, 'runCells', _inline_payload(rc_text))
+        # 3. wire the publish constant (NB_PATH — the Download-notebook target).
+        nb_path = _detect_notebook(proj)
+        html = _set_publish_constants(html, nb_path)
+    except EmitError as e:
+        print(f'ERROR: {e}', file=sys.stderr)
+        sys.exit(1)
 
-    # Step 4: Inject asset badges (bottom-up)
-    html = inject_asset_badges(html, assets, designer.get('items', {}))
-
-    # Step 5: Inject style into <head>
-    html = inject_style(html)
-
-    # Step 6: Build lite JSONs and inject script
-    V_lite = {
-        'stats': V['stats'],
-        'sentences': [
-            {
-                'context': s['context'],
-                'html_line': s['html_line'],
-                'summary': s['summary'],
-                'retrieve': s['retrieve'],
-            }
-            for s in V['sentences']
-        ],
-    }
-    v_str = json.dumps(V_lite, ensure_ascii=True)
-    v_str = v_str.replace('</script>', '<\\/script>')
-
-    # Designer lite: des_id -> {label, type, brief, data_source, based_on}
-    D_lite = {}
-    items = designer.get('items', {})
-    for des_id, item in items.items():
-        D_lite[des_id] = {
-            'label': item.get('label', des_id),
-            'type': item.get('type', 'visual'),
-            'brief': (item.get('brief', '') or '')[:300],
-            'data_source': item.get('content', {}).get('data_source', ''),
-            'based_on': item.get('based_on', []),
-        }
-    d_str = json.dumps(D_lite, ensure_ascii=True)
-    d_str = d_str.replace('</script>', '<\\/script>')
-
-    html = inject_script(html, v_str, d_str)
-
-    # Write
-    out_path = os.path.join(proj, 'viewer.html')
-    with open(out_path, 'w', encoding='utf-8') as f:
+    with open(html_path, 'w', encoding='utf-8') as f:
         f.write(html)
+    print(f'Inlined verifyMap + runCells into {html_path}')
+    if nb_path:
+        print(f'NB_PATH set to {nb_path}')
 
-    print(f'viewer.html written to {out_path}')
+    # 4. derive + write cell_registry (gated: write-if-absent unless --refresh).
+    reg_path = os.path.join(proj, 'verify', 'cell_registry.json')
+    if os.path.exists(reg_path) and not args.refresh:
+        print(f'cell_registry.json present — left untouched (use --refresh to rewrite)')
+    else:
+        registry = derive_cell_registry(verify_map, analyst)
+        with open(reg_path, 'w', encoding='utf-8') as f:
+            json.dump(registry, f, ensure_ascii=False, indent=2)
+            f.write('\n')
+        print(f'cell_registry.json written to {reg_path} ({len(registry)} cell(s))')
+
+
+def _detect_notebook(proj):
+    """NB_PATH = verify/<name>.ipynb if exactly one notebook lives in verify/.
+    Returns None (leave the shell's value) when zero or several are present."""
+    vdir = os.path.join(proj, 'verify')
+    if not os.path.isdir(vdir):
+        return None
+    nbs = [n for n in sorted(os.listdir(vdir)) if n.endswith('.ipynb')]
+    if len(nbs) == 1:
+        return 'verify/' + nbs[0]
+    return None
 
 
 if __name__ == '__main__':

@@ -1,0 +1,5 @@
+{
+  "_fixture": "scenario 06 GREEN — identical minimal scaffold to the RED fixture (resolved abstract topic_profile suppresses §0b). The ONLY difference from RED is in auditor.json: the send-back is discharged. Section 15 emits NONE of its four kinds here; the leftover unrelated mandatory-stage floors are deliberately ignored by the scenario-06 assertion (it greps the Section-15 kinds, not the exit code).",
+  "topic_profile": { "is_visual": false, "is_computational": false, "tags": ["abstract"] },
+  "items": {}
+}

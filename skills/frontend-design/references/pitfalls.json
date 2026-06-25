@@ -1,0 +1,911 @@
+{
+  "_doc": {
+    "what": "Curated 'mistakes never to repeat' reference (a 错题本 / lessons-learned log) for Data2Story blog generation. Each entry is a REAL bug observed in a shipped run, generalized to apply to ANY topic — not a hypothetical. The fix is the correct approach; the detect line is how a role catches it (a grep/check + the role that owns the catch).",
+    "who_reads": "Programmer consults this BEFORE building (do not reintroduce a known mistake); Auditor runs each entry's `detect` during the render/static audit; Critic treats any recurring known pitfall on the page as a hard fail.",
+    "severity": "hard = a defect a reader/judge can see (invisible chart, overflow, broken media, IP risk) → blocks/caps; soft = quality/polish/weight issue → advisory.",
+    "fields": "id, title, symptom (what dev/reader sees), root_cause, fix (correct approach), detect (grep/check + owning role), severity (hard|soft), tags, ref (cross-link to the design ref / fix_pattern that encodes the fix).",
+    "tags_vocab": [
+      "layout",
+      "chart",
+      "media",
+      "audio",
+      "map",
+      "cards",
+      "pipeline",
+      "testing",
+      "licensing",
+      "video",
+      "api",
+      "interaction",
+      "copy"
+    ],
+    "relationship_to_quality_rubric": "quality_rubric.json scores the FINISHED page PASS/FAIL per criterion; this file is the prevention log of root causes BEHIND those fails. Where a pitfall maps to a rubric criterion, the rubric criterion id is named in `ref`. Together: rubric = the gate, pitfalls = how not to trip it.",
+    "loop_rule": "PROMOTE, don't just log. Once a pitfall is BINARY (a grep/file-check can decide it) or RECURRING (seen across >1 run), it must graduate from prose-only into an enforced gate — a check in inspector/scripts/validate.py and/or an Auditor `detect` step — so the pipeline catches it deterministically, not just a careful reader of this file. This file stays the human-readable root-cause ledger; the gate is the machine that can't forget. Each entry's `detect` names the owning role; an entry whose `detect` is a clean grep/stat/file-exists is a candidate to harden into validate.py.",
+    "toc": {
+      "_note": "Index by theme. IDs are STABLE references (cited from other files + `cf PIT-NN`), so a merged-away id is retired, never reused — gaps (PIT-20/22/25) are intentional, and PIT-24 is a retired tombstone (Colab branch removed by design — see its `_retired`).",
+      "charts_layout": "PIT-01 (0-width Vega), PIT-02 (margin:auto can't center over-wide), PIT-03 (SVG wider than spec.width — OUTER overflow), PIT-05 (data-bound render fed null/{}→NaN; radar starves bars), PIT-18 (corner controls overlap), PIT-55 (one throw blanks every sibling chart + hero — cascade abort), PIT-62 (Vega guide text dark-on-dark on the always-on dark stage — subtitle/axis/legend invisible), PIT-64 (a {condition:…} object on a Vega MARK property is invalid — labels clump at the axis), PIT-65 (point/scatter marks beyond scale.domain overflow the frame — INNER overflow; need clip:true + domain headroom)",
+      "testing_render_truth": "PIT-06 (JSDOM can't repro layout), PIT-31 (dead control), PIT-32 (recompute disagrees), PIT-33 (no JS-off fallback), PIT-53 (Verify-panel/fixed-overlay white-out: unpainted root + no color-scheme:dark + backdrop-filter blur → UA-white flush on a light OS theme; not headlessly reproducible), PIT-55 (cascade script abort — real-browser cascadeScriptAbort + static no-try smell)",
+      "media_seams_loops": "PIT-04 (per-section scrim seam), PIT-09 (YouTube iframe ≠ hero loop), PIT-16 (no clean real loop), PIT-26 (rectangular composite halo), PIT-27 (animated face warps), PIT-43 (shrinking-pane hero→content transition), PIT-52 (subtle cinemagraph reads as static / no seamless loop), PIT-54 (near-black gradient rest → black scroll gap in photographic cinematic mode; rest must hold a dimmed real photo)",
+      "media_assets_weight": "PIT-13 (orphan/big assets + raw generated video), PIT-14 (yt-dlp needs ffprobe), PIT-21 (multi-asset collapsed / aggregate credit), PIT-17 (deck mixes photos+silhouettes)",
+      "video_generation": "PIT-36 (Veo/Wan refuse real faces), PIT-37 (Kling 720p cap), PIT-38 (Real-ESRGAN tile bug), PIT-39 (OpenRouter video API + duration)",
+      "audio": "PIT-07 (Spotify 30s preview), PIT-08 (autoplay needs gesture), PIT-19 (BGM player off-center/buried), PIT-35 (AI track as BGM), PIT-47 (generic loop where a real anthem was the best fit / rung 2 not climbed)",
+      "richness_floor": "PIT-45 (rich topic took the impoverished path — 1 image, cinematic off, static hero, generic loop — yet passed every gate), PIT-46 (cinematic silently dropped to off for under-supply instead of sending Scout back for >=5), PIT-48 (absent topic_profile no-ops every richness/cinematic/BGM/engagement floor — now a hard error), PIT-50 (data_driven cinematic declared but never built)",
+      "interaction_set": "PIT-30 (purposeless playground), PIT-34 (no hero pile), PIT-41 (decorative overlay eats clicks), PIT-42 (hardcoded number), PIT-40 (probability-space label), PIT-44 (interactive hero halves land in the Verify allow-list), PIT-61 (keyboard activation opens a popup but does not update the readout the mouse path updates — keyboard/mouse disagree), PIT-66 (a 'share my result' button using the Web Share API with a File crashes the whole tab — use clipboard.write([ClipboardItem]) + Download, never navigator.share)",
+      "provenance_pipeline": "PIT-10 (copyrighted/un-auditable numbers), PIT-11 (generated-artifact desync: the inline provenance islands), PIT-12 (dangling data-* tags), PIT-15 (source missing facts, never fabricate), PIT-23 (Pyodide snippet not self-contained), PIT-28 (verify_map repoint is legit), PIT-29 (verify layer silently absent), PIT-49 (malformed verify_map passes Stage-6 gate then crashes Stage-7), PIT-51 (scout.-prefixed data_source silently bypassed the cross-ref check), PIT-59 (PROJECT_DIR created before Stage 0 resolves DATA_NAME — input-dispatch ordering seam), PIT-63 (Pyodide 32-bit numpy throws int64→int32 on np.bincount — runs locally, fails in-browser; cast to np.intp)",
+      "titling_captioning": "PIT-56 (templated / AI-tell headline — the AT1 'flat statement. flat counter-statement.' two-beat above all), PIT-57 (standfirst pre-spoils the interactive hero's reveal number), PIT-58 (caption labels an axis instead of stating the finding)",
+      "idea_mode_interaction": "PIT-60 (idea-mode convergence + both checkpoints must be AskUserQuestion choice-driven with an 'Other' escape, substance-first — not free-text essays / a cold questionnaire)"
+    }
+  },
+  "pitfalls": [
+    {
+      "id": "PIT-01",
+      "title": "Vega \"width\":\"container\" measured at parse time returns 0 → invisible chart",
+      "symptom": "A chart whose CSS reads width:100% renders 0 px wide — a blank/empty box. Source inspection looks fine; the chart is simply not there in the browser.",
+      "root_cause": "\"width\":\"container\" is measured the instant the inline <script> runs (often during page parse, before layout completes). On a long/heavy page that measurement returns 0, so Vega renders the SVG at 0 px wide.",
+      "fix": "Embed every simple width:container chart through the canonical `embedChart` helper: measure the REAL pixel width after layout (DOMContentLoaded + requestAnimationFrame), fall back to parent width or 640 if still <40px, cap at the column max, and re-render on resize. Block-mount CSS alone (display:block; width:100%) fixes only the CSS half and is NOT sufficient.",
+      "detect": "Auditor — the live render audit reports it as zeroWidthCharts / chartsWithNoRender in render_report.json (ground truth). Static fallback: grep for `width:'container'`/`\"width\": \"container\"` and confirm the mount goes through embedChart, not a bare vegaEmbed(el, spec) call. Node/static tests CANNOT reproduce this (clientWidth returns 0 in JSDOM regardless).",
+      "severity": "hard",
+      "tags": [
+        "chart",
+        "testing"
+      ],
+      "ref": "programmer component_implementations.json charts_vega_lite.responsive_embed (embed_js); auditor fix_patterns.json fix_8_chart_width_measure; quality_rubric.json CHT5"
+    },
+    {
+      "id": "PIT-02",
+      "title": "margin:auto cannot center an element WIDER than its parent",
+      "symptom": "A breakout/full-bleed element meant to be centered instead left-aligns and overflows off the right edge; horizontal scroll appears.",
+      "root_cause": "margin-inline:auto (and margin:0 auto) only distributes LEFTOVER space. When the element is wider than its containing block there is no leftover space, so both auto margins collapse to 0 — the element pins to the left and spills right.",
+      "fix": "Center an over-wide element with explicit math: `margin-inline:calc((100% - min(Wpx, Nvw))/2)` (or the full-bleed idiom `width:100vw; margin-left:calc(50% - 50vw)`). Do NOT use the `transform:translateX(-50%)` hack (it leaves the layout box in place, so overflow/scroll persists).",
+      "detect": "Auditor — render audit reports horizontalOverflow:true (desktop) or mobile.horizontalOverflow:true. Static: grep for `margin:auto`/`margin-inline:auto` or `translateX(-50%)` on any element with width >100% / width:100vw, and for left:50% hacks.",
+      "severity": "hard",
+      "tags": [
+        "layout"
+      ],
+      "ref": "auditor fix_patterns.json fix_center_wide_breakout + fix_5_recenter_full_bleed; layout.json full_bleed; quality_rubric.json LAY2"
+    },
+    {
+      "id": "PIT-03",
+      "title": "A Vega <svg> is wider than spec.width → overflows its card on the right",
+      "symptom": "The rendered chart pokes past the right edge of its container/backing card; on a cinematic card the chart bleeds over the card border.",
+      "root_cause": "Vega draws axes, axis titles and legends OUTSIDE the plotting area, so the produced <svg> is routinely wider than the `width` in the spec. The container is sized to spec.width, so the extra axis/legend overhead overflows.",
+      "fix": "Force the rendered SVG to fit its container: `.chart-card svg{max-width:100%!important; height:auto; display:block; margin-inline:auto}` (and the same for `.vega-embed svg`). This clamps the drawn SVG to the card and centers it.",
+      "detect": "Auditor — render audit horizontalOverflow with the offending node inside a [data-des] chart; vision layout lens sees the chart crossing its card edge. Static: grep that each chart mount's shared class carries `svg{max-width:100%}`.",
+      "severity": "hard",
+      "tags": [
+        "chart",
+        "layout"
+      ],
+      "ref": "auditor fix_patterns.json fix_svg_fit_container; component_implementations.json charts_vega_lite.rules (center rendered SVG); quality_rubric.json CHT5 + LAY2"
+    },
+    {
+      "id": "PIT-04",
+      "title": "Per-section dark scrim gradients create a visible horizontal seam",
+      "symptom": "Where two sections meet over a shared photographic/cinematic background, a hard horizontal line appears — the page looks banded, not continuous.",
+      "root_cause": "Each section paints its own dark gradient scrim for text contrast. Adjacent scrims don't line up at the boundary, so the overlap (or gap) reads as a seam.",
+      "fix": "Use ONE uniform full-screen filter over the whole background — a single fixed overlay positioned ABOVE the background images but BELOW the content — instead of per-section scrims. If a per-image tint is needed, keep it flat and identical per image; never stack a second per-section gradient on top.",
+      "detect": "Auditor — vision layout/media lens sees the horizontal seam in the full-page screenshot. Static: grep for multiple per-section `linear-gradient(...rgba(0,0,0...))` scrims on consecutive sections (expect ONE fixed full-screen overlay instead).",
+      "severity": "soft",
+      "tags": [
+        "layout",
+        "media"
+      ],
+      "ref": "auditor fix_patterns.json fix_uniform_fullscreen_scrim; component_implementations.json cinematic_background; quality_rubric.json LAY5 + COL3"
+    },
+    {
+      "id": "PIT-05",
+      "title": "A data-bound render fed a null/{}-typed value → NaN/empty (radar starves bars; {value,flag} → NaN width)",
+      "symptom": "Any data-bound visual paints nothing where a number was expected: an entity/stat card's attribute bars render at ~0 width (invisible) next to a radar; a bar's fill is missing because its width computed to NaN; a chart series / stat callout / gauge silently drops a point or shows NaN; a value-accessor returns `undefined`/`[object Object]`.",
+      "root_cause": "A value-accessor was handed a value it can't coerce and didn't guard it. The original case: an attribute stored as a `{value, flag}` object passed to `Number({})` yields NaN, so `width:NaN%` paints nothing — but the SAME class of bug bites ANY data-bound render (chart encoding, stat callout, gauge, map marker size) when the field is null / empty-string / undefined / an object-where-a-number-is-expected, or when a baseline is rendered with a sentinel (`draw(null)` — see PIT-55 FM2). A second, layout-only compounding cause for the card case: laying a radar and the bars side-by-side in one row splits the width so the bars get almost none.",
+      "fix": "Add ONE value-accessor used by every data-bound render that unwraps `{value}` (returns the inner number) and treats `null` / `\"\"` / `undefined` / an object-without-a-number as MISSING — SKIP that datum rather than coercing to NaN; never `Number({…})`. Render every baseline / 'at-rest' state on REAL data, never a sentinel a callee derefs. For the card layout specifically, stack the radar ABOVE the bars (full width each), not side-by-side, so the bars get the full card width.",
+      "detect": "Auditor — vision lens sees zero-width/empty bars or a NaN/missing datum; render audit `findings.zeroWidthBars` is ground truth, and `findings.cascadeScriptAbort` catches the case where the null-deref actually THREW (PIT-55). The grep for `Number(`/`parseFloat(` applied to an attribute that can be an object, and for `draw(null`/`render(null` sentinel calls, is the fallback when render didn't run (checks.json check_14). Static: grep any data-bound render JS for `Number(`/`parseFloat(` on a possibly-object field, and (card case) a bars-row laid `display:flex` beside the radar.",
+      "severity": "hard",
+      "tags": [
+        "cards",
+        "chart"
+      ],
+      "ref": "component_implementations.json card_decks / stat callouts + charts_vega_lite.no_sentinel_baseline_RULE; auditor checks.json check_14 + fix_patterns.json fix_10_no_sentinel_null_guard; render_capture.js findings.zeroWidthBars; cf PIT-55 (the cascade a null-deref triggers); quality_rubric.json CHT5 + LAY3"
+    },
+    {
+      "id": "PIT-06",
+      "title": "Node/JSDOM 'DOM shim' tests cannot reproduce real-browser layout",
+      "symptom": "A static test suite passes green, but the shipped page has invisible (0-width) charts, missing bars, off-center breakouts, or overflow that the tests never caught.",
+      "root_cause": "In a Node/JSDOM shim, `clientWidth` and `getBoundingClientRect()` return 0 (no layout engine) and `getElementById` returns a fake non-null node for anything. So width-0 bugs, null-element bugs, centering bugs and overflow bugs are all MASKED — the shim reports success.",
+      "fix": "Use static tests for SYNTAX + LOGIC ONLY (does the JSON parse, does the function branch correctly). Visual/layout correctness MUST be verified in a REAL browser — the Auditor's headless-Chrome render audit, or a web-agent that reads actual `getBoundingClientRect()` — never a DOM shim. Treat 'static tests pass' as necessary, not sufficient.",
+      "detect": "Auditor — this is the rationale for running render_capture.js (real Chrome) as Step 0; if only static checks ran (render_audit.ran=false), layout correctness is UNVERIFIED and must be flagged as such, not assumed clean.",
+      "severity": "hard",
+      "tags": [
+        "testing",
+        "pipeline",
+        "chart",
+        "layout"
+      ],
+      "ref": "auditor SKILL.md Step 0 (live render audit); checks.json (static = fallback only); quality_rubric.json CHT5"
+    },
+    {
+      "id": "PIT-07",
+      "title": "Spotify / 3rd-party audio embeds give visitors only a 30s preview and can't autoplay-from-start",
+      "symptom": "The 'signature track' you wanted readers to hear plays only 30 seconds (for non-logged-in visitors) and can't be programmatically started from the beginning on a user gesture.",
+      "root_cause": "3rd-party audio embeds (Spotify et al.) gate full playback behind a logged-in account and do not expose a JS API to autoplay the full track from 0 on a visitor's first gesture.",
+      "fix": "SELF-HOST the audio file for any 'signature track' whose playback you must control (a short, license-clean clip you own/are licensed for). Keep a 3rd-party embed only as a SECONDARY 'official version' link, never as the primary listening experience.",
+      "detect": "Auditor — vision/media lens + licensing check: if the primary signature audio is a Spotify/3rd-party iframe rather than a self-hosted <audio>, flag it. Static: grep for a Spotify/3rd-party iframe carrying the 'signature' role.",
+      "severity": "soft",
+      "tags": [
+        "audio",
+        "media",
+        "licensing"
+      ],
+      "ref": "component_implementations.json instance_embeds.spotify + audio recipes; motion.json accessibility.audio (audio never autoplays sound)"
+    },
+    {
+      "id": "PIT-08",
+      "title": "Browsers block autoplay-with-sound until the first USER GESTURE",
+      "symptom": "Audio set to play on load is silently blocked; nothing is heard, and the console shows a play() promise rejection.",
+      "root_cause": "Browser autoplay policy: audible playback is only allowed after the FIRST genuine user gesture (click / tap / keydown). Scroll and page-load are NOT gestures and do not unlock audio.",
+      "fix": "Start audio on a user gesture, not on load: bind a ONE-TIME handler to a broad first-interaction set (`pointerdown`/`touchstart`/`keydown`/`click`) that does `audio.currentTime = 0; audio.play()`. You MAY also include `scroll`/`wheel`/`touchmove` so the score starts 'as the reader scrolls' — but a pure wheel/scroll does NOT grant audio activation, so you MUST gate on the `play()` promise: only mark it started + remove the listeners on SUCCESS, and keep listening so the next real gesture (a touch-swipe, or the first tap/key on desktop) starts it. Never bind `.play()` to load/scroll expecting sound WITHOUT that success-gate + gesture fallback. Always expose visible play/pause controls.",
+      "detect": "Auditor — static: grep for `.play()` bound to `load`/`DOMContentLoaded` (always wrong), or bound to `scroll`/`wheel` WITHOUT a `.then()` success-gate + gesture fallback (silently fails on desktop). Confirm <audio> has visible controls and no `autoplay` with sound.",
+      "severity": "hard",
+      "tags": [
+        "audio",
+        "media"
+      ],
+      "ref": "quality_rubric.json MOT2 (no autoplay sound; controls present); motion.json accessibility.audio"
+    },
+    {
+      "id": "PIT-09",
+      "title": "A YouTube/<iframe> is not a seamless muted hero loop",
+      "symptom": "The hero 'background video' shows player chrome, occasional ads, and visibly restarts/jumps — it cannot loop a sub-segment seamlessly.",
+      "root_cause": "An embedded player (YouTube iframe) is a full player, not a raw video element: it carries UI chrome, may inject ads, and cannot loop an arbitrary sub-clip cleanly. (It also fails on file:// with a null origin.)",
+      "fix": "DOWNLOAD and re-encode a short MUTED clip and use a real `<video autoplay muted loop playsinline poster>` element for the hero. A generic, slow shot loops best (less obvious seam). Keep the source license-clean and re-encode small (see PIT-13).",
+      "detect": "Auditor — render audit `findings.iframeHeroLoops` is ground truth; the grep for a YouTube/Vimeo iframe used as hero is the fallback. Static: grep for a YouTube/Vimeo `<iframe>` used as a hero/background (expect a self-hosted muted <video> instead); render audit console will also show the file:// null-origin error if an iframe is used.",
+      "severity": "soft",
+      "tags": [
+        "media"
+      ],
+      "ref": "component_implementations.json instance_embeds.youtube (facade caveat) + cinematic background hero; quality_rubric.json MOT2 (ambient video muted + poster)"
+    },
+    {
+      "id": "PIT-10",
+      "title": "Copyrighted ratings/datasets carry IP risk AND fail the 'every number is auditable' thesis",
+      "symptom": "A card/chart shows numbers a reader cannot trace to a public source (e.g. a game's proprietary player ratings); the work also sits on someone else's intellectual property.",
+      "root_cause": "Lifting a proprietary index (a game's ratings, a paywalled dataset) is both an IP exposure and a violation of the Data2Story thesis that every number must be auditable — the reader cannot see WHY the number is what it is.",
+      "fix": "Derive your OWN auditable index from PUBLIC data and PUBLISH the formula, so every number traces back to inputs. In a 'card' specifically, the real IP minefield is the VISUALS — photo license, name/likeness, club/national crests/logos — NOT the (now self-derived) number; clear those separately.",
+      "detect": "Critic — flags any load-bearing number with no resolvable public-source lineage in verifier.json as a transparency/claim-alignment failure (caps those dimensions at 3). Auditor — licensing pass on card visuals (photo/crest/likeness rights).",
+      "severity": "hard",
+      "tags": [
+        "licensing",
+        "cards"
+      ],
+      "ref": "critic rubric.json data_method_transparency + claim_data_alignment; auditor SKILL.md Step 1b (image/likeness rights)"
+    },
+    {
+      "id": "PIT-11",
+      "title": "A GENERATED artifact (the inline provenance islands) desyncs after a later edit to its source",
+      "symptom": "A derived artifact no longer matches what it was generated from: the Verify drawer shows stale/partial provenance — the inline `verifyMap` / `runCells` <script type=\"application/json\"> islands no longer reflect verify/*.json on disk.",
+      "root_cause": "The inline islands are GENERATED, not hand-authored: they are embedded copies of verify/verify_map.json + verify/run_cells.json. Any later edit to the SOURCE (an index.html change, or a verify_map.json / run_cells.json change) shifts/desyncs the previously-generated copy. The page reads the INLINE/GENERATED copy, so the on-disk source being correct is not enough.",
+      "fix": "Regenerate every derived artifact as the VERY LAST step, after all source edits (Auditor fixes, Critic send-back fixes, cleanup) are final: re-run generate_viewer.py so the `verifyMap`/`runCells` islands are re-inlined FROM the canonical verify/*.json and each island is BYTE-IDENTICAL to its source file. Never hand-edit a generated artifact to 're-sync' it.",
+      "detect": "Inspector — re-run generate_viewer.py as the final step so the islands are re-inlined from verify/*.json. Auditor — static: extract each inline `verifyMap`/`runCells` island and byte-compare it to verify/verify_map.json / verify/run_cells.json; flag any mismatch. If any role edited a source after its artifact was built, the artifact is stale.",
+      "severity": "hard",
+      "tags": [
+        "pipeline"
+      ],
+      "ref": "inspector role (viewer generation as final step); inspector_panel_internals.json (inline_byte_identical); validate.py dangling-tag check (PIT-12)"
+    },
+    {
+      "id": "PIT-12",
+      "title": "Hand-built modules whose data-* tags aren't in the role JSONs → validate.py dangling-tag errors + broken overlay",
+      "symptom": "validate.py reports dangling-tag errors; the inspector audit overlay highlights nothing (or errors) on those hand-built modules.",
+      "root_cause": "Every `data-edt/-des/-ana/-sct/-cin` attribute is expected to resolve to a record in the corresponding role JSON. A module authored by hand (or copied) with tags that don't exist in editor.json/designer.json/analyst.json/scout.json/cinematographer.json leaves dangling references.",
+      "fix": "Every `data-*` traceability tag MUST resolve to a role-JSON record. When you hand-build a module, ADD the matching record to the owning role's JSON (or run a re-sync pass that reconciles tags ↔ JSON). Keep them in sync; don't ship orphan tags. Multiple IDs of one kind go in ONE attribute, comma-separated with no spaces (data-det=\"det_02,det_05\") — validate.py splits on commas, so a space-separated value is flagged dangling; connective [editorial] paragraphs carry no data-ana/data-det.",
+      "detect": "Inspector/pipeline — run validate.py; dangling-tag errors list the unresolved attributes. Static: grep index.html for every `data-(edt|des|ana|sct|cin)=` value and confirm each appears as an id in the matching role JSON.",
+      "severity": "hard",
+      "tags": [
+        "pipeline"
+      ],
+      "ref": "validate.py (dangling-tag check); programmer traceability.json (every visual tagged + resolvable)"
+    },
+    {
+      "id": "PIT-13",
+      "title": "Orphaned/scratch media + un-encoded big assets (incl. raw generated video) bloat page weight",
+      "symptom": "The page payload is large (slow mobile load): the assets/ folder contains raw downloads, replaced/duplicate assets, and oversized originals; a generated hero/AI video ships at its raw 20–30 MB instead of a web-delivery weight.",
+      "root_cause": "Intermediate downloads and superseded assets are never cleaned up, and large originals (hero video, hero image, full-quality audio) ship un-re-encoded. A video generator routinely returns a large MP4 (20–30 MB) that gets referenced directly, never transcoded — so total payload balloons.",
+      "fix": "Run a CLEANUP + TRANSCODE pass before ship: keep exactly ONE signature audio + ONE hero video; delete orphaned/scratch/replaced media; re-encode big media. For ANY video (sourced OR generated) transcode to web weight before shipping — a <3 MB H.264 mp4 + a webm twin via ffmpeg — and reference the WEB copies, not the raw original (install `static-ffmpeg` if ffmpeg is absent — it provides ffmpeg + ffprobe, cf PIT-14). Compress images, lazy-load below-the-fold images. Target the budget (audio ≤ 3 MB, image ≤ 600 KB, video ≤ 3 MB, total ≤ ~8 MB).",
+      "detect": "Auditor — render audit reports oversizedAssets / performance.totalOverBudget (send-back to Designer for generated media, Scout for sourced media). Static: list/stat assets/ and flag files over budget, and any referenced hero/AI video > 3 MB; confirm the page references the transcoded web copy (mp4 < 3 MB + a webm twin), not the raw generator output. For UNREFERENCED assets specifically: an unreferenced heavy master in `assets/` is RELOCATED to `provenance/` by the Inspector finalize step (`inspector/scripts/relocate_unreferenced.py`, run at Stage 7); `validate.py` Section 16 (`asset_unreferenced_heavy`) ERRORs if any unreferenced heavy file remains in `assets/` after relocate — no longer merely flagged.",
+      "severity": "hard",
+      "tags": [
+        "media",
+        "video",
+        "pipeline"
+      ],
+      "ref": "auditor SKILL.md (oversized_asset send-back + performance budget); media_presentation.json (lazy-load, re-encode); validate.py Section 16 (asset_unreferenced_heavy); inspector/scripts/relocate_unreferenced.py (Stage-7 finalize relocate of unreferenced heavy masters to provenance/); cf PIT-14 (static-ffmpeg)"
+    },
+    {
+      "id": "PIT-14",
+      "title": "yt-dlp needs BOTH ffmpeg + ffprobe; imageio-ffmpeg lacks ffprobe",
+      "symptom": "yt-dlp fails during post-processing (merge/convert) with a missing-ffprobe error, even though an ffmpeg binary is present.",
+      "root_cause": "yt-dlp's post-processing needs both `ffmpeg` AND `ffprobe`. The `imageio-ffmpeg` package ships only the ffmpeg binary (no ffprobe), so yt-dlp can't probe streams.",
+      "fix": "Install a bundle that provides BOTH: `pip install static-ffmpeg` (gives ffmpeg + ffprobe), and pass `--ffmpeg-location` to yt-dlp pointing at that bundle's bin directory.",
+      "detect": "Scout/pipeline — when a media download via yt-dlp errors on ffprobe, this is the cause; confirm both binaries are on the path / passed via --ffmpeg-location before retrying.",
+      "severity": "soft",
+      "tags": [
+        "pipeline",
+        "media"
+      ],
+      "ref": "scout media-acquisition tooling; validate.py media gate"
+    },
+    {
+      "id": "PIT-15",
+      "title": "Required facts may be ABSENT from the dataset — source them, never fabricate",
+      "symptom": "A planned element needs a fact the dataset doesn't contain (e.g. geo-coordinates for a map, venue capacities, a date) and the value isn't in any data_table.",
+      "root_cause": "The provided dataset is incomplete for the intended story element; the missing fact (coordinates, capacity, etc.) simply isn't there to resolve from analyst.json.",
+      "fix": "Source and VERIFY the missing facts SEPARATELY from an authoritative reference (Wikidata / Wikipedia / official source) and record their provenance. NEVER fabricate or guess a number to fill the gap — an unsourced number fails the auditability thesis.",
+      "detect": "Critic — any on-page number with no resolvable source lineage caps transparency/claim-alignment at 3. Analyst/Scout — flag dataset gaps and attach the external source + URL for each backfilled fact.",
+      "severity": "hard",
+      "tags": [
+        "map",
+        "pipeline",
+        "licensing"
+      ],
+      "ref": "critic rubric.json data_method_transparency; analyst.json (provenance per fact); find-data completeness gates"
+    },
+    {
+      "id": "PIT-16",
+      "title": "A clean 'signature' real-video loop may not exist as a sustained shot",
+      "symptom": "No single continuous clip is long/steady enough to loop as a seamless hero background; every real cut shows a visible jump at the loop point.",
+      "root_cause": "Real footage rarely contains a long, static, cut-free shot suitable for a seamless background loop; the obvious clip is too short or too dynamic.",
+      "fix": "Build a seamless loop from a short clip via slow-motion + a forward-reverse 'boomerang' (play then reverse), so the end frame returns to the start frame and the loop point is invisible. Keep it muted and re-encoded small (see PIT-09 / PIT-13).",
+      "detect": "Auditor — vision/media lens watches the hero for a visible jump at the loop seam. Cinematographer — own this when sourcing the hero loop.",
+      "severity": "soft",
+      "tags": [
+        "media"
+      ],
+      "ref": "cinematographer hero-loop recipe; component_implementations.json cinematic_background hero video"
+    },
+    {
+      "id": "PIT-17",
+      "title": "A card deck mixing real photos and silhouettes looks unfinished",
+      "symptom": "Some entities in a card deck show a real photo and others show a generic silhouette/placeholder — the deck reads as half-done.",
+      "root_cause": "Photos were sourced for only some entities (license gaps, missing assets), leaving placeholders that visually advertise the gap.",
+      "fix": "Source a REAL, license-clean photo for EVERY entity in the deck — or DROP the entity entirely. Do not ship a deck where the presence/absence of a photo is uneven.",
+      "detect": "Auditor — vision/media lens sees the mix of photos and silhouettes across the deck. Static: grep the deck for placeholder/silhouette asset names alongside real photos. Scout owns sourcing the missing photos.",
+      "severity": "soft",
+      "tags": [
+        "cards",
+        "media",
+        "licensing"
+      ],
+      "ref": "scout image sourcing; quality_rubric.json ANT5 (no decorative/placeholder filler); component_implementations.json card_decks"
+    },
+    {
+      "id": "PIT-18",
+      "title": "Multiple persistent UI controls pinned to the SAME viewport corner overlap",
+      "symptom": "Two (or more) always-on controls — e.g. a 'Verify' toggle and an audio/BGM bar, or a hero 'Real/AI' toggle and a scroll-progress control — sit on top of each other in a screen corner; one hides, clips, or blocks clicks to the other. (NOTE: there is NO cinematic on/off toggle — the cinematic stage is unconditional — so it is never one of the colliding controls.)",
+      "root_cause": "Each control was given its corner anchor independently (e.g. both `position:fixed`/`absolute` at `top:1rem; right:1rem`). Nothing coordinates their placement, so they land at identical coordinates and collide — and the higher z-index one can make the other unreachable.",
+      "fix": "Give the page ONE corner-control plan: put global controls in DIFFERENT corners (e.g. Verify top-left, audio bar top-right), and when two must share a corner, stack them with an explicit offset (`top:1rem` and `top:3.9rem`) — never identical coordinates. A section-scoped control (e.g. a hero-only Real/AI toggle) must sit clear of the global fixed controls, including on mobile. Re-audit corners after ADDING any new fixed/absolute control.",
+      "detect": "Auditor — vision/layout lens sees the overlapping controls in the corner screenshot. Static: grep for >=2 elements with `position:fixed`/`position:absolute` sharing the same corner anchors (e.g. multiple `top:1rem;right:1rem`), at both desktop and the mobile breakpoint; confirm each has a distinct corner or an explicit stacking offset.",
+      "severity": "hard",
+      "tags": [
+        "layout"
+      ],
+      "ref": "component_implementations.json toggles/controls placement; quality_rubric.json LAY-series (no overlapping/obscured UI controls)"
+    },
+    {
+      "id": "PIT-19",
+      "title": "Front-of-blog BGM player left-pinned/buried instead of centered at the top below the title, or its cover is a static square instead of a spinning vinyl disc",
+      "symptom": "The BGM/soundtrack player sits flush-left in the column (off-centre), or appears partway down the article instead of at the very opening — it reads as a stray widget rather than the page's 'press play and read' invitation. OR its cover is a plain static square that gives no signal the track is playing.",
+      "root_cause": "The player card has a max-width but no centering (e.g. `margin:0 0` instead of `margin:0 auto`/`margin-inline:auto`), and/or it was placed in a mid-article section rather than the opening below the title; and/or the cover was left a static square rather than the canonical spinning vinyl disc.",
+      "fix": "Place the soundtrack/BGM player at the VERY TOP of the article, directly BELOW THE TITLE (the opening content block) AND horizontally CENTER it (`margin-inline:auto`, centered in the column) on every breakpoint, so the reader can start it before reading — a top-of-article card guarantees the reader notices the BGM (this is the CANON; it is NOT a fixed top-right corner widget). Render the cover as a SPINNING VINYL DISC: the cover art clipped to a circle (`border-radius:50%`) that rotates ONLY while playing (CSS @keyframes + animation-play-state, paused otherwise; `@media (prefers-reduced-motion:reduce)` disables the spin), with title + artist + a play/pause button. Reader-controlled, never autoplay sound. (BGM is mandatory on every blog — cf PIT-29-style absence; the classical-recording floor guarantees a clean track always exists.)",
+      "detect": "Auditor — vision/layout lens checks the opening: is the player centered and at the top below the title, with a circular spinning-disc cover? Static: grep the soundtrack/BGM player card for a `max-width` WITHOUT `margin:auto`/`margin-inline:auto` (left-pinned), confirm the audio item is the first content block / its section is the opening, and confirm the cover carries `border-radius:50%` + an `animation-play-state`-driven spin gated on a `.playing`/playing state (not a static square).",
+      "severity": "soft",
+      "tags": [
+        "audio",
+        "layout"
+      ],
+      "ref": "designer audio_rules.json (sourced_bgm: centered card at the very top below the title + cover_treatment spinning vinyl disc); components.json signature_media_card.vinyl_cover; programmer component_implementations.json audio_music.sourced_bgm (spinning-disc CSS); quality_rubric.json LAY-series"
+    },
+    {
+      "id": "PIT-21",
+      "title": "Multi-asset media collapsed to the FIRST asset / one aggregate credit → only one item shown + verifiable",
+      "symptom": "An element backed by several assets (a flag set, a photo/face deck, a logo set) shows or credits only ONE of them: either the renderer drops every asset after the first, or the deck carries a single summarised credit ('images via …') instead of a traceable source+license per asset. Either way a reader cannot see or verify the individual items.",
+      "root_cause": "Two facets of the same mistake: (a) RENDER — the media renderer used `firstUrl(source_url)` / `[0]` (took only the first entry) instead of iterating the gallery array, so assets after the first are lost; (b) PROVENANCE — credit was attached at the DECK level, not the ITEM level, collapsing each asset's source+license into one summary line.",
+      "fix": "Treat any `flags` / `assets` / `photos` array as a GALLERY end-to-end: render every asset with its OWN thumbnail + label, AND attach every asset's OWN source + license (a per-item `photos[]` gallery on the element). So each face / logo / flag is both VISIBLE and INDIVIDUALLY verifiable. Never reduce a multi-asset entry to its first URL, and never summarise a deck's provenance into one aggregate credit string.",
+      "detect": "Auditor — static: (a) grep the media/render JS for `firstUrl(`/`[0]` applied to a `source_url`/`assets`/`flags`/`photos` array, and confirm multi-asset entries map over the WHOLE array (one credited thumbnail per asset); (b) for any card/photo deck confirm the element exposes a per-item `photos[]`/gallery with a source+license per asset, not one aggregate credit for the whole deck.",
+      "severity": "hard",
+      "tags": [
+        "media",
+        "cards"
+      ],
+      "ref": "verify_map.schema.json ($defs/galleryItem); inspector_panel_internals.json (gallery); quality_rubric.json A11Y1 (per-asset alt/credit)"
+    },
+    {
+      "id": "PIT-23",
+      "title": "In-browser (Pyodide) \"run it yourself\" snippet not self-contained / uses unavailable imports / runs full-N",
+      "symptom": "A 'run it yourself' code snippet hangs or throws in the browser: it tries to read files or hit the network, imports a package Pyodide doesn't ship, or attempts the full-N computation and never returns.",
+      "root_cause": "Pyodide runs in the browser sandbox: it has no local files / network by default and only a limited package set, and full-N compute blocks the main thread. Snippets written like a local script fail there.",
+      "fix": "Make each runnable snippet SELF-CONTAINED + REDUCED-N + Pyodide-safe: inline all inputs (no file/network reads), import only numpy / pandas / stdlib, and run heavy compute at a reduced N graded \"≈ within noise\" (NEVER a hard PASS) with the full-N version kept in the notebook. If a cell `needs_network:true` then `runnable:false` — show it read-only and point to the notebook.",
+      "detect": "Auditor — static: parse run_cells.json (and the inline runCells island) and flag any runnable snippet whose imports are outside {numpy, pandas, stdlib}, that reads files/network, or that has `needs_network:true` while still `runnable:true`. Reduced-N cells must be graded '≈ within noise', not PASS.",
+      "severity": "hard",
+      "tags": [
+        "testing",
+        "pipeline"
+      ],
+      "ref": "run_cells.schema.json"
+    },
+    {
+      "id": "PIT-24",
+      "_retired": "RETIRED — the Colab branch was removed by design. The reproducible notebook now reproduces by DOWNLOAD-AND-RUN-LOCALLY only: a DATA_DIR resolver (env-var → repo-relative → absolute, first that resolves) + the bundled verify/data/ inputs shipped next to the notebook. There is NO IN_COLAB / REPO_RAW_BASE fetch branch and no Colab-portability requirement. The local-reproducibility floor (no hardcoded absolute path + a DATA_DIR resolver) now lives in auditor/references/checks.json check_8_notebook_local_reproducible. This id is retired, not reused (stable-id convention).",
+      "title": "(retired) Reproducible notebook Colab-portability",
+      "severity": "retired"
+    },
+    {
+      "id": "PIT-26",
+      "title": "Real subject composited over a background as a rectangular crop → hard halo",
+      "symptom": "A real photo placed over a stage/scene shows a hard rectangular background halo around the subject — the composite reads as a pasted box, not an integrated subject.",
+      "root_cause": "The subject was placed as a rectangular photo over the background instead of a clean cutout, so the photo's own background rectangle is visible.",
+      "fix": "Background-remove the subject to a transparent PNG (e.g. `rembg`) before compositing. If no cutout tool is available, fall back to an aggressive CSS feather mask to soften the rectangular edge.",
+      "detect": "Auditor — vision/media lens sees the rectangular halo around a composited subject. Static: when a real subject is layered over a background, confirm it uses a transparent-PNG cutout (or an explicit feather mask), not a raw rectangular <img>.",
+      "severity": "soft",
+      "tags": [
+        "media"
+      ],
+      "ref": "(none)"
+    },
+    {
+      "id": "PIT-27",
+      "title": "Animating a real person's face (image2video) risks uncanny warping",
+      "symptom": "An image2video pass on a real, identifiable face produces uncanny deformation — the face warps/melts as the motion is generated.",
+      "root_cause": "Generative motion deforms a real identifiable face; the model reshapes features it should leave fixed.",
+      "fix": "Keep the real face STILL — animate only the stage / atmosphere around it — or use a strict no-warp motion prompt and REJECT any candidate that distorts the face. Fall back to a still face if no clean motion candidate passes.",
+      "detect": "Auditor — vision lens watches any animated real face for warping across frames; reject/flag distorted candidates (still-face fallback). Cinematographer/Designer own the real-subject rule.",
+      "severity": "soft",
+      "tags": [
+        "media"
+      ],
+      "ref": "(cf the designer real-subject rule)"
+    },
+    {
+      "id": "PIT-28",
+      "title": "verify_map.json is the provenance source-of-truth and may legitimately REPOINT a coarse on-page data-* tag",
+      "symptom": "An element's `data-ana` (or other `data-*`) points at a finding that isn't its true source — e.g. a card grid carries a neighbouring analysis id because one coarse tag covers a mixed region.",
+      "root_cause": "The on-page `data-*` tag is necessarily coarse (one id per region), so it can name a finding adjacent to, but not exactly, the element's real source.",
+      "fix": "Let `verify_map.json` carry the CORRECT provenance for that id and record the correction in an `_note`; keep the map AUTHORITATIVE over the raw on-page tag. The repoint is legitimate — do not 'fix' it by forcing the tag to match.",
+      "detect": "Auditor — treat verify_map.json as authoritative when its provenance for an id differs from the coarse on-page `data-*` tag; confirm any such repoint is documented in an `_note` rather than flagged as a dangling/incorrect tag.",
+      "severity": "soft",
+      "tags": [
+        "pipeline"
+      ],
+      "ref": "inspector_panel_internals.json (data_attr_contract)"
+    },
+    {
+      "id": "PIT-29",
+      "title": "Verify layer silently absent — the whole coding-verifier layer vanishes on a fresh run",
+      "symptom": "A shipped run has NO verify layer at all: no `verify/` directory, no `#verifyToggle` / Inspector panel in index.html — yet the run was presented as finished. The paper's mandatory coding verifier is simply gone, and nothing hard-failed.",
+      "root_cause": "The verify layer was 'MANDATORY' in prose only. The Programmer's Step 2.5 (authoring the panel shell + `verify/` payloads) and the Inspector's Stage 7 (`generate_viewer.py`, which fills the islands) sit OUTSIDE the Critic loop, and the older contract gate (validate.py) checked only `data-*`↔role-JSON, never the verify layer — so a run that skipped Step 2.5 + Stage 7 still passed every hard gate.",
+      "fix": "Make the layer a HARD pipeline gate, redundantly on both the deterministic and the LLM side. Deterministic (authoritative): validate.py Section 7 asserts the `verify/` files exist + the panel shell is pasted (Stage-6 contract gate), and generate_viewer.py must exit 0 at Stage 7. LLM-side net (this pitfall): the Critic HARD-fails a page missing the verify layer and CAPS `data_method_transparency` at 3, sending the fix to the Programmer (Step 2.5). A run is INCOMPLETE if the layer is absent — never present it as finished.",
+      "detect": "Critic — confirm the verify layer is PRESENT (not filled): (1) the FILES exist — `verify/verify_map.json`, `verify/run_cells.json`, and exactly one `verify/*.ipynb`; AND (2) index.html carries the panel SHELL — a `#verifyToggle` control PLUS the two island `<script type=\"application/json\">` tags (`id=\"verifyMap\"` and `id=\"runCells\"`). IMPORTANT (stage timing): the Critic runs BEFORE Stage 7 fills the islands, so the islands are legitimately EMPTY at Critic time — do NOT require their contents to be non-empty (that would hard-fail every run). Check shell-present + files-exist only. The deterministic island-FILLING gate is validate.py Section 7 (files + shell) + generate_viewer.py (fills + exits nonzero on any gap) at Stage 7. If the FILES or the SHELL are missing → HARD fail, cap `data_method_transparency` at 3, send back to Programmer (Step 2.5). Static greps: `ls PROJECT_DIR/verify/verify_map.json PROJECT_DIR/verify/run_cells.json PROJECT_DIR/verify/*.ipynb`; `grep -n 'verifyToggle' PROJECT_DIR/index.html`; `grep -nE 'id=\"verifyMap\"|id=\"runCells\"' PROJECT_DIR/index.html`.",
+      "severity": "hard",
+      "tags": [
+        "pipeline",
+        "testing"
+      ],
+      "ref": "data2story/SKILL.md Stage 7 (REQUIRED terminal step, MUST exit 0) + contract-gate verify_* routing; inspector/scripts/validate.py Section 7 (files + panel shell); inspector/scripts/generate_viewer.py (Stage 7 island-fill, nonzero exit on gap); critic rubric.json data_method_transparency (runnable coding verifier); cf PIT-11 (island byte-identity / generated-artifact desync, a DIFFERENT — filled-state — check)"
+    },
+    {
+      "id": "PIT-30",
+      "title": "A purposeless supporting playground — a widget that teaches the reader nothing",
+      "symptom": "An interactive is on the page but produces no cognitive update: it re-teaches the hero's finding, the reader drives a control and learns nothing new, or it was added because 'more interactives is better.' It looks busy but earns nothing.",
+      "root_cause": "Abundance was pursued without the quality gate. A supporting playground was built with no DISTINCT finding it lets the reader produce/feel, or it duplicates the hero centerpiece, so it is decoration that happens to move.",
+      "fix": "Every supporting playground MUST declare an explicit INFORM or IMMERSE purpose bound to a DISTINCT finding (no two playgrounds share one finding; none re-teaches the hero). The kill-rule stands: kill any interaction that doesn't change what the reader understands. More is NOT better — the curated SET (hero + supporting) survives only when EACH earns its place; an unearned widget caps visual_design at 3. Cut it at the media-purpose gate before the Programmer builds it.",
+      "detect": "Critic — for each supporting playground, confirm interaction.json/editor.json declares a purpose (INFORM/IMMERSE) bound to a finding distinct from the hero and from every other supporting; a playground with no purpose, a duplicate finding, or one the reader can't produce anything from is a hard fail (caps visual_design/insight_value at 3, send to the Critic/Editor-curation loop). The media-purpose gate (data2story SKILL.md) cuts a purposeless playground BEFORE it is built.",
+      "severity": "hard",
+      "tags": [
+        "pipeline",
+        "testing"
+      ],
+      "ref": "critic rubric.json R8 + insight_value.common_failure; interaction_playbook.json centerpiece_doctrine.earned_test/anti_pile; report_types.json interaction_purposeless; quality_rubric.json ANT5"
+    },
+    {
+      "id": "PIT-31",
+      "title": "A dead control — a slider/button that does nothing (only a real browser catches it)",
+      "symptom": "A playground's control looks live but driving it changes nothing: the slider moves but the readout/chart is static, the button click is a no-op, or the control throws in the console. The reader produces nothing.",
+      "root_cause": "The control is wired wrong (no handler, a handler bound to the wrong element, a recompute that errors) — OR it was only ever tested in a Node/JSDOM shim where a synthetic event 'passes' and getBoundingClientRect/clientWidth read 0, so the dead control is masked (cf PIT-06). A synthetic .click() also can never move a native <input type=range>, so a range-driven widget shows identical before/after under a naive probe.",
+      "fix": "Drive every control in a REAL browser: set range/number values + dispatch BOTH 'input' and 'change' (a click won't move a native range), advance selects with 'change', .click() buttons — then read the DECLARED [data-play-out] readout (not whole-container innerText). A control whose declared readout never changes, or that errors when driven, is a dead control → hard send-back to the Programmer. NEVER certify interactivity from a static/shim test.",
+      "detect": "Auditor — the Playtester (playtest_drive.js, Step 0c) drives each [data-int] in real Chrome and reports checks.fires==FAIL (readout unchanged or console error in that step) as interaction_dead_control. Node/JSDOM shims CANNOT reproduce this (events 'succeed', layout reads 0). With no browser the check is UNVERIFIED, never PASS.",
+      "severity": "hard",
+      "tags": [
+        "testing",
+        "chart"
+      ],
+      "ref": "auditor/scripts/playtest_drive.js (fires check); cf PIT-06 (shim masks dead controls); report_types.json interaction_dead_control; quality_rubric.json A11Y3 + LAY3"
+    },
+    {
+      "id": "PIT-32",
+      "title": "A playground recomputes a DIFFERENT number than the published headline",
+      "symptom": "At rest (untouched widget) the interactive's live in-browser readout disagrees with the published figure the prose claims — e.g. the article says 26.3% but the explorable's baseline shows 31%. The reader 'runs it themselves' and gets a contradicting number.",
+      "root_cause": "The inlined client_model / data_table the playground recomputes from drifted from the audited Analyst figure (a stale constant, a different seed, a wrong reduced-N, or a divergent formula), so the Python→JS-live layer no longer converges to the published number. The three-layer-number standard is broken at the JS layer.",
+      "fix": "Seed the playground at the AUDITED baseline so the untouched widget reproduces the headline EXACTLY (derived: equal to display precision; stochastic: '≈ within noise' at reduced N against the published figure, NEVER a hard PASS). The same audited client_model feeds the headline AND the live readout (same_model_as_headline). If they disagree, fix the inlined model/data_table — do not 'fix' the published number to match a broken widget.",
+      "detect": "Auditor — the Playtester's recompute_oracle check (playtest_drive.js, Step 0c) reads the baseline live readout and compares it to the published data_table figure (exact within a small epsilon for derived; within a declared Monte-Carlo band, median of 2–3 samples, for stochastic). A disagreement is interaction_recompute_disagrees → hard send-back to the Programmer. This closes the Python→JS-live→Pyodide loop no other gate checks.",
+      "severity": "hard",
+      "tags": [
+        "testing",
+        "chart"
+      ],
+      "ref": "auditor/scripts/playtest_drive.js (recompute_oracle); flagship_contract.json interactive_supporting_set; report_types.json interaction_recompute_disagrees; cf PIT-23 (Pyodide reduced-N '≈ within noise'); critic rubric.json claim_data_alignment"
+    },
+    {
+      "id": "PIT-33",
+      "title": "A playground breaks with JS/CDN off — no static fallback reveals the number",
+      "symptom": "With JavaScript disabled, a blocked CDN (Vega/D3/Pyodide fails to load), or reduced-motion, the interactive collapses to an empty box and the at-rest number is simply gone — a reader on a flaky network or restrictive browser sees nothing where the finding should be.",
+      "root_cause": "The playground renders its number ONLY via JS; there is no server-rendered/static at-rest value, no <noscript>, no `if(!MODEL){…show the published number;return}` guard, so any JS/CDN failure erases the load-bearing figure.",
+      "fix": "Every playground degrades gracefully: ship a <noscript> + an `if(!MODEL){render the published static number; return}` path + a prefers-reduced-motion path, AND keep the at-rest number in the STATIC DOM (so a blocked CDN still shows it). The enhancement is interactive; the baseline number must survive JS-off.",
+      "detect": "Auditor — the Playtester's degradation check (playtest_drive.js, Step 0c) re-renders the page with JavaScript DISABLED and confirms the at-rest number is in the [data-int] static text, plus a <noscript>/reduced-motion path exists. A playground that shows no figure JS-off is interaction_no_degradation → hard send-back to the Programmer.",
+      "severity": "hard",
+      "tags": [
+        "testing",
+        "pipeline"
+      ],
+      "ref": "auditor/scripts/playtest_drive.js (degradation); interaction_playbook.json (<noscript>+reduced-motion fallback per recipe); report_types.json interaction_no_degradation; quality_rubric.json MOT1/MOT6"
+    },
+    {
+      "id": "PIT-34",
+      "title": "A pile of widgets with no clear hero — abundance with no focal centerpiece",
+      "symptom": "The page stacks many interactives of equal weight with nothing dominant — a widget grid, not a story. The reader can't tell which one is THE explorable; the article reads as a toy box, not a guided argument.",
+      "root_cause": "Supporting playgrounds were added without preserving exactly ONE hero centerpiece the narrative is built around. 'More interactives' became the goal, flattening the hierarchy so no single playground anchors the page (the LAY3/ANT3 focal-point failure, in interactive form).",
+      "fix": "Keep exactly ONE hero centerpiece (the single contestable headline number, placed at/before the reveal, the narrative built around it) + any number of supporting playgrounds that each earn their place in their bound section. The hero must visibly dominate; supporting playgrounds stay subordinate. A widget-pile with no clear hero caps insight_value at 3.",
+      "detect": "Critic — confirm there is exactly ONE hero centerpiece that anchors the page and that supporting playgrounds are subordinate, not co-equal; a flat pile with no dominant interactive is a hard fail (caps insight_value at 3, send to the Critic/Editor-curation loop). cf LAY3/ANT3 (a soulless even grid with no focal point), here applied to the interactive set.",
+      "severity": "hard",
+      "tags": [
+        "layout",
+        "pipeline"
+      ],
+      "ref": "critic rubric.json R8 + insight_value; interaction_playbook.json centerpiece_doctrine (exactly ONE hero); quality_rubric.json LAY3 + ANT3; report_types.json interaction_purposeless"
+    },
+    {
+      "id": "PIT-35",
+      "title": "AI-generated track used as the front-of-blog BGM",
+      "symptom": "The page's soundtrack is a text2music / Lyria-composed track presented as the main BGM. It reads as generic mood-wash, not a real piece of music tied to the story, and there is no real artist/cover to credit.",
+      "root_cause": "An older framing treated AI-generated music as the BGM 'default'. text2music's strength is atmospheric beds, not a front-of-blog soundtrack; a composed track has no real provenance, no cover art, and nothing auditable to credit — it cannot anchor the page the way a real sourced track does.",
+      "fix": "The front-of-blog BGM MUST be a REAL sourced track in the signature_media_card cover-art card (a SPINNING VINYL DISC cover + title/artist/one-line desc + a single play/pause button, at the top of the article below the title) that autostarts on the reader's first gesture (the sndKick 7-window-event, lock-on-success, currentTime=0 pattern). Use a license-clean track when one fits (publishable); a best-fit copyrighted track may be self-hosted for the DEMO as a des_ asset with publish_blocker:true (Auditor advisory copyrighted_audio_publish_blocker + a footer 'demo-only — license or swap before publishing' note), never claimed as a clean sct_. When no topic-fitting or signature track exists, the GUARANTEED license-clean floor is a CLASSICAL RECORDING (verify the RECORDING's license, not just the composition's PD status; period-appropriate or a famous master, mood-appropriate) — so there is ALWAYS a real clean BGM and never a reason to reach for an AI track. text2music is SFX-only — the opt-in sound_design/SFX form for an un-findable sound (a drone, a texture, a scene bed), short and reader-controlled, NEVER the BGM.",
+      "detect": "Auditor — static: grep the front-of-blog BGM player; if its <audio> src is a text2music/generated asset (a designer generated-audio item used as the masthead BGM) rather than a sourced_bgm/real-track asset, flag it. Confirm the BGM renders as the signature_media_card cover card with the first-gesture autostart, not a generated mini-player. cf PIT-07/PIT-08 (self-host + gesture-gated) and PIT-19 (centered at the top).",
+      "severity": "soft",
+      "tags": [
+        "audio",
+        "media",
+        "licensing"
+      ],
+      "ref": "components.json signature_media_card (primary BGM cover card) + audio_player.sound_design (SFX form); programmer component_implementations.json audio_music.sourced_bgm (cover card + sndKick) / sound_design; designer audio_rules.json (BGM = sourced, text2music = SFX); auditor flagship_contract.json bgm_music + report_types.json copyrighted_audio_publish_blocker"
+    },
+    {
+      "id": "PIT-36",
+      "title": "Veo / Wan image2video HARD-REFUSE a real, identifiable celebrity face",
+      "symptom": "An image2video job whose source still contains a recognizable real person (a footballer, an actor, a politician) is REJECTED by the model — not a bad render, an outright policy refusal. Veo returns error code 15236754 (likeness/safety block); Wan refuses similarly. The pipeline stalls on the hero with no clip.",
+      "root_cause": "Veo (and Wan) enforce a likeness/safety policy that blocks animating a real identifiable face. seedance does NOT refuse but it MOVES the subject (deforms/repositions the face, cf PIT-27). So the two 'default' image2video paths each fail a faces-still cinemagraph: one refuses, the other warps.",
+      "fix": "For a hero that must keep a real face STILL while only the scene moves (a faces-still cinemagraph), use Kling (kling v3 std worked for the flagship) — it animates atmosphere around a held face without the hard refusal. Reserve seedance/text2video for GENERIC, no-real-face motion. If every faces-on model refuses or warps, fall back to the still image (poster) — never ship a warped face. (For the model-list/duration constraints when calling these, see PIT-39.)",
+      "detect": "Cinematographer/Designer — when an image2video submit returns a likeness/safety refusal (Veo code 15236754) on a real-face source, this is the cause: switch the model to Kling for the faces-still beat rather than retrying Veo/Wan. Auditor — vision lens still checks the resulting clip for a warped face (cf PIT-27).",
+      "severity": "soft",
+      "tags": [
+        "video",
+        "media",
+        "pipeline"
+      ],
+      "ref": "data2story/designer/scripts/openrouter-image2video (model selection); cf PIT-27 (face-warp on animation), PIT-39 (video model list + duration), PIT-16 (seamless loop)"
+    },
+    {
+      "id": "PIT-37",
+      "title": "Kling caps output at 720p — native-rendering a 'hi-res' hero gives a soft, sub-HD clip",
+      "symptom": "A hero cinemagraph rendered through Kling tops out at 720p; requesting 1080p/4K natively is ignored or errors, and the full-bleed hero looks soft on a large screen.",
+      "root_cause": "Kling's image2video output resolution is capped at 720p. There is no native high-res render to ask for — the ceiling is the model's, not a parameter you set.",
+      "fix": "Render at Kling's 720p, then AI-UPSCALE the finished clip to the delivery resolution as a separate post step (see PIT-38 for the upscaler gotcha) — do NOT try to native-render above 720p. Then transcode the upscaled clip to web weight (PIT-13). Order: generate 720p → upscale → transcode → ship.",
+      "detect": "Cinematographer/Designer — if a hero clip is soft/sub-HD straight from Kling, confirm an upscale post-step ran (not a failed attempt to native-render >720p). Auditor — vision lens flags a soft full-bleed hero; static: hero pipeline should show a 720p render + an upscale stage.",
+      "severity": "soft",
+      "tags": [
+        "video",
+        "media",
+        "pipeline"
+      ],
+      "ref": "cinematographer hero pipeline; cf PIT-38 (Real-ESRGAN tile bug), PIT-13 (transcode after upscale)"
+    },
+    {
+      "id": "PIT-38",
+      "title": "Real-ESRGAN ncnn-vulkan 2× has a tile-scramble bug → use 4× then lanczos-downscale",
+      "symptom": "Upscaling a clip/frame with Real-ESRGAN ncnn-vulkan at scale 2× produces visible tile artifacts — the image is scrambled into mismatched square blocks at tile seams.",
+      "root_cause": "The ncnn-vulkan build of Real-ESRGAN has a known tile-handling bug at the 2× scale: tiles are stitched wrong, so the output is block-scrambled. The 4× path does not hit the bug.",
+      "fix": "Never request 2× from Real-ESRGAN ncnn-vulkan. Upscale at 4× (x4plus, which is clean) and then LANCZOS-DOWNSCALE to the target size you actually wanted (e.g. 4× then ÷2 for an effective 2×). The 4×→downscale route avoids the tile scramble and yields a clean result.",
+      "detect": "Cinematographer/Designer — if an upscaled frame/clip shows square tile artifacts, you ran 2×; switch to 4×→lanczos-downscale. Auditor — vision lens flags block/tile artifacts on an upscaled asset.",
+      "severity": "soft",
+      "tags": [
+        "video",
+        "media",
+        "pipeline"
+      ],
+      "ref": "cinematographer/designer upscale step; cf PIT-37 (why upscaling is needed at all)"
+    },
+    {
+      "id": "PIT-39",
+      "title": "OpenRouter lists video models ONLY at GET /api/v1/videos/models; duration is 4/6/8 only",
+      "symptom": "Picking a video model from OpenRouter's normal model list fails — the chat /models endpoint omits video models entirely, so a valid video model id 'doesn't exist'. Separately, a video job with duration 5 (or any non-{4,6,8}) is rejected.",
+      "root_cause": "OpenRouter splits its catalog: the standard `GET /api/v1/models` (chat) list does NOT include video models. Video models are enumerated ONLY at the separate `GET /api/v1/videos/models` endpoint. And the video generation API accepts ONLY duration values 4, 6, or 8 seconds — arbitrary durations error.",
+      "fix": "Discover a video model via `GET /api/v1/videos/models` (NOT the chat /models list), then submit to `POST /api/v1/videos`. Set `duration` to exactly 4, 6, or 8 — never an in-between value. Bake both facts into the generation tooling so a model lookup and a duration choice are valid on the first call.",
+      "detect": "Cinematographer/Designer/pipeline — if a video model id is 'not found', confirm the lookup hit `/api/v1/videos/models`, not `/api/v1/models`; if a job errors on duration, confirm duration ∈ {4,6,8}. Static: grep the video tooling for the `/api/v1/videos/models` listing call and a duration constrained to 4/6/8.",
+      "severity": "hard",
+      "tags": [
+        "video",
+        "api",
+        "pipeline"
+      ],
+      "ref": "data2story/designer/scripts/openrouter-image2video + openrouter-text2video (config.json endpoints; add the /videos/models listing + duration∈{4,6,8} guard)"
+    },
+    {
+      "id": "PIT-40",
+      "title": "Head-to-head % (sums to 100 between two) conflated with championship % (out of N)",
+      "symptom": "A number reads as wrong or contradictory because two different probabilities are shown without saying which space they live in — e.g. a 'pick a side' two-way share (Argentina 58% vs France 42%, summing to 100) sits next to the model's championship odds (Argentina 26.3%, out of 48 teams), and a reader thinks the page contradicts itself.",
+      "root_cause": "Two probabilities from DIFFERENT sample spaces were presented as if comparable: a head-to-head/conditional share normalizes between just two outcomes (sums to 100% across the pair), while a championship probability is out of the whole field of N (sums to 100% across all teams). Unlabeled, the head-to-head number looks like an inflated championship number.",
+      "fix": "Always LABEL which probability space a number lives in, right where it is shown: 'X% to win the World Cup' (out of all teams) vs 'X% vs France' / 'X% of this pair' (head-to-head). Keep the two visually + verbally distinct, and when an interaction reveals a championship figure, converge it on the model's published out-of-N value (not a two-way share). One number, one named denominator.",
+      "detect": "Critic/Auditor — for every probability on the page, confirm its denominator/space is stated or unambiguous from context (championship out-of-N vs head-to-head pair). Flag any two probabilities placed side by side that imply different spaces without labels. cf PIT-42 (the figure must read from the model, not a hardcoded literal).",
+      "severity": "soft",
+      "tags": [
+        "interaction",
+        "chart"
+      ],
+      "ref": "interaction_playbook.json content_patterns (label the comparison); critic rubric.json claim_data_alignment; cf PIT-42"
+    },
+    {
+      "id": "PIT-41",
+      "title": "Decorative overlay (chips, particle canvas) swallows interaction clicks or becomes a spurious Verify hit-target",
+      "symptom": "A purely decorative layer over an interactive hero intercepts the reader's clicks — the 'pick a side' halves or the Verify hit-target stop responding where a chip/canvas sits — OR a decorative chip carries a data-* tag and so lights up as a (meaningless) Verify provenance target.",
+      "root_cause": "A decorative overlay (an EA-style ability chip, a particle <canvas>, a flourish) was given default pointer behaviour and/or a stray data-* attribute. With pointer events on, it eats clicks meant for the interactive layer beneath it; with a data-* tag, the Verify engine treats it as a real provenance hit-target.",
+      "fix": "Every DECORATIVE overlay MUST be `pointer-events:none` AND carry NO `data-*` traceability tag (and usually `aria-hidden=\"true\"`). Then clicks pass through to the real interactive/Verify layer beneath, and Verify never offers a meaningless decorative target. Only genuine content/controls get pointer events + data-* tags. (cf the inverse pitfall PIT-12: real modules MUST have resolvable data-*; decorative ones must have NONE.)",
+      "detect": "Auditor — static: for each absolutely/fixed-positioned overlay above an interactive region (chips, canvas, flourishes), confirm it sets `pointer-events:none` and has no `data-(edt|des|ana|sct|cin|det|int)=` attribute. Playtester — if a hero control fails to fire only in the region under an overlay, suspect a decorative layer eating the click.",
+      "severity": "hard",
+      "tags": [
+        "interaction",
+        "layout"
+      ],
+      "ref": "exemplars/cinematic_flagship.md (E1 pick-a-side hero: decorative chips pointer-events:none + NO data-*); cf PIT-12 (real modules need resolvable data-*); quality_rubric.json A11Y3"
+    },
+    {
+      "id": "PIT-42",
+      "title": "A displayed number hardcoded as a literal instead of read from the model at runtime",
+      "symptom": "An on-page figure (a championship %, a stat, an interactive readout) is written into the HTML/JS as a constant. It silently goes STALE the moment the model/data changes, and an interaction that 'reveals' it shows a number the live model never produced — breaking the auditability promise.",
+      "root_cause": "The figure was typed in as a literal (a magic number in markup or a JS constant) rather than read from the page's own model/data at runtime. The displayed value and the model can then drift apart, and the reader 'running it themselves' gets a different number.",
+      "fix": "Displayed numbers MUST read from the model/data at runtime — derive them from the inlined client_model / data_table / a `window.MODEL.*` accessor, never a hardcoded literal in markup or script. The ONLY place an expected number lives as a literal is provenance/expected_stdout (the verify layer's recorded oracle for grading), NOT the rendered page. Seed an interaction's at-rest readout from the same model so it reproduces the headline by construction (cf PIT-32: a widget recomputing a DIFFERENT number than the headline).",
+      "detect": "Auditor — static: grep the markup/JS for load-bearing numbers (percentages, headline stats, interaction readouts) typed as literals rather than read from the model/data accessor; confirm the at-rest readout is sourced from the model, with literals confined to verify/expected_stdout. Playtester recompute_oracle (PIT-32) catches a live value that disagrees with the published figure.",
+      "severity": "hard",
+      "tags": [
+        "interaction",
+        "pipeline",
+        "testing"
+      ],
+      "ref": "exemplars/cinematic_flagship.md (E1/E2: every number read from window.WC_MODEL / accuracyData, none hardcoded); interaction_playbook.json centerpiece_doctrine.same_model_as_headline; cf PIT-32 (recompute disagrees), PIT-40 (label the probability space)"
+    },
+    {
+      "id": "PIT-43",
+      "title": "Hero→content transition reads as a shrinking rectangle over a fixed backdrop",
+      "symptom": "As the reader scrolls from the hero into the first section, the hero doesn't dissolve away — it visibly SHRINKS, a rectangle scaling down over a static background. The transition looks like a collapsing pane / a closing window, not a continuous film handing off to the next scene.",
+      "root_cause": "The transparent hero OVERLAY (the `.teaser` carrying the furniture, sitting over a fixed/pinned background video) was animated out with `transform:scale()` (e.g. a `.leaving{transform:scale(.92)}` or a scroll-driven scale). Scaling a TRANSPARENT overlay does not move the fixed backdrop behind it, so the eye sees the overlay's box shrink against an unmoving background — a shrinking-pane seam. Scale only looks continuous on SOLID full-bleed media that fills the frame; on a see-through overlay it exposes the trick.",
+      "fix": "Dissolve the hero overlay with OPACITY ONLY (no scale): drive `hero.style.opacity` 1→0 on scroll progress and let the existing crossfade engine carry `cin_00 → cin_01` behind it (put the hero video in the backdrop stack as `cin_00`, cf the E5 hero-as-cin_00 recipe). NEVER apply `transform:scale()` to a transparent overlay. Only ever scale SOLID full-bleed media (a ken-burns on a background image/video that fills the viewport), never a transparent furniture overlay. Under reduced-motion, early-return and leave the overlay fully opaque.",
+      "detect": "Auditor — vision lens watches the hero→first-section scroll for a shrinking rectangle instead of a dissolve. Static: grep the hero scroll handler / CSS for `transform:scale(` or a `scale(` applied to the `.teaser`/hero OVERLAY element (the transparent furniture layer), and confirm the overlay's scroll-out animates `opacity` only — not transform. Cinematographer/Programmer own the hero handoff.",
+      "severity": "soft",
+      "tags": [
+        "layout",
+        "media"
+      ],
+      "ref": "exemplars/cinematic_flagship.md (E5 hero-as-cin_00 continuous backdrop handoff: overlay dissolves by opacity only, GOOD-vs-BAD shrinking-pane); cinematographer cinematic_recipes.json (hero_as_cin_00 / continuous pinned backdrop); cf PIT-04 (per-section scrim seam), PIT-09/PIT-16 (hero loop)"
+    },
+    {
+      "id": "PIT-44",
+      "title": "Interactive hero halves built as <button>/<a href> land in the Verify allow-list → container drawer never opens",
+      "symptom": "Under Verify-ON, clicking a 'pick a side' hero half does nothing useful: the hero stops opening its provenance drawer, OR the click is consumed by the half and never reaches the container's Verify hit-target. The reader can play the hero OR inspect it, but the two fight — the interactive hero and the click-to-source Verify layer don't coexist.",
+      "root_cause": "The clickable halves were authored as `<button>` or `<a href>` elements, which ARE in the Verify engine's `INNER_INTERACTIVE` allow-list. The Verify engine treats an allow-listed inner control as a real interactive leaf and lets its click run (or the element's own default/handler consumes it), so the gesture never bubbles up to the CONTAINER that carries the provenance `data-*` Verify needs to open the drawer.",
+      "fix": "Build the halves as `role=\"link\"` elements (NOT `<button>`/`<a href>`) — `role=\"link\"` is NOT in the Verify `INNER_INTERACTIVE` allow-list, so the click bubbles to the container. Then: (1) EVERY half handler's FIRST line is `if (verify-on) return;` (so under Verify-on the gesture passes through to the container instead of mutating the hero); (2) feature code NEVER calls `stopPropagation`/`preventDefault` on the bubbling click (the bubble to the container is load-bearing — it's how Verify gets the gesture); (3) the provenance `data-*` lives on the CONTAINER (`.teaser`), not on the halves; decorative overlays on top carry `pointer-events:none` + no `data-*` (cf PIT-41). Real interactive CONTROLS that should NOT bubble (a slider/button inside a supporting widget) stay `<button>/<input>` — this rule is specifically for the two big hero hit-areas that must ALSO be the container's Verify target.",
+      "detect": "Auditor — static: grep an interactive hero (a `.teaser`/centerpiece that also needs a CONTAINER Verify hit) for `<button` or `<a href` used as the big clickable halves/hit-areas (expect `role=\"link\"` instead), confirm every half handler early-returns under verify-on, and confirm NO `stopPropagation`/`preventDefault` in the hero feature code. Playtester (Step 0c verify_coexist) drives the hero under Verify-on and fails it if the drawer doesn't open. Interaction/Programmer own the coexistence wiring.",
+      "severity": "hard",
+      "tags": [
+        "interaction"
+      ],
+      "ref": "exemplars/cinematic_flagship.md (E1 interactive 'pick a side' hero that coexists with Verify: role=link halves, early-return guard, no stopPropagation, data-* on container); interaction/references/interaction_recipes.json (verify_coexistence); auditor flagship_contract.json interactive_hero_verify_coexistence (report_type interactive_verify_coexistence_broken); cf PIT-41 (decorative overlay eats clicks), PIT-31 (dead control / verify_coexist)"
+    },
+    {
+      "id": "PIT-45",
+      "title": "A RICH topic took the impoverished path (1 image, cinematic off, static hero, generic-loop BGM) yet passed every gate",
+      "symptom": "A genuinely visual/computational topic ships threadbare — one stock image, cinematic mode off, a flat static cover photo, and a generic topically-unrelated CC0 loop for BGM — and NOTHING flags it: zero validation errors, every hard gate green. The run is presented as 'done' even though it under-delivered at every richness decision, because the pipeline rewards omission (the safe minimal path) rather than richness.",
+      "root_cause": "The gates were built to cut EXCESS (the media-purpose gate kills purposeless additions) but had no floor against IMPOVERISHMENT: each step independently chose the cheapest safe option (Scout sourced 1 image, the Cinematographer fell back to off, the cover stayed a static still, the soundtrack stayed a generic loop) and each choice passed its own local check. With no richness floor reading the topic profile, a rich topic that owes a dynamic hero + cinematic + an asset floor + a best-fit soundtrack can satisfy every gate while delivering none of them.",
+      "fix": "Enforce a richness FLOOR keyed off topic_profile (the inverse of the media-purpose gate): the richness checks ERROR on a topic the classifier marks visual/computational, WARN otherwise — so when topic_profile.is_visual==true OR is_computational==true the impoverished path is BLOCKED (sent back), and on any other topic it is a warning, never silently shipped (absent-profile / privacy-sensitive are exempt). On a visual topic that means a dynamic hero (not a bare static still), cinematic ON when supply exists, a license-clean topic-asset floor (>=3 distinct, >=5 cover-able for cinematic), and the best-FIT real soundtrack (rung 2 climbed, not a generic loop). Each required-rich element still earns its place via the existing purpose gates — the floor forbids impoverishment, it never forces a fabricated/decorative asset (which itself caps visual_design at 3). The richness verdict cross-references the already-hard computational floors (substantive verify, >=1 earned interactive) so one 'richness' read covers all of it.",
+      "detect": "Inspector/pipeline — validate.py richness_* checks (richness_cinematic_undersupplied / richness_static_hero / richness_asset_floor / richness_hollow_verify_cells) load topic_profile and ERROR on a topic the classifier marks visual/computational, WARN otherwise (absent-profile / privacy-sensitive exempt). Orchestrator — the richness gate (data2story SKILL.md, beside the media-purpose gate) surfaces 'richness floor not met' in the closing summary; on a topic the classifier marks rich it blocks (sends back) unless a legitimate blocker is recorded, rather than reporting a silent 'done'. Critic — on a visual topic the impoverished path (1 image + no cinematic + static hero + generic-loop BGM) caps visual_design at 3 (inverse of the decorative-media cap).",
+      "severity": "soft",
+      "tags": [
+        "media",
+        "pipeline"
+      ],
+      "ref": "validate.py Section 12 (richness_cinematic_undersupplied / richness_static_hero / richness_asset_floor / richness_hollow_verify_cells + topic_profile loader); data2story/SKILL.md richness gate; auditor flagship_contract.json (cinematic_supply_floor / dynamic_hero_on_visual / topic_asset_floor, complement of missing_engagement_floor); critic rubric.json visual_design + insight_value richness-floor cap; cf PIT-46 (cinematic dropped for lack of supply), PIT-47 (generic loop where a real anthem fits), PIT-48 (an ABSENT topic_profile no-ops this whole floor — now a hard error); the engagement half of the impoverished path (a descriptive topic shipping NO earned interactive) is now a HARD block-with-escape — validate.py Section 12 missing_engagement_floor + flagship_contract.json missing_engagement_floor"
+    },
+    {
+      "id": "PIT-46",
+      "title": "Cinematic under-supplied on a visual topic — settle for a non-photographic fallback instead of sending Scout back for >=5",
+      "symptom": "On a clearly visual topic the Cinematographer ships a non-photographic fallback (generative / data_driven) and the run accepts it as 'the correct outcome' — but the reason is UNDER-SUPPLY (Scout sourced only 1-4 cover-able backgrounds), not that the topic is genuinely abstract. The richer PHOTOGRAPHIC scroll the topic warranted is quietly absent and nothing sends the pipeline back to source more imagery. (Historically this surfaced as the now-retired mode:off; cinematic is now mandatory, so the under-supply shows up as a fallback mode, not an off.)",
+      "root_cause": "The under-supply fallback was treated identically to an honest-abstract fallback. Scout sourced too few cover-able images, the Cinematographer correctly cannot run a photographic scroll on 1-4 backgrounds, and the older guidance called any fallback 'the correct outcome' — so the fix (go get more imagery) was never triggered. The >=5 threshold existed but nothing enforced sending Scout back to meet it.",
+      "fix": "Discriminate honest-abstract fallback (correct restraint on a weakly-visual topic — passes) from under-supply fallback (impoverishment on a visual topic — sent back). When is_visual AND cinematic is ON (any on-mode) AND 1 <= (verified license-clean cover-able image count) < 5: warn-and-send-back — Scout sources >=5 (ideally a dozen+) cover-able backgrounds and the Designer registers each as des_/sct_ BEFORE the Cinematographer re-runs, so the immersion can UPGRADE to photographic. The image COUNT is the primary signal (the 1<=count<5 bound prevents firing on zero / privacy-sensitive imagery); the mode_reason is only a secondary confirm. The >=5 threshold itself is unchanged; only the response to an under-supplied immersion changes from 'silent, correct' to 'send back to source first'.",
+      "detect": "Inspector/pipeline — validate.py richness_cinematic_undersupplied (the supply half of the richness floor: is_visual ∧ cinematic ON ∧ 1<=cover-able-count<5 -> send-back). Cinematographer/Scout/Designer own the re-source loop. Orchestrator — the cinematic-supply gate bullet surfaces the send-back.",
+      "severity": "soft",
+      "tags": [
+        "media",
+        "pipeline"
+      ],
+      "ref": "validate.py Section 12 (richness_cinematic_undersupplied); scout/SKILL.md + designer/SKILL.md + cinematographer/SKILL.md (reword 'correct outcome / silent' -> 'on a visual topic an under-supplied off is sent back to source >=5 first'); auditor flagship_contract.json cinematic_supply_floor; cf PIT-45 (the whole impoverished path), PIT-16 (a clean seamless loop may not exist)"
+    },
+    {
+      "id": "PIT-47",
+      "title": "A generic CC0 loop shipped where a real recognizable anthem was the best fit — rung 2 not climbed",
+      "symptom": "A story that HAS a signature track (an official anthem, a film theme, the song the piece is about) ships a generic, topically-unrelated CC0 loop as its BGM instead, on the reasoning that the clean loop is 'license-clean and publishable.' The reader hears mood-wash with no connection to the story, and the real best-fit track the piece is literally about is absent.",
+      "root_cause": "License-tier was treated as the PRIMARY selector instead of a tiebreak: a license-clean loop won simply because it was publishable, even though it fit the story far worse than the real anthem. The audio ladder's rung 2 (a best-fit copyrighted track self-hosted for the demo behind a publish-gate) was not climbed — the pipeline settled for the clean loop on rung 1 although the loop fit worse. FIT FIRST was inverted into LICENSE FIRST.",
+      "fix": "FIT FIRST: pick the most recognizable best-FIT real track the story carries; license-tier is a tiebreak ONLY among comparably-fitting tracks. When the story has a signature anthem/theme/song, SOURCE THAT — climb to rung 2 (a des_ audio asset with publish_blocker:true, license 'All Rights Reserved — demo-only', source_url, demo-gated) rather than substituting a generic clean loop. A license-clean track wins only when it fits the story AS WELL as the best-fit one (then publishable breaks the tie). The rung-2 publish-gate stays loud (Auditor advisory copyrighted_audio_publish_blocker + a 'demo-only — license or swap before publishing' footer); the answer to the IP tension is the gate, not a worse-fitting loop. A generic clean loop in place of the real best-fit anthem is NOT a win just because it is publishable. NOTE: when the story has NO signature track AND no topic-fitting real track, the GUARANTEED clean floor is a license-clean CLASSICAL RECORDING (mood/period-appropriate, recording's license verified) — that floor is the right clean fallback, NOT a generic unrelated CC0 loop.",
+      "detect": "Auditor — static: when the story carries a signature track (a det_/scout-noted official anthem/theme/song) confirm the BGM is that best-fit track on rung 2 (a des_ asset with publish_blocker:true) or rung 1 only if a clean track fits AS WELL, NOT a generic topically-unrelated CC0 loop. Designer/Scout own the FIT-FIRST track choice. cf PIT-35 (BGM must be a REAL sourced track, never AI-composed) and PIT-07 (self-host the signature track, not a 30s embed).",
+      "severity": "soft",
+      "tags": [
+        "audio"
+      ],
+      "ref": "designer audio_rules.json (default / bgm_ladder rungs 1-2 / copyrighted_referenced_track: FIT FIRST, license-tier is a tiebreak; rung 2 carries publish_blocker:true + publish_note); scout/SKILL.md + designer/SKILL.md (reorder preference: source the signature anthem); components.json signature_media_card; cf PIT-35 (no AI BGM), PIT-45 (the whole impoverished path)"
+    },
+    {
+      "id": "PIT-48",
+      "title": "topic_profile absent -> the richness/cinematic/BGM/engagement floors all silently no-op (a stale gate read the template, not the resolved profile)",
+      "symptom": "A blog ships with no per-run topic_profile authored (neither detective.json nor scout.json carries explicit is_visual + is_computational), and NOTHING flags it: every capability-gated floor (richness_*, cinematic_missing, bgm_missing, missing_engagement_floor) reads falsy and quietly does not fire, so a rich topic can ship impoverished while every gate stays green. A sibling failure: a flagship_contract trigger that greps the references/topic_profile.json TEMPLATE side-file (an examples wrapper with no top-level booleans) instead of the resolved profile, so the trigger reads nothing and the floor is dead.",
+      "root_cause": "The shared classifier was treated as ABSENT-FALSE: validate.py resolved topic_profile to {} on 'nothing found' and every downstream check used `bool(tp.get('is_visual'))`, which cannot distinguish 'no profile authored' (absence) from 'profile authored all-false' (an honest abstract topic). With no presence check, a genuinely absent profile silently disabled the entire richness family. Separately, gates that read the references/topic_profile.json template (which carries no top-level is_visual/is_computational — only an examples/template wrapper) read nothing and no-op'd.",
+      "fix": "Treat topic_profile as RESOLVED only when BOTH capability keys are explicitly PRESENT (`'is_visual' in tp AND 'is_computational' in tp` — key presence, NOT truthiness), so an honest is_visual:false,is_computational:false topic counts as resolved (and correctly trips none of the floors) while a genuinely ABSENT profile is a HARD ERROR. The Detective (Stage 1) MUST write a resolved topic_profile{is_visual,is_computational,tags[]}; the Scout (1.5) writes it if the Detective did not. Every gate reads the RESOLVED profile in detective.json/scout.json (including the post-Analyst is_computational upgrade), NEVER the references/topic_profile.json template (which only widens/labels).",
+      "detect": "Inspector/pipeline — validate.py raises `topic_profile_unresolved` (error, unconditional — the one richness-family check that is NOT capability-gated) when neither detective.json nor scout.json carries a topic_profile with explicit is_visual + is_computational. Auditor — confirm every flagship_contract trigger greps detective.json/scout.json for the resolved profile, not the template side-file. Static: `grep -nE '\"is_visual\"|\"is_computational\"' PROJECT_DIR/detective.json PROJECT_DIR/scout.json` returns a real per-run profile.",
+      "severity": "hard",
+      "tags": [
+        "pipeline"
+      ],
+      "ref": "validate.py Section 0b (topic_profile_unresolved, key-presence resolver) + Section 12 (the capability-gated floors it guards); auditor flagship_contract.json _doc.trigger_inputs.topic_profile (read the resolved profile, not the template); cf PIT-45 (the impoverished path a no-op'd floor lets through), PIT-46"
+    },
+    {
+      "id": "PIT-49",
+      "title": "A malformed verify_map entry passes the Stage-6 contract gate, then crashes generate_viewer.py at Stage 7",
+      "symptom": "validate.py reports a clean verify layer at the Stage-6 gate (verify/ exists, panel shell pasted, every page id has a map entry), but the terminal Stage-7 step (generate_viewer.py) then exits nonzero on a per-kind schema violation — a verify_map entry with an unknown/absent `kind`, a non-object value, or a kind missing a required key. The run looked green at the gate and only blew up at the very end.",
+      "root_cause": "The Stage-6 gate (validate.py Section 7) asserted the verify_map PARSES + has >=1 key + every page data-* id is a key, but it did NOT mirror generate_viewer.py's VERIFY_MAP_REQUIRED per-kind required-key check. So a structurally-malformed entry slipped through the gate and was only caught by generate_viewer.py's validate_islands() at Stage 7 (which exits nonzero), after the gate had already passed.",
+      "fix": "Mirror generate_viewer.py's VERIFY_MAP_REQUIRED (the per-kind required-key dict for computation|media|generated|fact|credits) at the Stage-6 gate, kept in LOCK-STEP with the Stage-7 source. validate.py Section 7 now walks every authored verify_map entry and fails it AT THE GATE — a non-object entry, an unknown/absent kind, or a kind missing required keys — so a malformed map routes back to the Programmer (Step 2.5) before Stage 7 instead of crashing it. The on-disk verify_map.json is authored complete at Step 2.5, so this is safe pre-island-fill (it inspects the authored entries, not the empty page islands). The five kinds are complete; a decorative gradient carries no data-* token and so has no entry.",
+      "detect": "Inspector/pipeline — validate.py raises `verify_map_entry_malformed` (entry is not an object), `verify_map_unknown_kind` (kind not in computation|media|generated|fact|credits), or `verify_map_kind_keys_missing` (a known kind missing a required key) at the Stage-6 gate. generate_viewer.py validate_islands() remains the Stage-7 backstop. Static: confirm validate.py's VERIFY_MAP_REQUIRED equals generate_viewer.py's (they will drift if edited apart).",
+      "severity": "hard",
+      "tags": [
+        "pipeline",
+        "testing"
+      ],
+      "ref": "validate.py Section 7 (per-kind VERIFY_MAP_REQUIRED mirror); inspector/scripts/generate_viewer.py VERIFY_MAP_REQUIRED + validate_islands (the Stage-7 source of truth); verify_map.schema.json $defs (the five kinds + decorative_no_entry note); cf PIT-29 (verify layer silently absent), PIT-11 (island byte-identity)"
+    },
+    {
+      "id": "PIT-50",
+      "title": "data_driven cinematic mode DECLARED but never BUILT — the chart-spine immersion is absent and nothing flags it",
+      "symptom": "cinematographer.json sets meta.mode == \"data_driven\" (the chart-spine scroll background for an abstract topic), but the immersion was never produced: no built scene exists (scenes is empty, or every scene is image/video), or scenes exist but the page carries no data-cin token wiring the scroll layer. Because a data_driven scene carries no media_ref, validate.py Section 6's per-scene media_ref guard never fires, so the declared-but-not-built immersion ships silently.",
+      "root_cause": "Section 6 only validated image/video scenes (their media_ref must resolve); a data_driven chart-spine / gradient scene has NO media_ref by design, so it was entirely unguarded. A mode declared in meta but with no built scene and/or no data-cin on the page is the gap the media_ref guard cannot see.",
+      "fix": "When meta.mode == \"data_driven\", assert >=1 real BUILT scene AND that the page wires the scroll layer. 'Built' is defined by INVERSION — any non-_ scene whose background.kind is NOT image/video (color/gradient/chart/...) — so an unanticipated non-media kind still counts as built (no false-positive). If no built scene exists -> send back to the Cinematographer (the declared immersion was never produced); if built scenes exist but no data-cin token is on the page -> send back to the Programmer (the scroll layer is not wired). The render QUALITY of the built layer stays an Auditor/Critic concern (flagship_contract cinematic_background); this only catches declared-but-utterly-absent.",
+      "detect": "Inspector/pipeline — validate.py raises `cinematic_data_driven_not_built` (Section 6b) with `where` disambiguating Cinematographer (cinematographer.json, no built scene) vs Programmer (index.html, built but no data-cin). Static: when `grep -nE '\"mode\"' PROJECT_DIR/cinematographer.json` shows data_driven, confirm >=1 non-image/video scene exists AND `grep -n 'data-cin' PROJECT_DIR/index.html` returns a real token.",
+      "severity": "hard",
+      "tags": [
+        "media",
+        "pipeline"
+      ],
+      "ref": "validate.py Section 6b (cinematic_data_driven_not_built); auditor flagship_contract.json cinematic_background (the mandatory-mode-declared-but-not-built half; QUALITY cap stays Critic); cinematographer/references/schema.json (data_driven = chart-spine, no media_ref); cf PIT-45 (impoverished path), PIT-46 (under-supply fallback)"
+    },
+    {
+      "id": "PIT-51",
+      "title": "A \"scout.\"-prefixed data_source silently bypassed the designer cross-reference check (a dangling free-text reference shipped unflagged)",
+      "symptom": "A designer item's content.data_source is a free-text `scout.<something>` string (e.g. scout.live_status for a dated reality-check strip). validate.py Section 3 saw the `scout.` prefix and skipped the reference ENTIRELY — so a typo'd or dangling scout.<suffix> that resolves to nothing still passed the gate, while a normal data_source (an ana_ id) is checked. The bypass swallowed every scout.-prefixed reference, resolving or not.",
+      "root_cause": "Section 3's data_source check excluded any string starting with `scout.` from the analyst-id resolution (an unconditional bypass, because a scout.* reference is not an ana_ id), but it never positively RESOLVED the scout.* suffix against anything — so the prefix was an escape hatch that disabled the check rather than redirecting it.",
+      "fix": "Resolve a `scout.<suffix>` data_source instead of bypassing it: accept it when the suffix names a registered scout item (suffix in sct_ids, or 'sct_'+suffix in sct_ids), OR when it is `scout.live_status*` and scout.json carries a non-empty top-level `live_status` list (the dated display-only reality-check strip); otherwise it is a dangling reference and errors. The observed real grammar is unambiguous (scout.live_status, backed by a real live_status list), so this resolves correctly without false-positiving a legitimate blog.",
+      "detect": "Inspector/pipeline — validate.py raises `des_data_source_scout_dangling` (Section 3) when a designer content.data_source starts with `scout.` but its suffix resolves to neither a registered sct_ item nor a non-empty live_status in scout.json. Static: `grep -nE '\"data_source\":\\s*\"scout\\.' PROJECT_DIR/designer.json` and confirm each suffix resolves in scout.json.",
+      "severity": "hard",
+      "tags": [
+        "pipeline"
+      ],
+      "ref": "validate.py Section 3 (des_data_source_scout_dangling resolver); cf PIT-12 (every data-* / cross-reference must resolve to a role-JSON record, no orphan references)"
+    },
+    {
+      "id": "PIT-52",
+      "title": "A subtle cinemagraph hero reads as a STATIC photo + has no seamless loop — technically-correct video that looks dead",
+      "symptom": "The cover is a real <video autoplay loop muted> with correct attributes, yet a reader sees what looks like a still: the only motion is a 'faint pulse' / 'thin clouds drift slowly' over an otherwise-static stadium/building, so the page reads as one more static-photo blog. Separately, the raw model clip VISIBLY JUMPS at the loop point (head and tail don't connect), a cut every few seconds. The cover — the page's single most load-bearing detail and its hook — squanders the animated treatment.",
+      "root_cause": "Two compounding misses. (a) Motion too SUBTLE: the image2video prompt asked only for minimal-motion verbs (a faint pulse, a slow drift) instead of a clearly-visible PRIMARY motion + strong SECONDARY motions, so the cover never reads as alive. (b) No SEAMLESS LOOP: the model clip was shipped raw, with no boomerang/crossfade post-process, so frame N != frame 0 and the loop jumps. (A subject that TRANSLATES across/off the frame — a train driving off-screen — also cannot loop and compounds it.)",
+      "fix": "Make the cover DRAMATIC + LOOPED. (a) Require a clearly-visible PRIMARY motion + 1-2 strong SECONDARY motions, all IN-PLACE / cyclic (flags WAVING boldly, wheels SPINNING, smoke BILLOWING, crowd SURGING, sky parallax) — when the subject must stay still (building/landscape/held face) the motion comes from a BOLD animated foreground, never a faint pulse; never translate the subject off-frame (pick the concept from hero_recipes.json topic_motion_library). (b) Post-process EVERY hero clip into a seamless loop — default ffmpeg BOOMERANG (`[0]reverse[r];[0][r]concat`, inherently seamless), alt CROSSFADE the loop point (`xfade`, last ~0.5s into first ~0.5s) — and RECORD the technique on hero.json `loop` (\"boomerang\"|\"xfade\"|\"native\"); resolve ffmpeg via the imageio-ffmpeg wheel (not on PATH). Keep the on-page `loop` attribute.",
+      "detect": "Inspector — validate.py Section 12a raises `hero_loop_marker_missing` (hero.json carries no valid `loop` marker → the seamless-loop post-process was likely skipped) — WARN by default, ERROR on a visual topic. Auditor — static: grep the hero image2video prompt for ONLY minimal-motion verbs (faint/subtle/gentle/slow pulse/drift with no bold flags/smoke/crowd/wheels term); vision/media lens watches the cover for (i) a near-still that reads as a photo and (ii) a visible jump at the loop seam. Hero/Designer own the dramatic-motion + seamless-loop fix.",
+      "severity": "soft",
+      "tags": [
+        "media",
+        "video"
+      ],
+      "ref": "hero/references/hero_recipes.json build_recipe.animate (dramatic-motion floor + in-place motion) + build_recipe.optimize (seamless-loop boomerang/xfade) + topic_motion_library; hero/SKILL.md Step 2; validate.py Section 12a (hero_loop_marker_missing); critic rubric.json visual_design (static-looking / non-looping hero cap); designer video_pipeline.json loop_seam; cf PIT-16 (a clean real loop may not exist as a sustained shot), PIT-09 (iframe is not a seamless hero loop), PIT-45 (the impoverished path)"
+    },
+    {
+      "id": "PIT-53",
+      "title": "Verify panel / fixed overlay white-out: an unpainted <html> root + no color-scheme:dark + a backdrop-filter:blur toggle flushes the dark page to the UA-white root canvas on a light OS theme",
+      "symptom": "A reader on a light OS theme (or certain GPUs/zoom levels) opens the Verify panel — or merely loads a page with a fixed blurred control — and the dark page blows out to ALL-WHITE / unreadable. The panel's own CSS is all-dark and cannot be reproduced headlessly; the page looks fine for most readers, so it ships unnoticed.",
+      "root_cause": "The emitted page paints `<body>` dark but leaves `<html>` UNPAINTED (e.g. only `html{scroll-behavior:smooth}`) and never declares `color-scheme:dark`, so the ROOT canvas is the UA default — white under a light UA color-scheme. A fixed element with `backdrop-filter:blur(...)` / `-webkit-backdrop-filter` (the `.verify-toggle`, a sticky bar, a `.v-backdrop`) samples whatever is painted behind it; with the unpainted white root as the backdrop, Chromium can flush the whole page to white (a documented backdrop-filter + unpainted-root quirk). The verbatim panel template shipped this vector every run (dark `<body>`, unpainted root, blurred toggle).",
+      "fix": "Belt-and-suspenders, all three: (1) PAINT THE ROOT dark — `:root{ color-scheme: dark; background: var(--bg); }` (or `html{background:var(--bg)}`) and/or `<meta name=\"color-scheme\" content=\"dark\">`, so the root canvas is never the UA white. (2) DECLARE color-scheme:dark on the real page (its theme comes from the Designer's page_rhythm, so the fix must land in the actual `<head>`, not only the demo template). (3) GUARD THE BLUR — either drop `backdrop-filter` (the toggle already has a solid `background:rgba(20,18,16,.82)` fallback) or wrap it in `@supports (backdrop-filter:blur(6px))` with the solid background as the base, so no fixed element ever blurs against an unpainted root.",
+      "detect": "Inspector — validate.py Section 7f raises `root_color_scheme_missing` (no `:root/html{...color-scheme:dark...}` rule and no `<meta name=\"color-scheme\" content=\"...dark...\">`) and/or `root_background_unpainted` (no `html`/`:root` background rule — only `<body>` painted) on the emitted index.html. WARN (robustness floor). Static: the page paints a `<body>` background but no `html`/`:root` background, declares no color-scheme, AND carries a `backdrop-filter`/`-webkit-backdrop-filter` fixed element — that triad is the white-out vector. The white-out itself is NOT headlessly reproducible (it needs a light OS theme + certain GPUs); painting the root + declaring color-scheme + guarding the blur neutralizes the only plausible vector. Programmer/Designer own painting the root in the real theme.",
+      "severity": "soft",
+      "tags": [
+        "layout",
+        "testing"
+      ],
+      "ref": "inspector/references/inspector_panel_reference.html (:root color-scheme:dark + html{background} + @supports-guarded .verify-toggle backdrop-filter); programmer/SKILL.md Step 2 (paint <html>/:root dark + color-scheme:dark, not just <body>); validate.py Section 7f (root_color_scheme_missing + root_background_unpainted); cf PIT-18 (corner controls overlap — the same fixed-overlay family), PIT-06 (real-browser-only render truth)"
+    },
+    {
+      "id": "PIT-54",
+      "title": "Near-black gradient REST creates a black scroll gap in photographic cinematic mode (a photo ends -> black -> long scroll -> next photo)",
+      "symptom": "In the scroll-driven cinematic background the reader hits black/empty stretches between photos: a photo ends, the page goes near-black, a long scroll passes with nothing on screen, then the next photo arrives. The scroll coverage is continuous (no dead zones) and validate.py is green — the holes are gradient 'rest' scenes rendering as near-black sections, sometimes two back-to-back, so the background looks broken even though every gate passes.",
+      "root_cause": "In PHOTOGRAPHIC mode (which HAS real verified imagery) a 'rest' beat was emitted as a `kind:gradient` scene — a near-black `linear-gradient(#0c0d11 -> #111319)` full-bleed layer with NO <img> — exactly like a generative/data_driven rest. validate.py Section 6 deliberately SKIPS color|gradient scenes (legitimate in the abstract modes), so the near-black rest passes every check; and two such rests can land consecutively, doubling the dead stretch. A bare gradient is the right rest medium ONLY when there are no real photos (generative/data_driven) — in photographic mode it IS the black gap.",
+      "fix": "Redefine a photographic rest so the background stays a REAL photo, never bare black: a rest beat HOLDS the previous/upcoming verified sct_/des_ image as a quieter beat — reuse the existing `framed` blurred-fill treatment (the blurred-darkened cover copy `filter:blur(~32px) brightness(~.45)`, optionally the contained image dimmed) and/or a heavier scrim — so the same photographic surface simply quiets down and one photo flows seamlessly into the next. Keep the silky crossfade (CSS-transition opacity restart + img.decode(), no `void offsetWidth` reflow). FORBID in photographic mode: (a) any `kind:gradient`/`kind:color` rest, and (b) two consecutive rest scenes. Gradient/atmospheric rests stay valid ONLY in generative/data_driven mode (no real photos exist there).",
+      "detect": "Inspector/pipeline — validate.py Section 6c raises `cin_photographic_gradient_rest` (a cin scene with background.kind gradient|color while meta.mode is photographic/cinematic) and `cin_consecutive_gradient_rests` (two adjacent gradient rests) — ERROR, photographic mode only (the existing Section-6 gradient SKIP stays for generative/data_driven). Auditor — checks.json check_13_photographic_gradient_rest_black_gap greps cinematographer.json for a gradient/color `kind` under a photographic mode and index.html for two adjacent `.cin-bg` layers painting a CSS gradient with no data-sct/data-des. Vision/media lens sees the black stretch in the full-page screenshot. Cinematographer owns redefining the rest; Programmer owns rendering the dimmed real-photo layer.",
+      "severity": "hard",
+      "tags": [
+        "media",
+        "layout"
+      ],
+      "ref": "cinematographer/SKILL.md (photographic rest = dimmed/framed real photo; no consecutive rests; no gradient rest in photographic mode) + cinematographer/references/cinematic_recipes.json pinned_crossfade.continuous_photo_no_black_gap_CRITICAL + generative_atmosphere (gradients valid for abstract mode only) + schema.json _field_notes.restraint; programmer/references/component_implementations.json cinematic_background (photographic rest renders a dimmed real-photo `framed` layer, not a kind:gradient layer); validate.py Section 6c (cin_photographic_gradient_rest / cin_consecutive_gradient_rests); auditor checks.json check_13_photographic_gradient_rest_black_gap; cf PIT-04 (per-section scrim seam), PIT-43 (shrinking-pane hero handoff), PIT-46 (under-supply fallback)"
+    },
+    {
+      "id": "PIT-55",
+      "title": "One uncaught throw in the shared <script> blanks every sibling chart + the hero (cascade abort)",
+      "symptom": "A whole page of charts goes blank at once — not one bad chart, but every chart AND the hero render nothing — and the console shows a single error like `Cannot read properties of null (reading 'datum')`. Source inspection of each chart looks fine in isolation; the data is inlined; yet nothing paints below the point of the throw.",
+      "root_cause": "All chart/interaction setups are emitted into ONE shared inline `<script>` that runs each setup SEQUENTIALLY. A single synchronous uncaught exception (the classic trigger: a baseline `draw(null,…)` / `render(undefined)` sentinel the callee derefs, or `Number({value,flag})` on an object — see PIT-05) aborts the ENTIRE `<script>` block, so every setup AFTER the throw — including later charts, later playgrounds, and the hero wiring if it sits below — never runs. The existing `embedChart` `.catch()` only wrapped the `vegaEmbed()` promise, NOT the synchronous `specFn(cw())` / data-prep that runs before it, so a throw there still escaped. Highest blast radius of any chart bug: one line takes down the page.",
+      "fix": "FAULT-ISOLATE every setup. Wrap each chart's and each playground's WHOLE setup in its own IIFE `(function(){ try { /* build spec / state + render() + wireControls() */ } catch(e){ console.error('<id> setup', e); } })();` so a throw logs to console and the NEXT setup still runs. `embedChart` now also wraps its whole body (incl. the data-prep + the embed call) and degrades to a static table when the CDN is blocked. Pair with PIT-05's no-sentinel-baseline + null/`{}` guards (FM2) so the throw is prevented at source, and wrap feature-side handler bodies in try/catch (FM5) so a reader gesture can't throw into the event loop either.",
+      "detect": "Auditor — render_capture.js findings.cascadeScriptAbort is ground truth: it correlates >=1 console error with >=2 charts that rendered nothing and emits ONE finding (so it routes as a single send-back, not N blank-chart reports). Static fallback (no browser): validate.py Section 14 WARNs `chart_no_fault_isolation` — a single `<script>` mounting >=2 charts/interactions (vegaEmbed/setup) with <1 `try` (ERROR on a computational/rich topic); checks.json check_14 greps the same. Programmer owns wrapping each setup; the fix composes with PIT-05.",
+      "severity": "hard",
+      "tags": [
+        "chart",
+        "interaction",
+        "testing"
+      ],
+      "ref": "programmer/references/component_implementations.json charts_vega_lite.{fault_isolation_RULE,responsive_embed} + interactive_elements (FM1) + programmer/SKILL.md Step 2 build rules (fault isolation); auditor/scripts/render_capture.js findings.cascadeScriptAbort; inspector/scripts/validate.py Section 14 (chart_no_fault_isolation); auditor/references/checks.json check_14 + fix_patterns.json fix_9_chart_fault_isolation_iife; report_types.json chart_cascade_script_abort / chart_no_fault_isolation; cf PIT-05 (the null-deref that triggers it), PIT-01 (0-width invisible chart), PIT-06 (real-browser-only)"
+    },
+    {
+      "id": "PIT-56",
+      "title": "Templated / AI-tell headline — the 'flat statement. flat counter-statement.' two-beat (AT1) reads as machine-written",
+      "symptom": "The page H1 (or a section heading) sounds like an LLM wrote it, not a newsroom: most often the AT1 two-beat — a flat declarative sentence followed by a short contradicting one (\"Argentina is the favourite. No bookmaker agrees.\") — or a topic label instead of a conclusion (\"An Analysis of …\", \"Exploring …\", \"A Look at …\"), an empty superlative the data doesn't back, or a colon subtitle reflex (\"Topic: A Something of Something\"). The headline names the SUBJECT and hides the FINDING.",
+      "root_cause": "Titling was left to a competent default, which reaches for the AI-tell patterns the Copywriter's AT1-AT9 kill-list names — above all the AT1 two-beat, the rhythm no human editor writes but an LLM produces every time. The headline was written front-to-back (from the topic) instead of last, from the conclusion backward, and only one phrasing was generated instead of several across different devices.",
+      "fix": "Run the Copywriter (Stage 3.5): write the headline LAST, from the conclusion backward; generate SEVERAL candidates across different devices (D1-D16) and pick the strongest; state the so-what (the conclusion), not the topic; concrete noun + vivid verb + real number; honest promise, not clickbait; statement not Betteridge question. KILL the AT1 two-beat first — rewrite \"X. Not Y.\" into a single device-driven spine (\"Every bookmaker has Argentina behind the model\"). The Copywriter writes copywriter.json (strings only, each backed by a real ana_*); the Programmer renders masthead.headline + section titles verbatim. (Naming, not editing — no finding/number/id changes.)",
+      "detect": "Auditor — checks.json check_15_titling_caption_quality greps the <h1> / masthead.headline for the AT1 'statement. short counter-statement.' shape and the templated roots ('An Analysis of', 'A Look at', 'Exploring', 'Understanding', a reflexive colon subtitle, a marketing word). Critic — corroborates via rubric.json narrative_pacing.titling_caption_cap (a generic/templated headline caps narrative_pacing at 3, send back to copywriter). ADVISORY (soft) — not a hard gate and not a validate.py kind yet (so it stays out of the deterministic contract gate until proven); promote to a validate.py Section only after the grep is shown two-sided.",
+      "severity": "soft",
+      "tags": [
+        "copy"
+      ],
+      "ref": "data2story/copywriter/SKILL.md (positive principles + AT1-AT9 kill-list + D1-D16 devices); frontend-design/references/exemplars/titling_captioning.md (T1-T8 GOOD/BAD headline pairs, esp. T8 the AT1 antidote); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality + report_types.json titling_generic_headline; cf PIT-57 (standfirst spoiler), PIT-58 (axis-only caption)"
+    },
+    {
+      "id": "PIT-57",
+      "title": "Standfirst pre-spoils the interactive hero's reveal number — the centerpiece has nothing left to deliver",
+      "symptom": "The masthead standfirst/dek states the exact number the interactive hero exists to make the reader PRODUCE (\"Our model gives Argentina a 26.3% chance …\"), so when the reader reaches the explorable/guess-then-reveal there is no reveal left — the centerpiece's whole payoff was handed away in the dek.",
+      "root_cause": "The standfirst was written to summarise the finding rather than to PRIME the question + stakes. It is the same failure the Editor's 'standfirst primes, never pre-spoils' rule guards, applied to the Copywriter's masthead pass: the reveal number belongs to the interaction, not the dek.",
+      "fix": "Write the standfirst to set up the QUESTION + the STAKES and stop there — name the model, the scale, the conflict, the invitation ('Pick a side and watch the favourite emerge'), but NOT the reveal number the hero makes the reader produce. (Mirror the Editor's standfirst rule; the Copywriter owns the masthead string, the Editor owns the body.) The reveal number stays in the interaction (read from the model, PIT-42), surfaced when the reader acts.",
+      "detect": "Auditor — checks.json check_15_titling_caption_quality flags the masthead.standfirst stating the interactive centerpiece's produced figure verbatim (the hero's reveal number from interaction.json/analyst.json appearing in the dek). Critic — corroborates via rubric.json narrative_pacing.titling_caption_cap (a pre-spoiling standfirst caps narrative_pacing at 3, send back to copywriter — dedup with the Editor's standfirst check; route once). ADVISORY (soft).",
+      "severity": "soft",
+      "tags": [
+        "copy"
+      ],
+      "ref": "data2story/copywriter/SKILL.md Step 1 (standfirst primes, never pre-spoils); data2story/editor/SKILL.md writing rules (standfirst primes, never pre-spoils — the body-side twin); frontend-design/references/exemplars/titling_captioning.md S1/S2 (standfirst GOOD/BAD); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality; cf PIT-42 (read the reveal number from the model, never hardcode), PIT-56 (templated headline)"
+    },
+    {
+      "id": "PIT-58",
+      "title": "Caption labels an axis (or opens 'This chart shows') instead of stating the finding — the most-read line under a chart is wasted",
+      "symptom": "A figure/photo/table caption restates what the reader can already see instead of asserting the takeaway: 'Figure 3: championship probabilities', 'the x-axis shows year', 'This chart shows the relationship between …', or the wire-caption cliché 'a stadium is pictured recently'. The caption — the most-read line under a visual — carries no conclusion, no metric/unit, no date.",
+      "root_cause": "The caption was treated as a label, not a title. A caption IS a title: its job is to state the finding (chart = conclusion title-line + metric subtitle + source-below; photo = present-tense who/what/where + absolute date, then past-tense why; table = a 'what to look for' line). Axis-labelling and 'This chart shows…' are the caption-flavoured AI-tells.",
+      "fix": "Run the Copywriter takeaway-title caption rule: CHART caption's title line = the conclusion (<=10 words, active, with the number), a descriptive subtitle carries the metric/unit/time/geography, the source sits below, and the outlier is annotated ON the chart (dataviz annotation_layers.json — the caption asserts, the annotation locates). PHOTO = two sentences (present-tense who/what/where + an ABSOLUTE date, then past-tense why the pixels can't show), captioning only what is depicted. TABLE caption above + a 'what to look for' line. FORBIDDEN openers: 'This chart/figure shows', 'the x/y-axis shows', 'is pictured/poses/looks on', 'may suggest a possible…', 'Figure N:'. The Copywriter writes copywriter.json items[des_xx].caption; the Programmer renders the figcaption verbatim.",
+      "detect": "Auditor — checks.json check_15_titling_caption_quality greps <figcaption> for the forbidden openers ('Figure \\d', 'This (chart|figure) shows', 'the x-axis', 'the y-axis', 'is pictured', 'poses', 'looks on', 'may suggest a possible') and for a caption that is an axis label rather than a finding. Critic — corroborates via rubric.json narrative_pacing.titling_caption_cap (an axis-only caption caps narrative_pacing at 3, send back to copywriter). ADVISORY (soft) — not a validate.py kind yet.",
+      "severity": "soft",
+      "tags": [
+        "copy"
+      ],
+      "ref": "data2story/copywriter/SKILL.md Step 3 (caption takeaway-title rule + forbidden openers); frontend-design/references/exemplars/titling_captioning.md C1-C5 (caption GOOD/BAD pairs); dataviz-craft/references/annotation_layers.json (annotate the point on the chart so the caption asserts it); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality + report_types.json caption_states_no_finding; cf PIT-56 (templated headline), PIT-57 (standfirst spoiler)"
+    },
+    {
+      "id": "PIT-59",
+      "title": "PROJECT_DIR created before Stage 0 (input dispatch) resolves DATA_NAME — a literal top-to-bottom read of the orchestrator builds the run folder with an unresolved name",
+      "symptom": "In URL/IDEA mode the run folder lands at a broken path: PROJECT_DIR is created as `.../{DATA_NAME}/...` with the literal placeholder still in it (or an empty/garbage segment), because the orchestrator's 'Create PROJECT_DIR' action ran before the dataset that defines DATA_NAME existed. Every later `{DATA_DIR}`/`{DATA_NAME}`-relative path (Archival, role JSONs, verify/) is then rooted under the wrong folder.",
+      "root_cause": "The orchestrator lists 'Create PROJECT_DIR' and `PROJECT_DIR = .../{DATA_NAME}/...` as steps that DEPEND on DATA_NAME, but in URL/IDEA mode DATA_NAME is only known AFTER Stage 0 (input dispatch — ideation/find-data) resolves DATA_DIR + DATA_NAME. A reader (or an agent) who executes the orchestrator literally top-to-bottom reaches the PROJECT_DIR creation before Stage 0 has run, so the name it interpolates is still the unresolved `{DATA_NAME}` template. The ordering dependency is real but was not gated.",
+      "fix": "Stage 0 (input dispatch) MUST resolve DATA_DIR + DATA_NAME FIRST — before ANY PROJECT_DIR creation or Archival step that interpolates `{DATA_NAME}`. Treat input acquisition as a hard prerequisite barrier: in folder/CSV mode DATA_NAME is known immediately, but in URL/IDEA mode NOTHING that references `{DATA_NAME}` (Create PROJECT_DIR, PROJECT_DIR=, Archival, any role-JSON path) may run until ideation/find-data has returned a validated DATA_DIR and DATA_NAME is set from it. WHENEVER an upstream input-acquisition stage is ADDED, gate every `{DATA_NAME}`-dependent action on that stage having run (an explicit 'DATA_NAME resolved?' precondition), so the dependency can never be satisfied by the template default.",
+      "detect": "Orchestrator/pipeline — manual: in URL/IDEA mode confirm Stage 0 emitted a resolved DATA_DIR + DATA_NAME BEFORE any PROJECT_DIR is created; a PROJECT_DIR path still containing a literal `{DATA_NAME}` (or an empty name segment) means the creation ran ahead of input dispatch. There is no automated detector — this is an orchestrator step-ordering invariant, caught by reading the run's folder path against the stage order, not by a static check.",
+      "severity": "hard",
+      "tags": [
+        "pipeline"
+      ],
+      "ref": "data2story/SKILL.md (Stage 0 input dispatch resolves DATA_DIR/DATA_NAME before Create PROJECT_DIR + Archival; gate every {DATA_NAME}-dependent action on input acquisition having run); ideation/SKILL.md (returns the validated DATA_DIR the orchestrator sets DATA_NAME from); cf PIT-48 (a stage reading the wrong/absent source silently); (no validate.py kind — manual ordering invariant)"
+    },
+    {
+      "id": "PIT-60",
+      "title": "Idea-mode convergence + checkpoints written as free-text essays instead of AskUserQuestion choices — high-friction, and risks reading as the cold opening questionnaire",
+      "symptom": "In IDEA mode the convergence dialogue and BOTH checkpoints ask the reader to COMPOSE prose — open-ended 'what angle do you want?' / 'is this brief OK, please describe any changes' paragraphs — instead of letting them CLICK options. The reader faces a wall of free-text prompts (high friction, easy to abandon), and if the very first turn opens with bare questions it reads as the cold opening questionnaire `sparring-partner` explicitly warns against.",
+      "root_cause": "The idea-mode interaction was authored as conversational essay-writing rather than choice-driven selection. Picking from framed options is far lower-friction than composing, and each `AskUserQuestion` doubles as a micro-checkpoint — but that only works if the angles/scope/data-forks/approve-edit-abort decisions are presented AS options. Two failure modes compound it: (a) no 'Other / free-text' escape, so an off-menu angle (often the best one) is caged out; (b) leading the FIRST turn with options before any substance, which is the cold-questionnaire opening.",
+      "fix": "Drive idea-mode convergence AND both checkpoints with `AskUserQuestion` (reader CLICKS): frame the angles, the scope, the data-forks, and the approve/edit/abort decisions as options, not paragraphs the reader must write. ALWAYS keep an 'Other / free-text' escape on every question — the menu is your framing, but the reader's own off-menu angle frequently wins, so it must survive. This is NOT the cold opening questionnaire `sparring-partner` warns against: lead the VERY FIRST turn with SUBSTANCE (frame the space + an open invitation), THEN switch to choice-driven options for convergence and the checkpoints. Choice-first ≠ substance-free.",
+      "detect": "Ideation/orchestrator — manual: confirm the idea-mode convergence + Checkpoint 1 (brief) + Checkpoint 2 (dataset) are presented as `AskUserQuestion` choices each carrying an 'Other'/free-text option, and that the opening turn leads with substance before offering options (not a bare question list). There is no automated detector — this is an interaction-style judgement on the ideation dialogue, not a static grep.",
+      "severity": "soft",
+      "tags": [
+        "pipeline",
+        "copy"
+      ],
+      "ref": "ideation/SKILL.md ('Interaction style — let the reader CHOOSE' + CHECKPOINT 1 / CHECKPOINT 2 use AskUserQuestion with an Other escape); ideation/references/sparring_brief.md (frame-with-substance-first, not a cold questionnaire); (no validate.py kind — manual interaction-style judgement)"
+    },
+    {
+      "id": "PIT-61",
+      "title": "Keyboard activation opens a popup/changes state but does NOT update the readout — mouse and keyboard disagree",
+      "symptom": "A map marker / control responds to the MOUSE (hover/click updates the live `[data-play-out]` readout) but a KEYBOARD gesture (focus + Enter/Space/Arrow) does not update that same readout — the keyboard user sees a popup open or a visual change, yet the readout the mouse path drives stays frozen. The two input paths produce different output.",
+      "root_cause": "The keyboard handler calls only `openPopup()` / a visual change and NEVER the readout-update fn the mouse path calls, so the `[data-play-out]` value is only ever touched on the mouse branch. Compounding it, Leaflet markers and other `[tabindex]` controls fall OUTSIDE a naive `button,input,select,textarea` interactive probe, so an a11y/keyboard check that only walks those four tags never sees the marker and the gap ships silently.",
+      "fix": "Wire BOTH a `focus` listener AND a `keydown(Enter/Space/Arrow)` listener on the marker/control to the SAME readout-update fn the mouse path calls (so focus-or-key updates `[data-play-out]` exactly as hover/click does) — NOT only `marker.openPopup()`. Transfer the hero-halves keydown pattern (component_implementations.json `interactive_hero` wiring_js: the `el.addEventListener('keydown', …Enter/Space…)` on a `tabindex=0` `role=link` element, guarded by `vOn()`) to the marker. Give each marker `tabindex=0` + `role=\"button\"` + an `aria-label`, and size `.leaflet-control a` to >=44px so the zoom +/- controls clear the keyboard/touch hit-area.",
+      "detect": "Auditor Playtester `playtest_drive.js` a11y/keyboard-readout-parity check emits `interaction_keyboard_no_readout` when a keyboard gesture (focus + Enter/Space/Arrow) leaves `[data-play-out]` unchanged while the mouse path updates it. (Programmer reads this before building maps/markers.) Real-browser only — enforced by the Playtester driving a live DOM (a focus + key event), NOT by the static contract gate, which cannot drive a keyboard event.",
+      "severity": "hard",
+      "tags": [
+        "interaction",
+        "map",
+        "a11y"
+      ],
+      "ref": "programmer/references/component_implementations.json maps_leaflet (marker tabindex/role/aria + focus+keydown -> same readout-update fn) + interactive_hero (the keydown-on-tabindex=0 pattern this transfers); auditor/scripts/playtest_drive.js (a11y/keyboard-readout-parity check); auditor/references/report_types.json#interaction_keyboard_no_readout; cf PIT-31 (dead control — control fires but readout never changes), PIT-44 (interactive-hero a11y allow-list)"
+    },
+    {
+      "id": "PIT-62",
+      "title": "Vega guide text (subtitle / axis / legend) falls to Vega's DARK default and goes invisible on the always-on dark cinematic background",
+      "symptom": "A chart's title shows but its SUBTITLE (and/or axis labels, axis titles, legend text) is invisible — dark ink on the dark cinematic stage. The chart-card surface is dark, the data marks render, but the guide text is unreadable. The chart looks fine in a light-background preview, so it ships unnoticed.",
+      "root_cause": "Vega-Lite guide-text colors default to a DARK ink. The Data2Story page is always-on dark (the cinematic stage is unconditional) and embedChart sets spec.background='transparent', so any guide-text color left unset renders dark-on-dark. The shared _config_block historically set axis label/title ink for a LIGHT frame and carried NO config.title block at all, so config.title.subtitleColor was never set — the subtitle took Vega's dark default. (subtitleColor is a SEPARATE property from title.color: setting only color still leaves the subtitle dark.) WHY IT SHIPPED: the guide-text colors were set PER-CHART / incompletely instead of in the ONE shared base config the charts share — the WC blog's 10 charts shared one embed() base config that set title.color (light) but OMITTED subtitleColor, so EVERY subtitle was dark-on-dark, yet validate.py Section 17 PASSED because Section 17 only checks whether `subtitleColor` appears ANYWHERE on the page and one OTHER chart happened to set it locally. Per-chart guide-text color is exactly how a chart gets missed — the omission hides behind any single chart that got it right.",
+      "fix": "Put guide-text colors in the ONE shared chart base config, NEVER per-chart — per-chart (or 'one chart sets it') is precisely how a subtitle/axis/legend gets missed (the WC failure mode: 10 charts on one base config, subtitleColor omitted there, every subtitle invisible, the page-wide §17 token-presence check fooled by a single other chart). Author EVERY chart's Vega config for the dark stage from the ONE dark _config_block (dataviz-craft/references/axis_label_polish.json) so all charts INHERIT it and none can be missed: that shared block sets config.title.color + config.title.subtitleColor (both — subtitleColor is separate), config.axis.labelColor + titleColor, config.legend.labelColor + titleColor (all light, e.g. #ffffff / #e8e8e8), and light-on-dark gridColor/domainColor. Never ship a chart relying on Vega's default guide-text colors over the cinematic background, and never set these inks on individual charts in place of the shared config. The opaque .chart-card surface gives a dark backing but does NOT set the text color — that is the config's job.",
+      "detect": "Inspector/pipeline — validate.py Section 17 raises `vega_dark_text_missing` when an inline chart <script> sets a `subtitle` but the page declares no `subtitleColor` anywhere (ERROR on a visual/computational topic via _rsev, WARN otherwise). Auditor — vision lens sees the missing subtitle/axis text; static: grep an inline chart <script> for a `subtitle`/`title` with no `subtitleColor`/`labelColor`/`titleColor`. The dark _config_block is the structural fix that prevents it.",
+      "severity": "hard",
+      "tags": [
+        "chart",
+        "layout"
+      ],
+      "ref": "dataviz-craft/references/axis_label_polish.json _config_block (dark title.color+subtitleColor+axis/legend ink, authored for the always-on dark stage); programmer/references/component_implementations.json charts_vega_lite.rules (dark-stage guide-text rule) + responsive_embed (transparent background over the dark stage) + cinematic_background.chart_card_DEFAULT_in_cinematic_mode (dark SURFACE only, not text color); frontend-design/references/components.json chart_frame; inspector/scripts/validate.py Section 17 (vega_dark_text_missing); cf PIT-01 (0-width invisible chart), PIT-03 (svg overflows its card)"
+    },
+    {
+      "id": "PIT-63",
+      "title": "Pyodide's 32-bit numpy throws casting int64->int32 (np.bincount + platform-intp index sinks) — a verify cell that runs locally fails in the browser",
+      "symptom": "A runnable verify cell that works in local 64-bit Python/Jupyter throws in the in-browser 'Run' (Pyodide) with `TypeError: Cannot cast array data from dtype('int64') to dtype('int32') according to the rule 'safe'`. Most often np.bincount(arr) on an int64 array; any function needing platform-intp indices (fancy-index counts) can hit it.",
+      "root_cause": "Pyodide's numpy is a 32-bit wasm build: np.intp / the default int is int32. np.bincount (and other intp-index sinks) require platform-intp indices, so an int64 array is rejected under the 'safe' casting rule. On desktop numpy (64-bit) np.intp IS int64, so the identical code passes locally and the failure only appears in the browser proof.",
+      "fix": "Author every runnable cell Pyodide-safe for dtype: cast index args to np.intp — `np.bincount(np.asarray(x, dtype=np.intp), ...)` (np.intp is int64 on desktop = a no-op; int32 under Pyodide = fixes the throw). More generally, never assume 64-bit int in a runnable cell. AND smoke-test each runnable cell in REAL Pyodide (the in-page 'Run' button), not just local Python — local success does not prove in-browser success.",
+      "detect": "Inspector/pipeline — validate.py Section 18 raises `pyodide_int64_dtype_trap` when a runnable run_cells cell calls np.bincount( on an arg not wrapped in np.intp/dtype=np.intp/.astype(np.intp) (ERROR on a computational topic via _rsev, WARN otherwise). Auditor — checks.json check_7 greps verify/run_cells.json runnable code for `np.bincount(` without an np.intp cast. (No automated in-browser execution gate exists — the real proof is a manual 'Run' click in Pyodide; the static grep covers the OBSERVED sink, not every intp-sink function.)",
+      "severity": "hard",
+      "tags": [
+        "testing",
+        "pipeline"
+      ],
+      "ref": "inspector/references/run_cells.schema.json (Pyodide-safe authoring); inspector/references/inspector_panel_internals.json (imports/safe-set); inspector/scripts/validate.py Section 18 (pyodide_int64_dtype_trap); auditor/references/checks.json check_7 (dtype note + grep); cf PIT-23 (self-contained/reduced-N Pyodide safety — this is its dtype sibling)"
+    },
+    {
+      "id": "PIT-64",
+      "title": "A conditional/encoding object placed directly on a Vega-Lite MARK property is invalid — it fails silently (text labels lose their x/y binding and clump at the axis)",
+      "symptom": "Text/point labels are mispositioned — they clump at the axis or ignore their x/y — with no error thrown. The spec 'looks' right but a mark property was written as `{condition:{test:…}}` / `{value:…}` instead of a literal.",
+      "root_cause": "Mark properties (align, dx, dy, color, opacity, size, baseline, …) accept ONLY literal values in Vega-Lite. A `{condition:…}` / encoding-style object belongs on an ENCODING channel, not on `mark`. Put on `mark`, it is invalid and silently ignored / mis-applied, so e.g. text labels lose their positional binding.",
+      "fix": "Use LITERAL mark properties only (`\"align\":\"left\"`, `\"dx\":4`). For per-datum styling, do it the valid way: split the data into FILTERED LAYERS (one layer per condition, each with its own literal mark props), or move the conditional onto a real ENCODING channel (`encoding.color.condition`, etc.) where `condition` IS valid. Never put `{condition:…}`/an encoding object on a mark.",
+      "detect": "Inspector/pipeline — validate.py Section 19 raises `vega_conditional_on_mark` when a chart <script> has a `condition` token inside a `mark` object literal (ERROR on a visual/computational topic via _rsev, WARN otherwise). Auditor — vision lens sees text/points clumped at the axis; static: grep inline chart specs for `\"mark\":{…condition…}` / a `{condition:` on align/dx/dy/color.",
+      "severity": "hard",
+      "tags": [
+        "chart"
+      ],
+      "ref": "programmer/references/component_implementations.json charts_vega_lite.pitfalls (mark props are literals; conditionals go on encoding channels or filtered layers); dataviz-craft/references/encoding_craft.json (per-datum styling via encoding/layers); inspector/scripts/validate.py Section 19 (vega_conditional_on_mark); cf PIT-05 (NaN value-accessor), PIT-55 (a chart throw cascades)"
+    },
+    {
+      "id": "PIT-65",
+      "title": "Point/scatter marks overflow the chart frame — data beyond scale.domain draws over the axis / outside the card, and the mark isn't clipped",
+      "symptom": "Dots/points in a scatter or dot-plot float OUTSIDE the plotting area — over the axis, the chart-card edge, or the bare background — because their value exceeds the explicit scale.domain and the mark is not clipped.",
+      "root_cause": "An explicit scale.domain was set tighter than the data extent (or with no headroom), and the point/scatter mark has no `clip:true`. Unlike bars/areas (bounded by the baseline), points are positioned freely, so any datum past the domain renders outside the frame.",
+      "fix": "Two-part: (1) give scale.domain HEADROOM past the data max/min, or OMIT domain so Vega auto-fits the extent; AND (2) set `clip:true` on the point/scatter mark so nothing ever draws outside the plot frame. clip is the belt, domain headroom the suspenders.",
+      "detect": "Auditor — vision/render lens sees points outside the plot or over the card edge (the real catch). Static (smell, not a gate): grep a point/scatter chart spec for an explicit `scale`/`domain` on the point axis with NO `clip:true` on the mark. NOT statically decidable as a hard gate — whether a point overflows depends on the DATA vs the domain, which validate.py cannot evaluate without running the chart, so there is intentionally no validate.py kind; the authoring rule + the render lens carry it.",
+      "severity": "soft",
+      "tags": [
+        "chart",
+        "layout"
+      ],
+      "ref": "dataviz-craft/references/axis_label_polish.json point_overflow_rule (clip:true + domain headroom); programmer/references/component_implementations.json charts_vega_lite.pitfalls (point marks: clip + headroom); auditor render/vision lens; cf PIT-03 (the OUTER svg axis/legend overhead overflows its card — a different case, fixed by svg_must_fit), PIT-01 (0-width)"
+    },
+    {
+      "id": "PIT-66",
+      "title": "A 'share my result' button using the Web Share API (navigator.share/canShare with a File) crashes the whole browser tab — a renderer-process crash try/catch cannot intercept",
+      "symptom": "Clicking a 'share / copy my result' button kills the ENTIRE Chrome tab — 'Aw, Snap!', `Error code: RESULT_CODE_KILLED_BAD_MESSAGE`. Not a thrown JS error: the try/catch around the call and the promise `.catch()` BOTH fail to fire (the page is gone, not the function). Hits hardest when previewing the blog locally on a `file://` origin.",
+      "root_cause": "Handing the Web Share API a File payload — `navigator.share({files:[file]})` / `navigator.canShare({files})` — makes the renderer send the browser an IPC the browser process REJECTS, which kills the renderer (RESULT_CODE_KILLED_BAD_MESSAGE). It is a renderer-process crash, BELOW the JS layer, so `try/catch` and promise `.catch()` cannot catch it. A `file://` origin (how authors preview blogs locally) is the most reliable trigger, but some https Chrome builds hit it too. The crash surface is the Web Share API File path itself, not a recoverable exception.",
+      "fix": "Do NOT use the Web Share API for any 'share / copy result' feature — there is no try/catch that makes it safe. Instead: copy the result CARD IMAGE to the clipboard via `navigator.clipboard.write([new ClipboardItem({'image/png': blob, 'text/plain': textBlob})])` (pastes as a PICTURE into chat/social AND as TEXT into text fields), with a `navigator.clipboard.writeText` fallback and an ALWAYS-present Download link as the universal floor. Build the image Blob SYNCHRONOUSLY (`canvas.toDataURL('image/png')` -> Blob, NOT async `canvas.toBlob`) so the clipboard write runs INSIDE the click's user-activation window — an async toBlob defers past the activation and the clipboard write then rejects. Never leak a `file://` URL in the share text: gate any URL placed in the text payload to http(s) origins only. This clipboard-copy + download path delivers the same 'Share / Copy my result' result on every platform with ZERO crash surface.",
+      "detect": "Inspector/pipeline — validate.py Section 20 raises `web_share_api_used` when an inline <script> body calls `navigator.share(`/`navigator.canShare(` (WARN — advises clipboard.write([ClipboardItem]) + writeText fallback + Download link, build the Blob synchronously, http(s)-only share URL). Auditor — manual: click any share/copy control in a real browser AND on a file:// preview and confirm the tab does not crash; static: grep inline <script> for `navigator.share(`/`navigator.canShare(` (expect the clipboard-copy + download pattern instead). Reference implementation: the WC blog `wirePickerAndShare`/`doShare`/`clipboardFallback` (synchronous toDataURL->Blob, ClipboardItem image+text, writeText fallback, download-card, no Web Share API).",
+      "severity": "hard",
+      "tags": [
+        "interaction",
+        "testing"
+      ],
+      "ref": "data2story/interaction/references/interaction_recipes.json share_result_card (the crash-proof share/copy-result recipe: synchronous canvas Blob + ClipboardItem image+text + writeText fallback + always-present Download, no Web Share API); inspector/scripts/validate.py Section 20 (web_share_api_used); cf PIT-08 (clipboard/audio actions need the user-activation gesture window), PIT-31 (a control that fires but does nothing for the user)"
+    }
+  ]
+}

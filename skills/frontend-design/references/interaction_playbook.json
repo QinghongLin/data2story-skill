@@ -1,0 +1,195 @@
+{
+  "_toc": [
+    "craft_principles — the Pudding craft tests (20-minute-debate, reader-produces-it, restraint).",
+    "centerpiece_doctrine — exactly ONE hero the reader produces; earned_test for supporting playgrounds; same_model_as_headline.",
+    "content_patterns — reusable narrative moves (model_vs_market_or_benchmark + de-vig/dated-odds rules).",
+    "universal_engine — the state + render() + steps[] mental model that replaces a framework.",
+    "verify_coexistence — MANDATORY: every handler early-returns under `verify-on` (vOn()).",
+    "bare_number_readout — MANDATORY readout shape so the recompute_oracle can grade.",
+    "control_specs — control defaults (>=44px hit-area, keyboard, seed-at-baseline).",
+    "recipes — scrollytelling, cinematic_background, explorable_recompute, personal_input, guess_then_reveal, self_drawing_line, toggle_refilter, sortable_table, tooltip, animated_transitions, act_transition, scroll_snap_stepper, scored_quiz, playable_game, tune_the_assumption, personal_input_where_you_land.",
+    "interaction_taxonomy — pick the recipe by the job-for-the-reader.",
+    "portability_rules — file:// + allowed-CDN + inline-data constraints.",
+    "reference_clones — the Pudding source samples this was distilled from."
+  ],
+  "_note": "Pudding-grade interaction playbook. Distilled from The Pudding's methodology and source samples. EVERYTHING here is portable to ONE self-contained index.html, no build step, runs on file://, allowed CDNs = Vega-Embed, Leaflet, D3, PDF.js. The roles that build interaction (Designer, Programmer, the Interaction Engineer, and the Cinematographer if present) should read this fully.",
+
+  "craft_principles": [
+    "20-minute-debate test: only build an interaction around a claim people would argue about and leave 'feeling differently'. Not 'water is wet'.",
+    "THE central move: convert the contestable claim into a finding the READER PRODUCES — they guess it, enter their own value, run the model, or audit the data — so a number they'd argue with becomes something they felt/ran/verified.",
+    "Show, don't tell: visuals carry the argument; prose only steers attention. Draft prose, then cut it — text is bonus content, not the content.",
+    "Give the story a changing SHAPE (a funnel, a V, an inverted-V) and end on a felt realization about the reader's own assumptions, not a summary.",
+    "Hook fast and make it about the reader: lead with the single most striking stat (simple insight) or one relatable human/data point (complex insight); where possible open with the reader's own input/guess.",
+    "Restraint + iteration are the quality multiplier (and what AI most lacks): ship ONE HERO centerpiece + any number of supporting playgrounds that EACH earn their place, iterated — abundance is fine, slop is not. Kill any interaction that doesn't change what the reader understands.",
+    "NO HORIZONTAL SCROLL: the reader's axis is VERTICAL — never gate content or comparison behind sideways scrolling. Lay out card/entity decks and galleries as VERTICAL grids (see components card_deck/entity_cards), not scroll-x carousels; readers don't horizontally scroll, so anything off the right edge is effectively unseen. The ONLY sanctioned horizontal motion is a deliberate, keyboard+dot-rail stepper for a SMALL discrete set (3-7) via the scroll_snap_stepper recipe — and even then prefer vertical when in doubt. Map/chart panning inside a bounded viz is fine; PAGE-level horizontal scroll is the anti-pattern.",
+    "Ship trust: methods + code + data + traceability (this is already our strength — keep it as the credibility close)."
+  ],
+
+  "centerpiece_doctrine": {
+    "rule": "Every piece designates exactly ONE finding as the hands-on centerpiece the reader produces themselves, and the narrative is built AROUND it (not the reverse). Beyond that hero, on a visual OR computational topic (topic_profile.is_visual OR is_computational) build a supporting playground for EVERY distinct producible finding the dataset affords (Pudding/World-Cup-grade), each lighter than the hero and each surviving only if it passes the earned_test below (the earned_test is the FILTER, not a reason to stop at one). On a purely descriptive topic the supporting set stays a restrained allowance per the engagement floor.",
+    "earned_test": "A supporting playground is EARNED iff ALL of: (1) it is bound to a SPECIFIC finding the reader produces or feels (a distinct ana_xx / data_table the hero does not already own); AND (2) it passes a playtest in a real browser — the control fires, state changes, the readout updates, no console errors; AND (3) it is NOT a duplicate of another interaction's job (no two playgrounds re-teach the same finding or use the same mechanism on the same data). Fail any clause → cut it before the Programmer builds it.",
+    "abundance_floor": "On a visual OR computational topic the DEFAULT is the full earned set, not one supporting playground: enumerate every DISTINCT finding a reader could produce/feel and build a playground for each that clears the earned_test. Reach-for-many (coverage of distinct findings) and anti_pile cut-the-unearned (per-widget quality) are orthogonal. The hero centerpiece doctrine is unchanged; this floor governs only the SUPPORTING set.",
+    "anti_pile": "More EARNED interactions IS better; more UNEARNED interactions is not. A supporting SET is judged on its EARNED subset (distinct producible findings covered), never on raw count — coverage is the positive lever (see abundance_floor), the filter below removes the rest. More interactions is NOT better. An unearned, duplicate, or dead (inert/never-fires) widget is decoration, and a SET scores only on its EARNED subset, never on count — so an unearned/duplicate/dead widget caps visual_design at 3 (see critic/references/rubric.json). Curate down to the hero + the supporting set that each clears the earned_test; ship nothing the Editor did not curate.",
+    "how_to_choose": "Ask: which single contestable claim should the reader produce, and how? Map the claim to the lightest interaction that makes the reader produce it — see interaction_taxonomy. A predictive/derived headline (e.g. a model's champion odds) almost always wants an EXPLORABLE (let them re-run / tweak an input). A 'you assume X but actually Y' claim wants GUESS-THEN-REVEAL or PERSONAL-INPUT.",
+    "same_model_as_headline": "An explorable centerpiece MUST recompute on the Analyst's SAME audited client_model that produced the published headline number — same coefficients, same scoring/sim function (inlined from analyst.json client_model). The reader tweaking an input and the prose's headline are then two readouts of ONE model, so 'check the number yourself' is literally true. Never wire the widget to a second, hand-tuned, divergent model — that breaks the auditability promise.",
+    "anti_pattern": "Do NOT place the interaction after the prose already revealed the answer (the surprise gets spent before the reader acts). The centerpiece must come at or before the reveal, so the reader's own action IS the reveal."
+  },
+
+  "content_patterns": {
+    "_note": "Reusable NARRATIVE moves (what to compare/show), distinct from the interaction recipes (how to build it). Portable across topics.",
+    "model_vs_market_or_benchmark": {
+      "job": "Earn trust + drama by contrasting YOUR model's output against an INDEPENDENT external benchmark — betting-market odds, an official ranking, a transfer/market valuation, an analyst consensus, a published index — so the reader sees where the model agrees with and where it departs from 'the crowd'. The gap is the story.",
+      "generalize": "The external benchmark is whatever the field's market/consensus is: sports = bookmaker odds or a federation ranking; finance = analyst price targets or an index; products = critic/aggregate scores or list price; elections = polling averages. Pick one credible, datable benchmark and line it up against your derived metric (a scatter of model vs benchmark, a diverging bar of disagreements, or a side-by-side per-entity row).",
+      "betting_odds_rules": "If the benchmark is betting odds: (1) DE-VIG — convert each price to an implied probability and REMOVE the overround/margin (normalize the field's implied probabilities to sum to 1) before any comparison, else you're comparing your clean probabilities to inflated ones; (2) show a DATED snapshot ('odds as of <date>, <source>') — odds move, so freeze and attribute them; (3) declare the odds are NOT a model input (they're an independent yardstick, never fed back in — guard the leakage); (4) include a RESPONSIBLE-GAMBLING footer (e.g. an 18+/ begambleaware-style line) wherever odds are shown.",
+      "auditability": "Treat the benchmark as external evidence, not ground truth: state its source + date, keep it strictly separate from the model's inputs, and let the reader judge the disagreement rather than asserting the model is 'right'.",
+      "pairs_with": "An explorable_recompute centerpiece (reader nudges the model, watches it move toward/away from the market line) and/or entity_cards (per-entity model-vs-market column)."
+    }
+  },
+
+  "universal_engine": {
+    "_note": "ONE mental model replaces Svelte reactivity for scrollytelling, toggles, steppers, search-filter, and explorables alike. Standardize every interaction on it.",
+    "pattern": "A single `state` object + one `render()`/`update()` you call after every state change + (for scroll/step UIs) a `steps[]` array of functions where steps[i]() mutates the visual for step i. No framework.",
+    "skeleton": "const state={...}; function render(){ /* read state, redraw DOM/SVG/chart */ } controls.forEach(c=>c.addEventListener('...', e=>{ if (vOn()) return; state.x=...; render(); })); render();",
+    "scroll_state": "Detect active step with IntersectionObserver over .step divs (threshold array + pick max intersectionRatio), then call update(activeIndex). For continuous scroll-progress (0-1), read intersectionRatio or compute (innerHeight/2 - rect.top)/rect.height in a scroll+rAF loop."
+  },
+
+  "verify_coexistence": {
+    "_note": "MANDATORY guard for every reader-operated playground so it COEXISTS with the Inspector/Verify layer. This is exactly what the Playtester's `verify_coexist` check enforces.",
+    "rule": "When the Verify layer is ON, the document element carries class `verify-on`. While `verify-on` is set, every playground control→readout mutation MUST be inert: a click/drag opens the provenance drawer (Verify owns the gesture) instead of changing the readout. So the at-rest published number stays put under audit and can never drift mid-verification.",
+    "pattern": "Define once near the top of the script: `const vOn = () => document.documentElement.classList.contains('verify-on');`. Then the FIRST line of every control handler (slider input, button click, select change, drag, game step) early-returns: `if (vOn()) return;`. Guard the mutating handlers only — do not guard `render()` itself (the initial baseline render must still run).",
+    "applies_to": "Every reader-operated recipe: explorable_recompute, tune_the_assumption, guess_then_reveal, scored_quiz, personal_input / personal_input_where_you_land, playable_game (and any toggle/stepper that mutates a readout)."
+  },
+
+  "bare_number_readout": {
+    "_note": "MANDATORY readout shape so the Playtester's `recompute_oracle` can auto-grade. The oracle reads the `[data-play-out=int_NN]` element's text and parses a NUMBER; a sentence-style readout ('Argentina are most likely…') has no parseable figure → grades UNVERIFIED.",
+    "rule": "At rest, the live readout MUST expose a BARE, parseable number — the baseline figure as plain text, not buried in prose. Put it either directly in the `data-play-out` node or in a dedicated child span (e.g. `.po-num`) that the node contains.",
+    "pattern": "`<span data-play-out=\"int_01\" class=\"po-num\">26.3</span>` (optionally followed by a separate static unit/label node, e.g. `<span class=\"po-unit\">% champion odds</span>` that is NOT inside the parsed span). Any surrounding sentence is fine as long as the bare number lives in its own readable node. On recompute, write the new bare number into that same node so the oracle reads the live value.",
+    "anti_pattern": "Writing the readout as a full sentence with the number embedded ('Argentina are most likely to win at 26.3%') with no isolated numeric node — the oracle can't parse it and grades the playground UNVERIFIED."
+  },
+
+  "control_specs": {
+    "_note": "Defaults for every reader-operated control so the Programmer builds compliant controls on the first pass (no Playtester send-back). These are the floor, not the ceiling.",
+    "hit_area": "Every interactive control (slider thumb, button, dot, tab, stepper arrow) DEFAULTS to a ≥44px hit-area (min 44×44px tap target) — matches quality_rubric A11Y5. Use min-height/min-width:44px (or padding) on buttons/dots; for a slider, size the thumb and add vertical padding so the grabbable band is ≥44px. The e2e build shipped 40px and the Playtester sent it back — build 44px first time.",
+    "keyboard": "Controls are real, labelled, keyboard-operable elements (native <button>/<input>/<select>), focus-visible, with aria where the recipe calls for it.",
+    "default_value": "Seed every control at the audited baseline / a sensible default so the at-rest, untouched widget is meaningful (and, for models, reproduces the published headline)."
+  },
+
+  "recipes": {
+    "scrollytelling": {
+      "job": "Surrender pacing; a complex argument unfolds one controlled beat at a time as a pinned graphic morphs on scroll. The Pudding signature.",
+      "structure": "Two-column grid: a `.sticky-graphic` (CSS position:sticky; top:0; height:100vh) beside a column of tall `.step` divs (min-height ~90vh).",
+      "technique": "IntersectionObserver on .step elements (fine threshold array, rootMargin '-40% 0 -40% 0') -> active step index -> steps[i]() mutates the graphic via D3 .transition(). No scrollama needed (position:sticky + IO). Reference: _pudding_research/how-to-implement-scrollytelling/demo/graphic.js (the update(step) engine) + demo/graphic.css (sticky CSS).",
+      "when": "Stories with a sequential argument or a funnel/transformation (e.g. a bracket narrowing 32->1)."
+    },
+    "cinematic_background": {
+      "job": "A full-bleed, scroll-driven BACKGROUND of verified imagery the reader scrolls through — the immersive 'Snow Fall' mode, distinct from scrollytelling's pinned CHART. Owned by the Cinematographer role (a MANDATORY pipeline stage — every blog ships a scroll background; the Cinematographer only selects which MODE fits).",
+      "structure": "A pinned full-bleed background layer (position:sticky/fixed, 100vh) behind the text column; consecutive scene images crossfade on scroll-progress; text scrolls over a readability scrim.",
+      "technique": "See cinematographer/references/cinematic_recipes.json (engine + pinned_crossfade / ken_burns / parallax_depth / video_background + scrims + reduced-motion/perf guardrails). Backgrounds must be Scout-verified (sct_) / Designer (des_) assets; tag data-cin + data-sct.",
+      "when": "ALWAYS (mandatory stage, no off path): the only choice is the MODE — photographic (default, >=5 cover-able verified images), else generative (AI atmosphere) or data_driven (chart-spine). 'Rich verified imagery + emotional/visual topic' selects PHOTOGRAPHIC; it is never the gate for whether to have a background. See cinematographer/SKILL.md."
+    },
+    "explorable_recompute": {
+      "job": "THE centerpiece for derived/predictive findings: the reader manipulates an input and watches the computed output RE-DERIVE live — so they produce/verify the headline themselves.",
+      "structure": "Controls (sliders / dropdowns / a 'run' button) + an output chart, both bound to a tiny client-side model. Every control's hit-area is ≥44px (see control_specs) so it is comfortably tappable at first build.",
+      "technique": "Requires a `client_model` from the Analyst (coefficients + a pure-JS scoring/sim function, inlined) — and it MUST be the SAME model that produced the published headline number (see centerpiece_doctrine same_model_as_headline), so the live readout and the prose's figure agree by construction. On any control change (debounced): FIRST early-return if the Verify layer is on — `if (vOn()) return;` where `const vOn = () => document.documentElement.classList.contains('verify-on');` (see verify_coexistence) so the click/drag opens the provenance drawer instead of mutating the readout; otherwise read inputs -> call the client_model function -> update the output chart (D3 join + transition, or re-embed a Vega spec). Keep client compute cheap (closed-form formula, or a few-thousand-iteration Monte-Carlo that runs <1s; show a tiny spinner if needed). Seed the controls at the audited baseline so the untouched widget reproduces the headline exactly. Expose the baseline output as a BARE parseable number in the readout node (see bare_number_readout) so it auto-grades.",
+      "example": "Champion-odds explorable: slider nudges a team's Elo; a JS Monte-Carlo (few-k sims) recomputes champion probabilities; bars animate. Delivers a literal 'check the 26.3% yourself / what if Argentina were weaker?'",
+      "when": "ALWAYS prefer this as the centerpiece when the piece rests on a model or a derived metric."
+    },
+    "personal_input": {
+      "job": "Make it about the reader: they enter their own value (name, city, category, a number) and the narrative/visual re-renders around them.",
+      "technique": "An <input>/<select>/<datalist> (≥44px hit-area, see control_specs) sets state -> the handler FIRST early-returns under Verify (`if (vOn()) return;`, see verify_coexistence) -> else render() pulls the reader's row out of the inlined data (or recomputes via client_model) -> highlight/annotate their position. If the placement yields a figure, write it as a BARE number into the readout node (see bare_number_readout). Pure DOM + D3 join. Pairs naturally with explorable_recompute.",
+      "when": "When the data has rows a reader can find themselves in (places, categories, years)."
+    },
+    "guess_then_reveal": {
+      "job": "Invest the reader by making them predict first, then feel the correction. The Pudding analogue of 'you-draw-it'.",
+      "technique": "A slider/choice (≥44px hit-area, see control_specs) captures the reader's guess as state; the guess + reveal handlers FIRST early-return under Verify (`if (vOn()) return;`, see verify_coexistence) so a click opens the provenance drawer instead of revealing. On reveal, draw BOTH the guess and the REAL value FROM THE DATA (never hardcoded pixel widths) so the gap is data-bound; expose the revealed REAL value as a BARE number in the readout node (see bare_number_readout); branch a short verdict. CRITICAL: bars/positions must be computed from the data_table, animated in.",
+      "anti_pattern": "The v4 failure mode: revealing fixed `width:160px` bars the guess never touched. The reveal must be the actual data."
+    },
+    "self_drawing_line": {
+      "job": "A trend reveals itself as a line draws on (great as a scroll step).",
+      "technique": "d3.line() -> path; L=path.getTotalLength(); set stroke-dasharray=`${L} ${L}`, stroke-dashoffset=L (hidden); animate stroke-dashoffset->0 via CSS transition or D3 .transition(). Partial reveal up to year Y via an offset scale. Reference: song-repetition/src/js/overtime.js."
+    },
+    "toggle_refilter": {
+      "job": "Let the reader recolor/refilter a chart by metric or category.",
+      "technique": "Native <button>/<input> flips state.metric -> render() rescales + re-joins (D3 .transition() for smooth bars). The universal_engine in miniature."
+    },
+    "sortable_table": {
+      "job": "Explore a catalog on the reader's terms.",
+      "technique": "Click <th data-key> -> rows.sort(d3.ascending/descending on key) -> re-render <tbody>; toggle asc/desc; set aria-sort for a11y. Inline value bars via CSS width %. Reference: svelte-templates/templates/Table.svelte."
+    },
+    "tooltip": {
+      "job": "Probe a dense chart point-by-point.",
+      "technique": "A fixed-position <div> toggled on mousemove (event.clientX/Y), opacity 0/1 on enter/leave. Hand-rolled (do not rely on d3-tip; it's not in the core bundle)."
+    },
+    "animated_transitions": {
+      "job": "Make change legible — one state fluidly becomes another; the motion carries meaning.",
+      "technique": "D3 .transition().duration(500-1500).ease() on enter/update/exit, with staggered .delay((d,i)=>i*k). For spring-like motion (no Svelte spring): a small rAF lerp toward a target, or just CSS transition:transform. Avoid hard re-renders that pop.",
+      "rule": "Only animate if the transition is meaningful, not just to 'make it pop' (Pudding restraint)."
+    },
+    "act_transition": {
+      "job": "Swap between two STICKY graphics (act A -> act B) as the reader scrolls, so the change of scene is felt rather than a hard cut. Distinct from scrollytelling (one graphic that morphs) — here two whole graphics crossfade.",
+      "structure": "Two stacked sticky layers in the same `.sticky-graphic` slot (each position:absolute; inset:0), graphic-A and graphic-B; a column of `.step` divs as in scrollytelling. Default: A has `.active`, B does not.",
+      "technique": "Reuse the existing IntersectionObserver active-step from the universal_engine: when the step that belongs to act B becomes active, toggle `.active` off A and on B (just class flips — CSS transitions do the motion). Crossfade OUT the outgoing layer with var(--dur-md) var(--ease-in) and IN the incoming with var(--dur-lg) var(--ease-out) (out faster/subtler than in; see motion.json choreography.two_act_sticky_transition). CSS: `.act{opacity:0;transition:opacity var(--dur-lg) var(--ease-out)} .act.active{opacity:1} .act.leaving{transition:opacity var(--dur-md) var(--ease-in)}`. Animate opacity (and optional transform) ONLY. Under reduced-motion the tokens collapse to 1ms so it becomes a clean instant swap, still correctly sequenced.",
+      "when": "A story with two or more distinct visual chapters that share the sticky slot (e.g. a bracket act -> a map act), where a morph between them would not be honest but a scene change is."
+    },
+    "scroll_snap_stepper": {
+      "job": "A horizontal stepper the reader swipes/arrows through, each step snapping to center — discrete states at the reader's pace without a full scrollytelling rig. (The clean named home for the scroll-snap pattern a card deck uses.)",
+      "structure": "A horizontal track `.stepper{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch}` holding `.step{flex:0 0 100%; scroll-snap-align:center}` children. A live region / dot rail shows position.",
+      "technique": "Native CSS scroll-snap does the snapping (no JS for the snap itself). Add keyboard support: make the track `tabindex=0` with `role=group`/`aria-roledescription` and on ArrowLeft/ArrowRight call `track.scrollBy({left: ±track.clientWidth, behavior})` where behavior = 'smooth' normally, 'auto' under prefers-reduced-motion (read the media query, don't hardcode). Track the active index with an IntersectionObserver (root=track, threshold 0.6) on the steps -> update the dot rail + aria-current. Snap scrolling honors var(--*) implicitly via the reduced-motion scroll-behavior reset in motion.json; do NOT add an easing curve to the scroll itself (scroll-linked = linear, see motion.json rule.scroll_is_linear).",
+      "when": "A small set of discrete comparable states (3-7) the reader steps through — a card deck, a before/after pair, a few scenario panels — where horizontal swipe/arrow paging beats vertical scroll."
+    },
+    "scored_quiz": {
+      "job": "Test the reader against a surprising number: they GUESS first, then see the real answer AND where their guess lands relative to the data's own spread — so the correction is felt, not told. The named home for the reader_quiz_guess_first mode; a guess_then_reveal that also scores the reader against a distribution.",
+      "structure": "A guess control (slider / numeric <input> / choice buttons, ≥44px hit-area — see control_specs) + a reveal that draws TWO data-bound bars — the reader's guess and the real ANSWER — plus a thin percentile band marking where the guess sits. A short verdict line, with the real ANSWER also written as a BARE parseable number in the readout node (see bare_number_readout). All bound to the universal_engine: `state={guess,revealed}`; `render()` redraws on every change.",
+      "technique": "Inline the Analyst data_table (and a client_model if the ANSWER is derived, not a raw cell) — never raw files. Guard for Verify coexistence: the guess + reveal handlers FIRST early-return under Verify (`if (vOn()) return;`, see verify_coexistence) so a click opens the provenance drawer instead of revealing/scoring. At rest: show only the guess control + an empty/hidden answer track. On reveal: read state.guess, pull the real ANSWER straight from the data_table, and draw BOTH bars with widths computed from the data's own scale (a D3 linear scale over the column's [min,max]) — NEVER hardcoded pixel widths (the v4 failure: revealing fixed `width:160px` bars the guess never touched; the reveal MUST be the actual data) — and write that real ANSWER as a BARE number into the `data-play-out` readout node (a `.po-num` span), not only inside the verdict sentence, so the recompute_oracle can parse it. Derive the percentile band from the DATA'S OWN SPREAD — the distribution of the relevant column across the data_table (e.g. how far the guess sits within the observed range / quartiles) — and label it honestly as a position within the data; NEVER fabricate a '% of readers' figure (we have no reader population). Animate the bars in (D3 .transition()); branch a one-line verdict (over / under / close) off the signed gap. Tag the root `data-int=int_NN` + `data-ana` (the finding it reveals); register a verify_map entry (kind:computation, recompute:data_table). Ship a `<noscript>` fallback that just states the real ANSWER + the number, and honor prefers-reduced-motion (bars appear at final width, no animation). Because the ANSWER is a real number, ship a matching Pyodide run_cell that recomputes the ANSWER EXACTLY from the inlined data_table (deterministic — same figure as the prose).",
+      "anti_pattern": "Hardcoding the answer/guess bar widths in px (decouples the reveal from the data); inventing a '% of readers scored below you' band (no reader population exists — the band must be derived from the DATA's spread, not a fabricated audience).",
+      "when": "A single surprising headline number the reader will have a prior about (a gap, a rate, a count) — let them commit to a guess before the reveal, and show them how far off the data says they were."
+    },
+    "playable_game": {
+      "job": "Let the reader ABSORB a finding by playing it, not reading it: a tiny self-contained loop where they make the same choice the data is about, repeatedly, and watch the aggregate converge to the published rate — so a statistic becomes something they experienced. Alias: interactive_demo_minigame.",
+      "structure": "A minimal play surface (a button or two per action — each ≥44px hit-area, see control_specs — a running scoreboard, a small chart of the running aggregate) bound to `state={round,score,history}`. One MODEL (the inlined Analyst client_model or the data_table's real odds) drives each round; the universal_engine renders after each step. The scoreboard's live aggregate is a BARE parseable number in the readout node (see bare_number_readout).",
+      "technique": "Inline the client_model / data_table (the REAL odds, never invented). Guard for Verify coexistence: `step()` (and any action handler) FIRST early-returns under Verify (`if (vOn()) return;`, see verify_coexistence) so a click opens the provenance drawer instead of playing a round. The loop: `function step(action){ if (vOn()) return; const o = MODEL.play(action, state); state.history.push(o); state.score += o.payoff; state.round++; render(); if (state.round >= N) finish(); }` where MODEL.play resolves one round under the DATA'S real probabilities (e.g. choose-under-the-odds, draw-a-card, take-the-shot). Keep it the LIGHTEST loop that makes the finding FELT — typically: the reader repeatedly chooses, each outcome is sampled from the real rate, and the running-aggregate chart visibly converges toward the published figure as N grows (the point: 'over many tries it really is X%'). Render the running aggregate as a BARE number in the `data-play-out` node (a `.po-num` span) so the oracle can read it. `finish()` freezes the surface and states the convergence vs the published rate. Real <button> controls (keyboard-operable, labels, focus), an aria-live scoreboard. Tag the root `data-int=int_NN` + `data-ana`; register a verify_map entry (kind:computation). Ship a `<noscript>`/no-MODEL fallback that states the published rate and what the game would have shown, and a prefers-reduced-motion path (advance state, skip the celebratory motion). The aggregate is a real number, so ship a matching Pyodide run_cell: a reduced-N Monte-Carlo of the same MODEL.play that lands '≈ within noise' of the published rate (stochastic — report it as an approximate band, NEVER a hard exact-match).",
+      "anti_pattern": "A 'game' with no real model behind the outcomes (scripted/fake wins teach nothing); running so few rounds the aggregate never visibly converges (the convergence IS the lesson); claiming an exact match from a stochastic loop instead of an '≈ within noise' band.",
+      "when": "An experiential statistic — a base rate, an expected value, a survival/conversion probability — that lands far harder when the reader lives the long-run average than when they read it."
+    },
+    "tune_the_assumption": {
+      "job": "The topic-agnostic generalization of explorable_recompute: the reader nudges ONE ASSUMPTION (a delta on a parameter) and watches the model's headline output re-derive against the cached published baseline — so they probe 'what if X were different?' on the real model. The portable form of the World Cup runScenario.",
+      "structure": "A small set of controls (a slider per tunable assumption + a 'reset to baseline' affordance — each ≥44px hit-area, see control_specs) + an output chart showing the recomputed metric AND the cached published baseline (a ghost bar / reference line) so the DELTA is visible. Bound to the universal_engine: `state={params}`; `render()` re-runs the model and redraws. The recomputed headline metric is exposed as a BARE parseable number in the readout node (see bare_number_readout).",
+      "technique": "Requires the Analyst client_model — the SAME audited model that produced the published headline (see centerpiece_doctrine same_model_as_headline), inlined (coefficients + a pure-JS sim/scoring function), never raw files. On any control change (debounced): FIRST early-return under Verify — `if (vOn()) return;` (see verify_coexistence) so the drag opens the provenance drawer instead of re-running the model; otherwise `const out = MODEL.simulate(reducedN, {param: state.delta});` then redraw the output AS A DELTA against the cached published baseline (computed once at the audited settings, kept as a constant reference — do not recompute the baseline from the slider) and write the recomputed metric as a BARE number into the `data-play-out` node (a `.po-num` span) so the oracle can parse it. Keep client compute cheap (closed-form, or a few-k-iteration Monte-Carlo <1s; tiny spinner if needed). SEED every control at the audited baseline so the UNTOUCHED widget reproduces the headline exactly (a reader who never moves a slider sees the published number). Pairs with content_patterns.model_vs_market_or_benchmark — line the tuned output up against the external benchmark (market/consensus/index) for finance, elections, products. Tag the root `data-int=int_NN` + `data-ana`; register a verify_map entry (kind:computation, three_layer). Ship a `<noscript>`/no-MODEL fallback that renders the baseline output statically, and a reduced-motion path (bars settle without animation). It produces a number, so ship a matching Pyodide run_cell: the same MODEL.simulate at the baseline reproduces the published figure exactly (deterministic seed), and shows the delta for one example tuned setting.",
+      "anti_pattern": "Wiring the widget to a second, hand-tuned model that disagrees with the prose (breaks auditability); recomputing the baseline from the live slider so the 'published' reference drifts; not seeding at baseline, so the at-rest widget shows a number the prose never claimed.",
+      "when": "ANY story resting on a model / derived metric with at least one assumption a reader would contest — prefer this as the hero for predictive/derived headlines, and as a supporting playground for a secondary modeled finding."
+    },
+    "personal_input_where_you_land": {
+      "job": "Make a finding about the READER: they enter their own value and the visual highlights where THEY land in the data — 'you're here' — turning an aggregate into a personal position. The generalization of personal_input.",
+      "structure": "An <input>/<select>/<datalist> for the reader's value (≥44px hit-area, see control_specs) + an output that places them in context (their row pulled from the inlined data_table, or their percentile from a client_model) with a 'you are here' marker on the existing chart. Universal_engine: `state={value}`; `render()` locates + highlights. The percentile/rank readout exposes a BARE parseable number in the readout node (see bare_number_readout).",
+      "technique": "Inline the data_table (rows a reader can match — places, categories, years, brackets) or a client_model that maps the reader's value to a percentile; never raw files. On input/change: FIRST early-return under Verify — `if (vOn()) return;` (see verify_coexistence) so the gesture opens the provenance drawer instead of relocating the marker; otherwise `render()` finds the reader's row (or computes their percentile), then highlights/annotates their position on the chart (a marker, a ring, a labeled point) and writes the percentile/rank as a BARE number into the `data-play-out` node (a `.po-num` span) — e.g. the '73' in 'you're at the 73rd percentile' lives in its own span so the oracle can parse it. Pure DOM + D3 join. Real labeled controls, keyboard-operable, with a sensible default value so the at-rest state is meaningful. Tag the root `data-int=int_NN` + `data-ana`; register a verify_map entry (kind:computation, recompute:data_table). Ship a `<noscript>` fallback that shows the chart with no highlight (still conveys the distribution), and a reduced-motion path (marker appears without animating). If the placement yields a number (a percentile, a rank), ship a matching Pyodide run_cell that recomputes that placement from the inlined data_table for one example input.",
+      "tradeoff_note": "Freehand 'draw your own guess' (the NYT you-draw-it curve) is intentionally NOT built by default: it is hard to make keyboard-accessible, hard to degrade without JS, and the playtest harness sets DISCRETE control values, not freehand pointer paths — so it can never be auto-verified and always falls to a human eyeball. guess_then_reveal / scored_quiz is the SANCTIONED equivalent (a slider/numeric guess captures the same 'commit before the reveal' with full a11y + verifiability). Reach for freehand only as an explicit, human-signed-off exception.",
+      "when": "The data has rows or a continuum a reader can locate themselves in (places, categories, years, a score they can compute about themselves)."
+    }
+  },
+
+  "interaction_taxonomy": {
+    "_note": "Pick by the job-for-the-reader. (* = highest value for data/forecast stories.)",
+    "scrollytelling*": "controlled beat-by-beat unfolding of a complex argument",
+    "explorable_recompute*": "drive the model yourself; tweak input, watch output re-derive (the centerpiece for derived/predictive claims)",
+    "guess_then_reveal*": "predict first, feel the data-bound correction",
+    "personal_input*": "enter your own value; the story re-renders around you",
+    "search_lookup": "pull your specific entry out of a big dataset",
+    "sortable_filterable_grid": "scan/sort a catalog on your terms",
+    "animated_state_transition": "watch one chart morph into another",
+    "scored_quiz": "guess first, then see the real answer AND where your guess lands in the data's own spread (recipe: scored_quiz — a scored guess_then_reveal; the band comes from the DATA, never a fabricated '% of readers')",
+    "stepper_walkthrough": "click through discrete states at your pace",
+    "hover_explore": "probe a dense viz point-by-point",
+    "playable_game": "absorb a point by playing it — a tiny loop where you make the data's choice repeatedly and watch the aggregate converge to the published rate (recipe: playable_game, alias interactive_demo_minigame)",
+    "note": "The Pudding does NOT do freehand draw-your-guess (that's NYT Upshot; neal.fun owns the circle/Bill-Gates pieces). Our equivalent is guess_then_reveal via slider/click."
+  },
+
+  "portability_rules": [
+    "ONE self-contained index.html, no build step, must run on file://.",
+    "Allowed libraries via CDN: Vega-Embed, Leaflet, D3 (use D3 for scales/axes/transitions/line-gen/force; draw marks yourself in SVG <=~2k marks, Canvas beyond), PDF.js.",
+    "Replace Svelte reactivity with the universal_engine (state + render + steps[]). Replace scrollama with position:sticky + IntersectionObserver. Drop ArchieML/LayerCake/Style-Dictionary/bits-ui entirely — inline copy as HTML and data as a JS literal.",
+    "Data/model for explorables comes from analyst.json `client_model` (inlined), NOT raw files.",
+    "Accessibility + graceful degradation: keyboard-operable controls, aria-sort on sortable tables, and the page must still convey its point if JS/interaction fails."
+  ],
+
+  "reference_clones": "internal reference (not included): how-to-implement-scrollytelling/demo/graphic.js (best single sample: the update(step) engine + rollyourown zero-dep scroll), svelte-templates/templates/ (Table, Confetti, InView, Scatterplot), song-repetition/src/js/overtime.js (scroll-driven line + stages) and basechart.js (responsive D3 base)."
+}

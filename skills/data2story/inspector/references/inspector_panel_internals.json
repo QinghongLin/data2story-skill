@@ -1,0 +1,69 @@
+{
+  "_doc": {
+    "purpose": "Component + behaviour spec for the Inspector panel / coding-verifier layer — the generalised successor to viewer_internals.json (which documented the old margin-shift evidence viewer). This file describes WHAT the layer does and the contracts it depends on; you build the panel per inspector_panel_reference.html, you do not reimplement it from scratch. The whole layer is MANDATORY for every blog.",
+    "predecessor": "Generalises an earlier margin-shift evidence viewer (retired — not shipped). The old layer shifted body content with body.margin-right; the Inspector panel uses a no-reflow overlay drawer instead (see drawer.no_reflow).",
+    "data_source": "The panel reads two inline <script> islands embedded in index.html: verifyMap (per-element provenance) and runCells (in-browser snippets). Those islands MUST be byte-identical to verify/verify_map.json and verify/run_cells.json (see inline_byte_identical).",
+    "mandatory": "Every published blog ships this layer. A blog without a working Inspector panel + a clean reproducible notebook is incomplete."
+  },
+
+  "kinds_to_renderers": {
+    "_note": "verify_map[id].kind selects the drawer renderer. Kinds: computation / media / generated / fact, plus 'credits' (a fact-shaped license/source aggregator rendered with a Credits badge) — matching verify_map.schema.json.",
+    "computation": "Renders the claim, the code slice (code_file + code_lines), a data_preview table, the expected_output, and a Run panel. If run_cells[id].runnable, a 'Run' button executes the snippet in-browser (lazy Pyodide) and grades it; otherwise the code is shown read-only with a pointer to the notebook (full_ref).",
+    "media": "Renders the asset preview (image/video/audio_embed/audio) plus source_url, license, author and identity. For a multi-asset element, renders the gallery (see gallery).",
+    "generated": "Renders the AI-generated preview plus tool, model, full prompt, purpose and disclosure, and surfaces real_default as the publish-safe fallback (the real asset is the default; the AI asset is opt-in / a toggle).",
+    "fact": "Renders the claim, its category, and the categorised sources[] — each source as a titled link with its facts[] bullet list.",
+    "credits": "A fact-shaped license/source aggregator (e.g. a card-deck's data + photo licences) rendered with a 'Credits' badge; uses the same renderer as fact."
+  },
+
+  "drawer": {
+    "no_reflow": "The drawer OVERLAYS the page (fixed-position panel above the content); it does NOT push the body. This replaces the old viewer's `body { margin-right: 440px }` reflow, which caused full-bleed (100vw) sections to mis-size and the page to jump on open. The body stays exactly where it is.",
+    "open_on_element": "Clicking any element carrying a data-* id from verify_map opens the drawer for that id and renders the matching kind.",
+    "focus_trap": "While open, focus is trapped inside the drawer (Tab cycles within it); focus returns to the triggering element on close.",
+    "escape_and_dismiss": "Esc closes the drawer; clicking the scrim / a close control also closes it. Closing restores focus.",
+    "es5_safe": "Panel JS stays compatible with the blog's own scripts (no global leaks; avoid clobbering the page's identifiers), consistent with the self-contained file:// constraint inherited from the old viewer."
+  },
+
+  "runnable_snippets": {
+    "lazy_pyodide": "Pyodide is loaded LAZILY — only on the first 'Run' click — so the page's initial load is not penalised. Subsequent runs reuse the loaded runtime.",
+    "imports": "Snippets import only numpy / pandas / stdlib (the Pyodide-safe set declared in run_cells.schema.json).",
+    "grading": {
+      "pass": "Exact / derived snippets (reduced_n == null): stdout must equal expected_stdout -> PASS.",
+      "approximate": "Stochastic snippets (reduced_n set): the reduced-N run is graded '≈ within noise' against the published figure and is NEVER shown as a hard PASS. The exact full-N reproduction is the notebook cell named in full_ref.",
+      "read_only": "needs_network:true => runnable:false: the snippet is shown read-only with a note pointing to the notebook; the panel does not execute it."
+    }
+  },
+
+  "gallery": {
+    "keys_in_order": "A multi-asset element exposes its gallery under one of three keys tried IN THIS ORDER: flags || assets || photos. The first present non-empty array is rendered.",
+    "item_shape": "Each item follows verify_map.schema.json#/$defs/galleryItem and carries its OWN source_url + license so per-asset attribution is preserved in the gallery view.",
+    "caption": "Item caption falls back across label -> team -> name -> subject -> filename."
+  },
+
+  "data_attr_contract": {
+    "attrs": "Elements are bound to provenance via data-* attributes, one per producing role: data-ana, data-det, data-des, data-sct, data-cin. The attribute value is the atomic id (e.g. data-ana=\"ana_01\").",
+    "decorative_skip": "Purely decorative elements carry no data-* id and are skipped by the panel (no drawer, no scan warning).",
+    "innermost_wins": "When data-* attributes nest, the INNERMOST element that was clicked wins — its id selects the drawer, not an ancestor's.",
+    "ids_must_exist": "Every data-* id present in the page MUST exist as a key in verify_map.json. A data-* id with no verify_map entry is an auditor failure (dangling reference); a verify_map id with no element on the page is an unused entry (report, not fatal)."
+  },
+
+  "inline_byte_identical": {
+    "rule": "The verifyMap and runCells <script> islands inlined into index.html MUST be byte-identical to verify/verify_map.json and verify/run_cells.json respectively.",
+    "why": "The on-disk JSON files are the auditable source of truth and the publish artifacts (also the inputs the downloaded notebook reproduces from); the inline copies are what the panel actually reads at runtime. If they drift, the audited provenance no longer matches what readers see.",
+    "escaping": "When inlining, escape any literal </script> as <\\/script> to avoid premature script-tag closure, and serialise with ensure_ascii so raw multibyte chars / newlines do not break the JS parser (inherited from the old viewer's constraints)."
+  },
+
+  "publish_wiring": {
+    "NB_PATH": "Path/URL to the reproducible notebook (verify/<topic>_forecast.ipynb) that the panel's 'Download notebook' link points at. The reader downloads it and runs it LOCALLY (alongside the bundled verify/data/ inputs) to reproduce the numbers from raw data. There is NO Colab branch — the notebook is download-and-run-locally only.",
+    "open_cell_source": "The panel's 'Open the notebook cell ↗' button (openCellSource) opens a fresh blank tab containing a tiny self-contained HTML page that renders the inlined run_cells[id].code in a styled <pre> — a RAW-CODE page, NOT a Colab/notebook link. It works on file:// with no assets and shows exactly the cell behind the clicked claim. (The in-browser Pyodide 'Run in your browser' path and the 'Download notebook' link are the other two ways to run the code.)",
+    "viewer_redirect": "The Inspector panel lives IN index.html (the in-page layer; the panel + the verifyMap/runCells islands are embedded there) — that single file IS the verifiable artifact. New runs ship ONLY index.html; no separate viewer.html is emitted. (Historically the Inspector emitted a viewer.html redirect for paper-link continuity; that was retired. Previously-deployed blogs keep their own standalone viewer.html on disk, unaffected.)",
+    "bundle": "The publish step must also bundle the notebook's inputs under verify/data/ (next to the notebook, so the DATA_DIR resolver finds them on disk) and any code/*.json the notebook reads (see reproducible_notebook.md §6)."
+  },
+
+  "see_also": [
+    "inspector_panel_reference.html  (the panel implementation reference — owned separately; do not reimplement)",
+    "verify_map.schema.json          (per-element provenance map: the 4 kinds + gallery $defs)",
+    "run_cells.schema.json           (the in-browser-runnable snippet map + its discipline)",
+    "cell_registry.schema.json       (notebook cell_id -> claims it backs; inverse of verify_map.cell_id)",
+    "reproducible_notebook.md         (the topic-agnostic notebook recipe: DATA_DIR resolver, guarded reads, self-asserts — download-and-run-locally, no Colab)"
+  ]
+}

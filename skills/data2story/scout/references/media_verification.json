@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "purpose": "How the Scout proves an asset's IDENTITY — that it is what the caption claims. Pick the cheapest sufficient method; set identity.verified=true only on a pass. The validate.py media gate hard-fails a real-subject asset whose identity.verified != true.",
+    "version": "1.0"
+  },
+  "methods": {
+    "oembed": {
+      "for": "embeds (spotify / youtube / etc.)",
+      "steps": [
+        "Fetch the real page and copy the opaque ID (never from memory).",
+        "Call the provider's oEmbed endpoint; require HTTP 200.",
+        "Compare the returned title to the claimed label (title sanity check).",
+        "Record method=oembed, verified=true, verified_title=<returned title>."
+      ],
+      "reuse": "../detective/references/instance_verification.json (the exact 4-step workflow + curl commands)"
+    },
+    "trusted_source": {
+      "for": "images / video from Wikidata or Wikimedia Commons",
+      "steps": [
+        "The asset comes from a Wikidata QID property (P18 image / P41 flag / P154 logo) or a Commons file whose description page names the subject.",
+        "Record the QID / Commons file + descriptionurl as the proof in identity.verified_title.",
+        "Record method=trusted_source, verified=true."
+      ],
+      "note": "Commons provenance is strong but not infallible — for the single most load-bearing hero image, also do a vlm_view."
+    },
+    "vlm_view": {
+      "for": "any image where identity matters (a named person, a specific place / object)",
+      "steps": [
+        "Open the downloaded file with the Read tool (it renders the image).",
+        "Confirm it depicts <subject> AND is a real photo, not an AI render of a real thing.",
+        "Record one line of what you actually saw in identity.verified_title.",
+        "Record method=vlm_view, verified=true — or, if it does not match, set verified=false and DROP the asset."
+      ]
+    },
+    "manual": {
+      "for": "fallback / generic imagery",
+      "steps": [
+        "Use for ambient / non-specific imagery (a crowd, a pitch) where there is no named subject to confirm.",
+        "Set identity.subject='generic', method=manual, verified=true. (License still must be verified.)"
+      ]
+    }
+  },
+  "rule": "Real-subject media — named people, specific stadiums / landmarks / objects, official logos / flags — MUST be verified by oembed, trusted_source, or vlm_view before any downstream use. Generic / ambient imagery needs license verification but may use method=manual with subject='generic'."
+}

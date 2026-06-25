@@ -1,0 +1,12 @@
+{
+  "_fixture": "scenario 06 GREEN — the send-back is discharged via the §15 escape: resolution=\"blocker_recorded\" WITH a non-empty blocker_reason, on the SAME id (int_02) that the playtest hard-failed. This satisfies §15a (resolution in {fixed,blocker_recorded}), §15b (blocker_recorded carries a reason), AND §15c (the hard playtest fail on int_02 is matched by a blocker_recorded+reason auditor entry on int_02). It deliberately does NOT use resolution=\"fixed\", because the latest playtest STILL hard-fails int_02 — a stale \"fixed\" there would (correctly) trip §15d send_back_fixed_but_still_failing. An honest recorded blocker is the right clean discharge.",
+  "send_backs": [
+    {
+      "send_back_to": "programmer",
+      "element": "int_02",
+      "type": "interactive_verify_coexistence_broken",
+      "resolution": "blocker_recorded",
+      "blocker_reason": "The third-party Vega tooltip swallows the bubbling click on this leaf control; the drawer stays reachable by keyboard and the recompute still fires. Recorded as a known upstream limitation rather than shipped as a silent break."
+    }
+  ]
+}

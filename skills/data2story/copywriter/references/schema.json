@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "role": "copywriter",
+    "is_computational": true,
+    "is_visual": true,
+    "_doc": "Copywriter output — the re-titled STRINGS for the masthead + every section title + every figure/photo/table caption, written to a research-driven titling standard that kills the AI-tell patterns (AT1 'flat statement. flat counter-statement.' above all). STRINGS ONLY: the Copywriter names, it does not edit — it touches NO finding, NO number, NO data-* id, NO layout, NO body prose. It REUSES the existing edt_/des_ ids (adds none), so the Verify layer + provenance graph are untouched. The Programmer renders masthead.* + items[*].caption verbatim. is_computational/is_visual record the topic_profile gate that set the register (sober->plain literal D16; computational->surprising-number D3). Runs at Stage 3.5, after the Editor, before the Designer."
+  },
+  "masthead": {
+    "headline": "Every bookmaker has Argentina behind the model   // the page H1 — written LAST, from the conclusion backward; states the so-what, not the topic; a single device-driven spine, never the AT1 two-beat",
+    "standfirst": "We ran the 2026 field 100,000 times. Pick a side and watch the favourite emerge — then see who the money disagrees with.   // the dek — PRIMES the question + stakes, NEVER pre-spoils the reveal number the interactive hero exists to make the reader PRODUCE (PIT-57)",
+    "kicker": "World Cup 2026 · The forecast   // the short eyebrow/section label (a few words) — a container/category, not a sentence",
+    "headline_device": "D3   // which device from D1-D16 the headline uses (D1 flat verdict | D2 earned superlative | D3 surprising number/odds | D4 quantify | D5 container | D6 imperative | D7 self-challenge | D8 causal spine | D9 N-units-later | D10 named phenomenon | D11 one-word stakes | D12 earned pun | D13 concrete-detail | D14 genuine triple | D15 open question | D16 plain literal)",
+    "headline_backs": "ana_01   // the ana_xx whose NUMBER the headline states; null for a number-free verdict that still traces to a finding's direction. NEVER a number not in analyst.json (that is fabrication, not naming)",
+    "rationale": "states the model-vs-market conflict as ONE spine (kills the AT1 two-beat); number traces to ana_01   // one line: device used + which AI-tell it avoids + why the number is honest"
+  },
+  "items": {
+    "edt_01": {
+      "title": "Short, surprising section title in this section's own voice   // the takeaway THIS edt_xx adds, in a device DIFFERENT from its neighbours (vary D1-D16 so AT8 'uniform rhythm' never fires); a pure category section gets a plain D5/D16 label — never invent a finding to punch it up",
+      "device": "D8   // the D1-D16 device this title uses",
+      "backs": "ana_03   // the ana_xx whose finding the title states, or the edt_xx it labels (for a pure category heading with no number)",
+      "rationale": "one line: device + the AI-tell it avoids + why honest"
+    },
+    "des_07": {
+      "caption": "Argentina lead, but the gap is one upset wide   // CHART: the TITLE LINE is the conclusion (<=10 words, active voice, with the number); never 'championship probabilities' / 'this chart shows'. PHOTO: two sentences (present-tense who/what/where + ABSOLUTE date; then past-tense why-it-matters the pixels can't show). TABLE: a 'what to look for' line.",
+      "subtitle": "Champion probability, 100k Monte-Carlo runs, as of 2026-06-18   // CHART/TABLE only — the descriptive subtitle (metric / unit / time-window / geography). Omit for a photo. Source goes BELOW (rendered separately).",
+      "backs": "ana_01   // the ana_xx whose number the caption states; a pure-illustration photo with no number backs the des_xx/edt_xx it sits in (say so in rationale)",
+      "rationale": "takeaway-title (conclusion, active, <10 words) + descriptive subtitle (metric/method/date); the spike is annotated ON the chart, not described here (PIT-58 avoided)"
+    }
+  },
+  "_field_notes": {
+    "naming_not_editing": "The ONLY writable surface is strings: masthead.{headline,standfirst,kicker} + items[edt_xx].title + items[des_xx].{caption,subtitle} + a rationale per entry. The Copywriter adds NO finding, changes NO number, introduces NO data-* id, reorders NOTHING, writes NO body prose. It reuses the edt_/des_ ids the Editor/Designer already produced (adds none) -> the Verify layer + verify_map + provenance graph are untouched. If a title needs a number the Analyst never computed, that is over-reach: pick a device that states what the data DOES say, or label the section plainly — never invent the number.",
+    "id_reuse": "items is a dict keyed by the EXISTING edt_xx (section) or des_xx (figure/photo/table) id — a list is wrong, and a NEW id (cw_xx) is wrong. No copywriter prefix reaches the HTML; the Programmer looks up masthead.* and items[<edt/des id>] by the id the rest of the pipeline already uses. This is why naming costs the provenance graph nothing.",
+    "every_string_backs_a_finding": "Every headline/title/caption carries `backs` = the real ana_xx whose number it states (or the edt_xx/des_xx it labels, for a number-free category heading or a pure-illustration photo). A title whose number is not in analyst.json is fabrication, not naming — the Auditor check_15 + the Critic catch a generic/unbacked title.",
+    "ai_tell_kill_list": "AT1 the 'flat statement. flat counter-statement.' two-beat (the HEADLINER病灶 — kill first) · AT2 reflexive rule-of-three · AT3 reflexive colon subtitle · AT4 abstract-noun puffery (landscape/tapestry/pivotal/underscore/delve) · AT5 empty superlative (unless data-backed = the earned D2) · AT6 vague gerund opener (Exploring/Understanding/A look at) · AT7 copula-avoidance/puffed verbs (serves as/boasts) · AT8 uniform rhythm across heads · AT9 over-typography (em-dash/curly-quote/Title-Case). The exemplar file shows each avoided in a real GOOD/BAD pair.",
+    "device_for_variety": "Generate headline candidates ACROSS several devices (D1-D16), then pick the strongest; and vary the device across the section titles so AT8 never fires. The register is gated by topic_profile: a sober/sensitive topic FORBIDS D12 earned-pun + D2 empty superlative and takes D16 plain literal; a computational topic favours D3 surprising-number.",
+    "caption_takeaway_rule": "A caption is a title: its job is to STATE THE FINDING, not label the axes. Chart = conclusion title-line + descriptive subtitle + source-below; the outlier is annotated ON the chart (dataviz annotation_layers.json), the caption asserts it. Photo = present-tense who/what/where + absolute date, then past-tense why. Table = caption above + a 'what to look for' line. Forbidden openers: 'This chart/figure shows', 'the x/y-axis shows', 'is pictured/poses/looks on', 'may suggest a possible…'. PIT-58 = a caption that labels an axis instead of stating a finding -> caps narrative_pacing at 3.",
+    "standfirst_primes_not_spoils": "The standfirst sets up the question + stakes; it must NOT state the reveal number the interactive hero exists to make the reader PRODUCE (PIT-57 — the Editor's 'standfirst primes, never pre-spoils' rule, now enforced on the Copywriter's standfirst too).",
+    "runs_before_designer": "The Copywriter usually runs BEFORE the Designer, so designer.json often does not yet exist. With it: read the des_xx kinds (chart/photo/table) to pick the caption rule. Without it: infer the visual kind from the Editor's [CHART:]/[MEDIA:] placeholders and write a caption per des_xx the Editor signalled. Either way captions key on the EXISTING des_xx id."
+  }
+}

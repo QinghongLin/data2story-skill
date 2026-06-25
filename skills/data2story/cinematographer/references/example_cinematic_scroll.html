@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cinematic scroll prototype — 2026 World Cup</title>
+<style>
+  :root{
+    --bg:#0e0f13; --ink:#f2efe9; --muted:#aab0bb; --accent:#2bd9b4;
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --ui:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+  /* ---- pinned cinematic background stage ---- */
+  .cin-stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#06070a}
+  /* each scene = a crossfading layer: a blurred FILL (full-bleed, no bars) + the SHOW image */
+  .cin-bg{position:absolute;inset:0;opacity:0;transition:opacity 1.15s ease;will-change:opacity}
+  .cin-bg.active{opacity:1}
+  .cin-bg img{position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden}
+  /* FILL: only used by "framed" object shots — a blurred, darkened backdrop so the frame is full-bleed */
+  .cin-bg .fill{object-fit:cover;filter:blur(32px) brightness(.42);transform:scale(1.25);opacity:0}
+  .cin-bg.framed .fill{opacity:1}
+  /* SHOW: the actual image. cover (full-bleed) by default; contain (whole subject) when framed */
+  .cin-bg .show{object-fit:cover;transform:scale(1.0);transition:transform 2s ease;transform-origin:50% 45%}
+  .cin-bg.active .show{transform:scale(1.05)}          /* gentle ken-burns, via transition (no reflow) */
+  .cin-bg.framed .show{object-fit:contain;filter:drop-shadow(0 14px 55px rgba(0,0,0,.6))}
+  .cin-bg.framed.active .show{transform:scale(1.03)}   /* gentler still for framed subjects */
+
+  .cin-scrim{position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(125% 85% at 50% 32%, rgba(8,9,13,.12), rgba(8,9,13,.55) 72%),
+      linear-gradient(180deg, rgba(8,9,13,.6) 0%, rgba(8,9,13,.22) 38%, rgba(8,9,13,.88) 100%)}
+
+  /* ---- foreground: the story scrolls over the background ---- */
+  main{position:relative;z-index:1}
+  .beat{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+    padding:14vh 1.5rem;max-width:760px;margin:0 auto}
+  .beat.center{align-items:center;text-align:center}
+  .kicker{font-family:var(--ui);text-transform:uppercase;letter-spacing:.2em;
+    font-size:.72rem;color:var(--accent);margin:0 0 1rem}
+  h1{font-size:clamp(2.6rem,8vw,5rem);line-height:1.04;letter-spacing:-.02em;margin:0;
+    text-shadow:0 2px 40px rgba(0,0,0,.7)}
+  h1 .dim{color:var(--muted)}
+  .stand{font-size:clamp(1.2rem,3.2vw,1.7rem);color:#e7e9ee;max-width:30ch;margin:1rem 0 0;
+    text-shadow:0 1px 22px rgba(0,0,0,.8)}
+  .beat p.body{font-size:clamp(1.15rem,2.6vw,1.5rem);line-height:1.5;max-width:32ch;
+    text-shadow:0 1px 26px rgba(0,0,0,.9)}
+  .beat p.body b{color:var(--accent);font-weight:700}
+  .num{display:block;font-size:clamp(3.4rem,11vw,6rem);font-weight:700;color:var(--accent);
+    line-height:1;letter-spacing:-.03em;text-shadow:0 2px 40px rgba(0,0,0,.7)}
+  .credit{font-family:var(--ui);font-size:.7rem;color:var(--muted);margin-top:1.6rem;opacity:.9;
+    border-left:2px solid var(--accent);padding-left:.6rem;max-width:42ch}
+  .credit .v{color:var(--accent);font-weight:600}
+  .scrolltip{font-family:var(--ui);font-size:.72rem;letter-spacing:.14em;color:var(--muted);
+    margin-top:2.2rem;text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0);opacity:.7}50%{transform:translateY(6px);opacity:1}}
+
+  footer{position:relative;z-index:1;background:var(--bg);padding:3rem 1.5rem 5rem;
+    max-width:760px;margin:0 auto;font-family:var(--ui);font-size:.82rem;color:var(--muted);line-height:1.6}
+  footer b{color:var(--ink)}
+
+  .rail{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0;z-index:5;
+    transition:width .12s linear}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    .cin-bg{transition:none}
+    .cin-bg .show{transition:none;transform:none !important}
+    .scrolltip{animation:none}
+  }
+
+  /* ===================================================================== */
+  /* ===== ABSTRACT-PATH DEMO (FALLBACK MODES, same IO engine) =========== */
+  /* data_driven_spine + generative_atmosphere — used ONLY when relevant   */
+  /* real imagery genuinely cannot be sourced. The stage is still MANDATORY:*/
+  /* the background never disappears, it becomes a chart spine / gradient.  */
+  /* Scoped under .demo2 so it does not collide with the photographic demo. */
+  .demo2{position:relative}
+  .demo2 .seam{position:relative;z-index:3;background:var(--bg);text-align:center;
+    padding:4rem 1.5rem 2rem;font-family:var(--ui);max-width:760px;margin:0 auto}
+  .demo2 .seam b{color:var(--accent)}
+  /* the pinned ABSTRACT stage: a theme gradient backdrop + a chart-spine layer + AI-atmosphere layers */
+  .d2-stage{position:sticky;top:0;height:100vh;z-index:0;overflow:hidden;
+    background:linear-gradient(160deg,#0c1418,#0e0f13 60%,#10171c)}  /* kind:gradient backdrop, NO media_ref */
+  .d2-bg{position:absolute;inset:0;opacity:0;transition:opacity 1.15s ease;will-change:opacity}
+  .d2-bg.active{opacity:1}
+  /* generative_atmosphere layer: a gradient/AI-still over the backdrop (here a CSS gradient stands in for a des_ AI still) */
+  .d2-bg.atmos{background:radial-gradient(120% 90% at 30% 20%, rgba(43,217,180,.12), transparent 60%),
+                          radial-gradient(120% 90% at 80% 80%, rgba(120,90,220,.14), transparent 60%)}
+  /* data_driven_spine layer: the signature chart pinned behind the prose, dimmed so the copy wins */
+  .d2-bg.spine{display:flex;align-items:center;justify-content:center;padding:8vh 6vw;
+    filter:saturate(.65) contrast(.9);opacity:0}
+  .d2-bg.spine.active{opacity:.9}
+  .d2-chart{position:relative;width:min(760px,92vw);height:min(60vh,440px)}
+  .d2-chart svg{width:100%;height:100%;display:block}
+  .d2-chart .gl{stroke:rgba(255,255,255,.08);stroke-width:1}
+  .d2-chart .ln{fill:none;stroke:var(--accent);stroke-width:3;
+    stroke-dasharray:1600;stroke-dashoffset:1600;transition:stroke-dashoffset 1.6s ease}
+  .d2-spine-active .d2-chart .ln{stroke-dashoffset:0}   /* line self-draws when the spine is active */
+  /* scroll-revealed annotations on the chart spine */
+  .d2-anno{position:absolute;font-family:var(--ui);font-size:.8rem;color:var(--ink);
+    background:rgba(8,9,13,.7);border-left:2px solid var(--accent);padding:.3rem .55rem;border-radius:4px;
+    opacity:0;transform:translateY(8px);transition:opacity .6s ease,transform .6s ease}
+  .d2-anno.in{opacity:1;transform:none}
+  .d2-scrim{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg, rgba(8,9,13,.55) 0%, rgba(8,9,13,.2) 40%, rgba(8,9,13,.8) 100%)}
+  .d2-credit{position:absolute;left:1.2rem;bottom:1rem;z-index:4;font-family:var(--ui);
+    font-size:.68rem;color:var(--muted);opacity:.85}
+  .d2-main{position:relative;z-index:2}
+
+  @media (prefers-reduced-motion: reduce){
+    /* MANDATORY stage degrades, never disappears: show the chart spine + ALL annotations at once, */
+    /* and pin every fallback layer visible (no scroll-gated reveal). The page still has a backdrop. */
+    .d2-bg{transition:none;opacity:1 !important}
+    .d2-bg.spine{opacity:1 !important}
+    .d2-chart .ln{transition:none;stroke-dashoffset:0 !important}  /* full line drawn immediately */
+    .d2-anno{transition:none;opacity:1 !important;transform:none !important}  /* all annotations shown at once */
+  }
+</style>
+</head>
+<body>
+
+<div class="rail" id="rail"></div>
+
+<!-- ====== PINNED CINEMATIC BACKGROUND (verified imagery only) ====== -->
+<!-- framed = object shot (blurred fill + whole subject); plain = wide/atmospheric (full-bleed cover) -->
+<div class="cin-stage" aria-hidden="true">
+  <div class="cin-bg" data-i="0"><img class="show" src="assets/teaser_hero.png" alt="" decoding="async"></div>
+  <div class="cin-bg framed" data-i="1"><img class="fill" src="assets/scout_messi.jpg" alt="" decoding="async"><img class="show" src="assets/scout_messi.jpg" alt="" decoding="async"></div>
+  <div class="cin-bg" data-i="2"><img class="show" src="assets/ref_estadio_azteca.jpg" alt="" decoding="async"></div>
+  <div class="cin-bg" data-i="3"><img class="show" src="assets/ref_metlife.jpg" alt="" decoding="async"></div>
+  <div class="cin-bg framed" data-i="4"><img class="fill" src="assets/ref_trophy.jpg" alt="" decoding="async"><img class="show" src="assets/ref_trophy.jpg" alt="" decoding="async"></div>
+  <div class="cin-scrim"></div>
+</div>
+
+<!-- ====== FOREGROUND: the story scrolls over the background ====== -->
+<main>
+
+  <section class="beat" data-bg="0" data-cin="cin_01">
+    <p class="kicker">2026 FIFA World Cup &middot; a forecast you can re-run</p>
+    <h1>Argentina are favourites.<br><span class="dim">They will probably still lose.</span></h1>
+    <p class="stand">Scroll. The model has one number for the team to beat &mdash; and a reason you shouldn't trust it too much.</p>
+    <p class="scrolltip">Scroll &darr;</p>
+  </section>
+
+  <section class="beat" data-bg="1" data-cin="cin_02" data-sct="sct_messi">
+    <p class="body"><span class="num">26.3%</span> A century of international results, run a hundred thousand times, lands on a single number. It makes the defending champions the team to beat &mdash; and still <b>far more likely to fall than to lift it.</b></p>
+    <p class="credit">Background: Lionel Messi. Photo &mdash; The White House / Wikimedia Commons. <span class="v">Public Domain &middot; identity verified &check;</span></p>
+  </section>
+
+  <section class="beat" data-bg="2" data-cin="cin_03" data-sct="sct_azteca">
+    <p class="body">The widest World Cup ever: <b>48 teams, 16 stadiums</b> across the United States, Canada and Mexico &mdash; with Estadio Azteca becoming the only ground to host three men's World Cups.</p>
+    <p class="credit">Background: Estadio Azteca, Mexico City. Photo &mdash; Wikimedia Commons. <span class="v">CC &middot; identity verified &check;</span></p>
+  </section>
+
+  <section class="beat" data-bg="3" data-cin="cin_04" data-sct="sct_metlife">
+    <p class="body">It ends here &mdash; <b>MetLife Stadium, 19 July</b> &mdash; one match, ninety minutes, after a month and 104 games narrow 48 hopefuls down to one.</p>
+    <p class="credit">Background: MetLife Stadium, New Jersey. Photo &mdash; Wikimedia Commons. <span class="v">CC &middot; identity verified &check;</span></p>
+  </section>
+
+  <section class="beat center" data-bg="4" data-cin="cin_05" data-sct="sct_trophy">
+    <h1 style="font-size:clamp(2rem,6vw,3.4rem)">The number isn't a black box.</h1>
+    <p class="body" style="max-width:34ch;margin-left:auto;margin-right:auto">Every figure behind this forecast traces back to the exact code and data that produced it. <b>The model is yours to re-run.</b></p>
+    <p class="credit" style="border:0;padding:0">Background: the FIFA World Cup Trophy. Photo &mdash; Wikimedia Commons. <span class="v">CC &middot; identity verified &check;</span></p>
+  </section>
+
+</main>
+
+<footer>
+  <p><b>Prototype &middot; cinematic scroll mode (PHOTOGRAPHIC).</b> A full-bleed background of <b>verified, license-clean imagery</b> the reader scrolls through, crossfading beat to beat (the Cinematographer role staging the Scout's checked photos). Object shots (the trophy, Messi) show the whole subject over a blurred fill; wide shots fill the frame. Every background traces to a real, licensed source &mdash; cinematic, not decorative.</p>
+  <p>Real build adds: more scouted imagery (players, goal moments, crowds), the live Monte-Carlo simulator as one scene, and a mobile-light path. This is just the feel.</p>
+</footer>
+
+
+<!-- ===================================================================== -->
+<!-- ===== ABSTRACT-PATH DEMO (FALLBACK MODES) =========================== -->
+<!-- Self-contained second demo for a topic with NO sourceable real photos. -->
+<!-- The stage is STILL mandatory: the background becomes a data_driven      -->
+<!-- chart-spine + a generative_atmosphere gradient, NOT a bare column.      -->
+<!-- Reuses the SAME IntersectionObserver-toggles-.active engine as above.   -->
+<!-- ===================================================================== -->
+<div class="demo2">
+
+  <div class="seam">
+    <p style="text-transform:uppercase;letter-spacing:.2em;font-size:.72rem;color:var(--accent);margin:0 0 .6rem">Fallback modes &middot; no real imagery available</p>
+    <p>When a topic is abstract and the Scout confirms <b>no real photograph honestly belongs</b>, cinematic does <b>not</b> turn off. It falls back to a <b>data-driven spine</b> (the signature chart becomes the set) and a <b>generative atmosphere</b> (gradient + AI metaphor stills). Keep scrolling.</p>
+  </div>
+
+  <!-- pinned ABSTRACT stage: gradient backdrop + a chart-spine layer + an atmosphere layer -->
+  <div class="d2-stage" id="d2stage" aria-hidden="true">
+    <!-- generative_atmosphere fallback layer (here a CSS gradient stands in for a registered des_ AI still) -->
+    <div class="d2-bg atmos" data-d2="0"></div>
+    <!-- data_driven_spine layer: the signature annotated chart pinned behind the prose -->
+    <div class="d2-bg spine" data-d2="1">
+      <div class="d2-chart">
+        <svg viewBox="0 0 760 440" preserveAspectRatio="none" aria-hidden="true">
+          <line class="gl" x1="40" y1="400" x2="740" y2="400"></line>
+          <line class="gl" x1="40" y1="260" x2="740" y2="260"></line>
+          <line class="gl" x1="40" y1="120" x2="740" y2="120"></line>
+          <!-- the signature line (data inlined from analyst.json in a real build); self-draws when active -->
+          <polyline class="ln" points="40,380 180,330 320,250 460,150 600,90 740,60"></polyline>
+        </svg>
+        <!-- annotations REVEAL on scroll as each beat crosses the middle -->
+        <div class="d2-anno" id="d2a1" style="left:14%;top:62%">Baseline &mdash; flat for a decade.</div>
+        <div class="d2-anno" id="d2a2" style="left:46%;top:30%">Inflection: the trend bends sharply up here.</div>
+        <div class="d2-anno" id="d2a3" style="left:74%;top:8%">Today &mdash; the headline number sits at the top of the curve.</div>
+      </div>
+    </div>
+    <div class="d2-scrim"></div>
+    <div class="d2-credit">Background: the story's signature chart (data inlined from analyst.json) &middot; data-ana</div>
+  </div>
+
+  <!-- the prose scrolls OVER the abstract stage; each beat reveals one annotation / drives the spine -->
+  <main class="d2-main">
+    <section class="beat" data-d2bg="0" data-d2anno="">
+      <p class="kicker">Abstract topic &middot; generative atmosphere</p>
+      <h1 style="font-size:clamp(2rem,6vw,3.4rem)">No photo fits.<br><span class="dim">So the data becomes the set.</span></h1>
+      <p class="stand">A gentle generated atmosphere (gradient + an AI metaphor still) holds the opening &mdash; mood only, asserting nothing factual.</p>
+      <p class="credit">AI-generated atmosphere &mdash; illustration. <span class="v">metaphor, not a real subject &check;</span></p>
+    </section>
+    <section class="beat" data-d2bg="1" data-d2anno="d2a1">
+      <p class="body">For <b>ten years</b> the number barely moved. The pinned chart behind this text is the story's <b>signature finding</b>, dimmed so the prose stays legible.</p>
+    </section>
+    <section class="beat" data-d2bg="1" data-d2anno="d2a2">
+      <p class="body">Then it <b>bent sharply upward</b>. Scrolling reveals each annotation in turn &mdash; the data spine <b>is</b> the cinematic background here.</p>
+    </section>
+    <section class="beat center" data-d2bg="1" data-d2anno="d2a3">
+      <h1 style="font-size:clamp(1.8rem,5vw,3rem)">The chart carries the scroll.</h1>
+      <p class="body" style="max-width:34ch;margin-left:auto;margin-right:auto">No real imagery &mdash; yet the page still reads as a scrolled film. <b>Mandatory, never off.</b></p>
+    </section>
+  </main>
+
+</div>
+
+<script>
+(function(){
+  var bgs = [].slice.call(document.querySelectorAll('.cin-bg'));
+  var beats = [].slice.call(document.querySelectorAll('.beat'));
+  var rail = document.getElementById('rail');
+
+  // Smooth crossfade: just toggle .active (CSS transitions opacity + a gentle scale). No forced reflow.
+  function activate(i){
+    for(var j=0;j<bgs.length;j++){ bgs[j].classList.toggle('active', j === i); }
+  }
+
+  // Active scene = whichever beat crosses the viewport middle.
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ activate(parseInt(e.target.getAttribute('data-bg'),10)); }
+    });
+  }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+  beats.forEach(function(b){ io.observe(b); });
+  activate(0);
+
+  // Pre-decode every background so a crossfade never waits on image decode (kills the stutter).
+  window.addEventListener('load', function(){
+    document.querySelectorAll('.cin-bg img').forEach(function(im){
+      if(im.decode){ im.decode().catch(function(){}); }
+    });
+  });
+
+  // Scroll-progress rail (rAF-throttled).
+  var ticking = false;
+  function onScroll(){
+    if(ticking) return; ticking = true;
+    requestAnimationFrame(function(){
+      var h = document.documentElement;
+      var p = h.scrollTop / ((h.scrollHeight - h.clientHeight) || 1);
+      rail.style.width = (p*100).toFixed(1) + '%';
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+})();
+
+// ===== ABSTRACT-PATH DEMO ENGINE (SAME IntersectionObserver technique) =====
+// Reuses the exact pattern: an IO on the text beats toggles .active on the
+// matching background LAYER (atmosphere vs chart-spine) and reveals the beat's
+// annotation. No forced reflow; CSS transitions do the crossfade + self-draw.
+(function(){
+  var d2bgs   = [].slice.call(document.querySelectorAll('.d2-bg'));
+  var d2beats = [].slice.call(document.querySelectorAll('.demo2 .beat'));
+  var d2stage = document.getElementById('d2stage');
+  if(!d2bgs.length || !d2beats.length) return;
+
+  function activate(i, annoId){
+    // crossfade the active background layer (atmosphere 0 / chart-spine 1)
+    for(var j=0;j<d2bgs.length;j++){ d2bgs[j].classList.toggle('active', String(j) === String(i)); }
+    // mark the spine active so the signature line self-draws when it is shown
+    if(d2stage){ d2stage.classList.toggle('d2-spine-active', String(i) === '1'); }
+    // reveal only the current beat's annotation (cumulative reveal also fine)
+    document.querySelectorAll('.d2-anno').forEach(function(a){ a.classList.remove('in'); });
+    if(annoId){ var a = document.getElementById(annoId); if(a) a.classList.add('in'); }
+  }
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        activate(e.target.getAttribute('data-d2bg'), e.target.getAttribute('data-d2anno'));
+      }
+    });
+  }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+  d2beats.forEach(function(b){ io.observe(b); });
+  activate(d2beats[0].getAttribute('data-d2bg'), d2beats[0].getAttribute('data-d2anno'));
+})();
+</script>
+</body>
+</html>

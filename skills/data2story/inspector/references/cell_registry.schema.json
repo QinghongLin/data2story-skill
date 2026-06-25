@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://data-journalist-agent.github.io/schemas/cell_registry.schema.json",
+  "title": "Inspector cell_registry",
+  "description": "Maps each stable notebook cell_id to what it computes and which atomic claim ids it substantiates. The forward index from the reproducible notebook to the page's claims; the inverse of verify_map[id].cell_id. See _doc.",
+  "type": "object",
+  "properties": {
+    "_about": {
+      "type": "string",
+      "description": "A free-text description of the registry: which source script feeds which cell, and any claims attached to a cell by hand rather than by a script's calculation reference."
+    },
+    "_doc": {
+      "description": "Contract notes. Optional but recommended.",
+      "type": "object",
+      "properties": {
+        "purpose": {
+          "type": "string",
+          "const": "cell_registry.json declares, per reproducible-notebook cell, what the cell computes and which atomic claim ids (ana_*/det_*/...) it backs. It lets the Inspector and an auditor cross-check that every published claim is reproduced by some cell and that no cell is orphaned."
+        },
+        "inverse_relationship": {
+          "type": "string",
+          "const": "backs[] is the INVERSE of verify_map[id].cell_id: if verify_map['ana_01'].cell_id == 'cell_findings', then cell_registry['cell_findings'].backs must contain 'ana_01'. A consistency check should confirm both directions agree."
+        },
+        "cell_id_stability": {
+          "type": "string",
+          "const": "Keys are the stable cell tags carried in the notebook (notebook cell metadata.tags). Renaming a tag requires updating both this file and every verify_map[*].cell_id that points at it."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "patternProperties": {
+    "^cell_[A-Za-z0-9_]+$": {
+      "type": "object",
+      "required": ["computes", "backs", "needs_network"],
+      "properties": {
+        "computes": {
+          "type": "string",
+          "description": "Plain-language statement of what this cell does (what it loads/derives, what it asserts against the published artifacts)."
+        },
+        "backs": {
+          "type": "array",
+          "description": "The atomic claim ids this cell substantiates. Empty [] for setup/intro/close/utility cells that back no specific on-page claim.",
+          "items": { "type": "string", "pattern": "^(ana|det|des|sct|cin|int)_[A-Za-z0-9_]+$" }
+        },
+        "needs_network": {
+          "type": "boolean",
+          "description": "true if running this cell requires the network (mirrors run_cells / verify_map for the same ids)."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

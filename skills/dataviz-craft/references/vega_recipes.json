@@ -1,0 +1,187 @@
+{
+  "_note": "Per-type EDITORIAL Vega-Lite recipe skeletons — what the Programmer fills in from analyst.json data_tables + designer.json. These are spec FRAGMENTS, not full specs: mark + key encoding notes + what to highlight + editorial defaults. They EXTEND component_implementations.json charts_vega_lite (don't restate width:container / centering / scale.zero / labelExpr mechanics — those live there). Always: inline data; \"width\":\"container\"; de-clutter via axis_label_polish.json config; annotate via annotation_layers.json; color via design_tokens.json data_color_scales + --accent for the highlighted datum.",
+  "_sources": "Vega-Lite documentation + gallery (mark/encoding idioms, re-authored). FT Visual Vocabulary (which chart for which intent). Project component_implementations.json (mechanics this extends).",
+
+  "_cdn": "MANDATORY — load Vega from the PINNED BUILD-FILE URL form, never the bare-package form. Bare-package jsDelivr URLs (e.g. https://cdn.jsdelivr.net/npm/vega@5) are served WITHOUT a JS content-type, so Chrome blocks them with net::ERR_BLOCKED_BY_ORB and every chart renders blank. Use exactly these three, in order: https://cdn.jsdelivr.net/npm/vega@5.30.0/build/vega.min.js , https://cdn.jsdelivr.net/npm/vega-lite@5.21.0/build/vega-lite.min.js , https://cdn.jsdelivr.net/npm/vega-embed@6.26.0/build/vega-embed.min.js . The pinned `@x.y.z/build/<pkg>.min.js` shape is the only form proven to render clean — keep versions current-stable as pinned here; do NOT regress to `@5` / `@latest` / a `/+esm` import.",
+  "_global_defaults": {
+    "width": "\"width\": \"container\" (responsive) BUT embed it through the canonical responsive embedChart() helper (component_implementations.json -> charts_vega_lite.responsive_embed): bare width:container is measured during inline parse and returns 0 on heavy pages, rendering an invisible 0-width chart. Composite/faceted charts set explicit child width + spacing and are centered via .vega-embed svg{margin:0 auto} (component_implementations.json).",
+    "config": "Apply the de-clutter config block from axis_label_polish.json (view.stroke=null, axis grid/ticks/domain off as specified, legend.orient='top', legend.title=null).",
+    "color": "Default to muted/grey marks; color ONLY the highlighted datum with --accent (conditional encoding, annotation_layers.json highlight_key_datum). Sequential/diverging/categorical scales -> design_tokens.json data_color_scales (set scale.range or scale.scheme).",
+    "tooltip": "\"tooltip\": true (or an explicit tooltip array of the fields the reader needs) on the primary mark.",
+    "highlight_note": "Every recipe names a 'highlight' — wire it to content.highlight from designer.json."
+  },
+
+  "bar": {
+    "intent": "magnitude | ranking",
+    "mark": {"type": "bar"},
+    "encoding": [
+      "Horizontal (long labels / many items): y = category (nominal, sort by value: \"sort\": \"-x\"), x = value (quantitative).",
+      "Vertical column: x = category (sort \"-y\"), y = value.",
+      "ALWAYS sort by value not alphabetically (encoding_craft.json sort_by_value)."
+    ],
+    "highlight": "Conditional fill: the story's item = --accent, all others = --muted/grey (annotation_layers.json). Optionally a text mark with the value at the bar end.",
+    "editorial_defaults": ["Bars start at ZERO — no scale.zero=false here (axis_label_polish.json zero_baseline_rule).", "Drop the axis with the category labels' gridlines/ticks; keep light gridlines only on the value axis.", "Value labels at bar ends can replace the value-axis entirely for a handful of bars."]
+  },
+
+  "grouped_bar": {
+    "intent": "magnitude (paired) | comparison within+across",
+    "mark": {"type": "bar"},
+    "encoding": [
+      "x = primary category (nominal), xOffset = sub-group (nominal)  [xOffset gives native grouped bars], y = value.",
+      "Or facet by the secondary dimension for many groups (see small_multiples_facet).",
+      "color = sub-group via a categorical scale (design_tokens.json categorical)."
+    ],
+    "highlight": "Accent the one sub-group/category the narrative compares; grey the rest. Keep the legend on top, no title.",
+    "editorial_defaults": ["Use xOffset (Vega-Lite native grouping), not manual x math.", "Cap at ~2-4 sub-groups before grouped bars get noisy — beyond that, small multiples.", "Consistent sub-group color + order across every group."]
+  },
+
+  "stacked_bar": {
+    "intent": "part_to_whole | composition over a few categories/time",
+    "mark": {"type": "bar"},
+    "encoding": [
+      "x (or y) = category/time, y (or x) = value with \"stack\": true, color = segment (categorical).",
+      "For 100%-stacked share: \"stack\": \"normalize\" (proportional_stacked_bar)."
+    ],
+    "highlight": "Accent the segment that carries the story; consider a text mark labeling that segment's share. Order segments by a fixed semantic order, largest-first if none.",
+    "editorial_defaults": ["normalize when the message is SHARE; absolute stack when the message is TOTAL+composition.", "Keep stack order identical across categories so segments are comparable.", "100%-stacked hides absolutes — surface the total in a callout if it matters (chart_chooser.json)."]
+  },
+
+  "line": {
+    "intent": "change_over_time (continuous)",
+    "mark": {"type": "line", "point": "false (add point:true only for sparse series or to mark observations)"},
+    "encoding": [
+      "x = time (temporal; set axis format via labelExpr/format — Vega-expr not JS), y = value (quantitative), color = series (categorical) IF few series.",
+      "Lines MAY truncate: \"scale\": {\"zero\": false} + an explicit domain on y (axis_label_polish.json) — a line shows change, not magnitude-from-zero."
+    ],
+    "highlight": "Label the line END with a text+argmax mark instead of a legend for few series (annotation_layers.json line_end_label). Mark the key turning point with a rule + text.",
+    "editorial_defaults": ["> ~4-5 lines = spaghetti -> highlight one in --accent + grey the rest (a detail/overview layer), or switch to small multiples.", "scale.zero=false is allowed and usually right for lines.", "Light major Y gridlines only; no X gridlines."]
+  },
+
+  "area": {
+    "intent": "change_over_time (volume) | composition over time (stacked)",
+    "mark": {"type": "area", "line": "true (a crisp top edge), opacity ~0.85"},
+    "encoding": [
+      "x = time, y = value (\"stack\": true for composition), color = series.",
+      "Single-series area: fill with a muted --accent tint; the edge in --accent.",
+      "For deviation-over-time: two areas split at a baseline by sign (chart_chooser.json surplus_deficit_line)."
+    ],
+    "highlight": "Accent the focal band; for stacked area watch occlusion — if lower bands vanish, switch to lines or small multiples.",
+    "editorial_defaults": ["Stacked AREA only with few, smoothly-varying series; otherwise stacked columns.", "Area implies magnitude -> y SHOULD include zero for a single filled series (unlike a plain line)."]
+  },
+
+  "layered_line": {
+    "intent": "change_over_time with a reference / forecast band / event",
+    "mark": "layer: [ {rule/area reference}, {line data}, {text labels} ]",
+    "encoding": [
+      "Layer order: bands/reference rules at the BOTTOM, data line in the MIDDLE, annotations (text/point) on TOP.",
+      "Forecast: a fan of nested confidence areas (low opacity) under the central line (chart_chooser.json fan_chart).",
+      "Reference/threshold lines + event markers from annotation_layers.json (rule mark)."
+    ],
+    "highlight": "The data line in --accent over muted reference geometry; label the end + the key event.",
+    "editorial_defaults": ["Resolve scales explicitly when layers share an axis.", "Keep reference geometry visually quiet so the data reads first."]
+  },
+
+  "slope": {
+    "intent": "ranking change | change_over_time (two points)",
+    "mark": "layer: line (two x positions per item) + point at each end + text label at ends",
+    "encoding": [
+      "x = the two time points / conditions (ordinal, just two values), y = value, detail/color = item.",
+      "x axis: only two ticks; drop everything else."
+    ],
+    "highlight": "Accent the 1-2 items that rose/fell most; grey the rest. Label item names at the right end (or both ends).",
+    "editorial_defaults": ["No gridlines; two x labels only; direct labels, no legend.", "If many lines cross into a hairball, highlight a few and grey the field."]
+  },
+
+  "dot_strip": {
+    "intent": "ranking | distribution (small n)",
+    "mark": {"type": "point", "filled": true, "size": "~90"},
+    "encoding": [
+      "Ranking: y = category (sort by value), x = value — one dot per item (a de-inked bar).",
+      "Distribution: x = value, y = group (or a constant), one dot per observation; add small jitter/yOffset to reduce overplot."
+    ],
+    "highlight": "Accent the focal dot(s); optionally a connecting rule from a baseline (-> lollipop).",
+    "editorial_defaults": ["Prefer dot strip over bars when there are MANY items (less ink).", "For pairs (before/after per category) connect the two dots with a rule (a 'dumbbell')."]
+  },
+
+  "lollipop": {
+    "intent": "ranking | magnitude (de-cluttered)",
+    "mark": "layer: rule (stem from baseline to value) + point (the head)",
+    "encoding": [
+      "Horizontal: y = category (sort by value), rule x = 0 -> x2 = value, point x = value.",
+      "The head carries the eye; the stem carries the magnitude (length channel)."
+    ],
+    "highlight": "Accent the focal item's stem+head; grey the rest. Value label beside the head if few items.",
+    "editorial_defaults": ["Stem starts at ZERO (it encodes magnitude by length).", "Use when bars feel heavy but you still want length, not just position."]
+  },
+
+  "small_multiples_facet": {
+    "intent": "compare the SAME chart across many groups (any intent) — the spaghetti antidote",
+    "mark": "any (line/bar/area); set on the inner spec",
+    "encoding": [
+      "\"facet\": {\"field\": group, \"type\": \"nominal\", \"columns\": N} at the TOP level (columns belongs on the facet spec top level, NOT inside the facet object — component_implementations.json).",
+      "Inner spec: explicit width/height per panel + shared encodings; \"resolve\": {\"scale\": {\"y\": \"shared\"}} so panels are comparable.",
+      "Sort facets by a meaningful order (peak value, total), not alphabetical."
+    ],
+    "highlight": "In every panel, grey all series and accent the focal one; or accent the panel that is the story. A shared scale makes the comparison honest.",
+    "editorial_defaults": ["Faceted charts ignore width:container and render at panel width -> center the SVG (component_implementations.json).", "Keep axes minimal in inner panels; one shared axis where possible.", "Shared y-scale unless the per-panel SHAPE (not level) is the point."]
+  },
+
+  "heatmap": {
+    "intent": "correlation (two categoricals) | change_over_time (calendar) | matrix density",
+    "mark": {"type": "rect"},
+    "encoding": [
+      "x = category/time-bin (nominal/ordinal), y = category (nominal), color = value (quantitative, sequential scale).",
+      "Calendar: x = week-of-year, y = day-of-week, color = daily value.",
+      "color scale = sequential from design_tokens.json (NOT a rainbow); set a clear legend with units."
+    ],
+    "highlight": "Outline the focal cell(s) with a rule/stroke; optionally text marks of the value in the most extreme cells.",
+    "editorial_defaults": ["Sequential (one direction) or diverging (around a midpoint) color only — never categorical hues for ordered magnitude (encoding_craft.json).", "Square-ish cells; readable gaps; values as text only where they aid reading.", "Sort rows/cols by a summary (cluster-like) order, not alphabetical, when it reveals structure."]
+  },
+
+  "strip_beeswarm": {
+    "intent": "distribution — show EVERY observation without overplotting",
+    "mark": {"type": "point", "filled": true, "opacity": "~0.6"},
+    "encoding": [
+      "x = value (quantitative), y = group (nominal) or constant; add yOffset jitter to spread points.",
+      "True beeswarm packing (no overlap, no random jitter) is not a native transform — approximate with jitter/offset; if exact packing is required, that is a D3 force task (d3_fallback_recipes.json note).",
+      "Overlay a rule/tick at the median or mean if a summary helps."
+    ],
+    "highlight": "Accent the focal observation(s); keep the cloud muted and semi-transparent.",
+    "editorial_defaults": ["Transparency + jitter beats a solid blob.", "Show every point when n is small/medium; switch to histogram/density only when n is large."]
+  },
+
+  "connected_scatter": {
+    "intent": "correlation over time | change_over_time as a path",
+    "mark": "layer: line (ordered by time) + point (each year) + text (label start/end/key years)",
+    "encoding": [
+      "x = variable A, y = variable B, \"order\": time (so the line connects in time order), detail = series.",
+      "Both axes usually scale.zero=false (relationship, not magnitude)."
+    ],
+    "highlight": "Label the first, last, and turning-point years; accent the path; arrowhead at the latest point to show direction.",
+    "editorial_defaults": ["Direction matters -> mark start and end clearly.", "Keep to one trajectory (or a few highlighted); many become unreadable."]
+  },
+
+  "scatter_bubble": {
+    "intent": "correlation (scatter) | correlation + magnitude (bubble)",
+    "mark": {"type": "point", "filled": true},
+    "encoding": [
+      "x, y = two quantitative variables; both usually scale.zero=false.",
+      "Bubble: size = third quantitative variable — Vega-Lite size is AREA by default (correct); do NOT pre-square or map to radius (encoding_craft.json area_not_radius).",
+      "color = category (hue) if a 4th, ordered dimension -> use shade not hue.",
+      "Optional trend layer (regression transform) UNDER the points."
+    ],
+    "highlight": "Accent + label the focal point(s); mute the field. Tooltip carries the exact x/y (and size) values.",
+    "editorial_defaults": ["scale.zero=false on both axes is normal for relationships (axis_label_polish.json).", "Set a size legend with real value anchors so readers can decode area.", "Many overlapping points -> add opacity or switch to a 2D histogram/heatmap."]
+  },
+
+  "choropleth": {
+    "intent": "spatial — a NORMALIZED value by region",
+    "mark": "geoshape (Vega-Lite geoshape over inlined TopoJSON/GeoJSON) OR Leaflet GeoJSON (component_implementations.json maps_leaflet) for interactive pan/zoom",
+    "encoding": [
+      "shape = the region geometry (inline geo), color = a NORMALIZED metric (rate / per-capita / density), sequential or diverging scale.",
+      "A choropleth must NOT encode raw counts (big regions dominate) — for counts use a proportional-symbol map (chart_chooser.json spatial)."
+    ],
+    "highlight": "Outline / accent the focal region(s); a clear legend with units and a sensible bin/threshold scheme.",
+    "editorial_defaults": ["Reuse ONE sequential scale (design_tokens.json) consistent with any bars/callouts of the same metric.", "Decide continuous vs binned (quantize) — binned reads more honestly for skewed data.", "If interaction (zoom, hover popups) is wanted, build with Leaflet, not geoshape."]
+  }
+}

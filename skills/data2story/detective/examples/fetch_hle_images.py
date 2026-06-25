@@ -30,7 +30,7 @@ def get_token():
     for p in (os.path.expanduser("~/.cache/huggingface/token"),
               os.path.expanduser("~/.huggingface/token")):
         try:
-            with open(p) as f:
+            with open(p, encoding="utf-8") as f:
                 return f.read().strip()
         except FileNotFoundError:
             continue
@@ -97,7 +97,7 @@ def main():
     if not token:
         sys.exit("error: no HuggingFace token (set HF_TOKEN or log in via huggingface-cli)")
 
-    rows = list(csv.DictReader(open(args.csv)))
+    rows = list(csv.DictReader(open(args.csv, encoding="utf-8")))
     # pick diverse image-bearing rows: up to per-category per category, prefer subject variety
     picks, by_cat, seen_subj = [], {}, set()
     for idx, r in enumerate(rows):
@@ -150,7 +150,7 @@ def main():
         time.sleep(0.3)
 
     mpath = os.path.join(args.outdir, "hle_images_manifest.json")
-    with open(mpath, "w") as f:
+    with open(mpath, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
     ok = sum(1 for r in manifest if r["status"] == "ok")
     print(f"\nDone: {ok}/{len(manifest)} HLE question images. Manifest: {mpath}", file=sys.stderr)

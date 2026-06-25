@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "role": "imagineer",
+    "is_computational": true,
+    "is_visual": true,
+    "engagement_blocker": "OPTIONAL, ADVISORY — only on a resolved descriptive topic (is_computational:false AND is_visual:false) where you propose shipping ZERO interactives: the honest reason no reader-fits-in lever exists (e.g. no row a reader fits into AND no entity set to sort). This is your PROPOSED blocker for downstream roles; the contract gate (missing_engagement_floor) does NOT read it here — it reads the honored reason from interaction.meta. The Interaction Engineer must propagate it into interaction.meta.engagement_blocker (alias engagement_floor_reason) for the gate to pass. Omit it whenever the pool is non-empty.",
+    "_doc": "Imagineer output — the candidate interactive-concept pool the Editor curates a hero + supporting set from. `items` is a dict keyed by img_xx (a list is wrong). DELIBERATE over-generation: one concept per finding a reader could produce hands-on. img_xx ids are INTERNAL planning vocabulary only — they NEVER reach the HTML, are tagged on no element, and are in NO provenance tuple/regex. is_computational/is_visual record the topic_profile gate that sized the pool. engagement_blocker (when present) is an advisory proposed-blocker only — the contract gate honors interaction.meta, not this file. Build nothing on-page; the Interaction Engineer builds only what the Editor keeps."
+  },
+  "items": {
+    "img_01": {
+      "label": "Short human-readable name for the concept",
+      "finding": "ana_01   // the SINGLE analyst finding the reader produces with this concept",
+      "archetype": "explorable_recompute | tune_the_assumption | guess_then_reveal | scored_quiz | personal_input | playable_game | scrollytelling   // from interaction_playbook.json interaction_taxonomy",
+      "purpose": "INFORM | IMMERSE   // INFORM = reader produces a number/insight the prose can't hand over; IMMERSE = reader produces a feeling (the correction lands, the odds shift under their hands). Neither = decoration, don't propose it.",
+      "reader_produces": "one line on what the reader GENERATES, not what they see — 'nudge a team's Elo, watch champion odds re-derive', not 'a chart of odds'",
+      "needs": {
+        "client_model": "code/client_model.js:simulate   // exact code/<file>.js:fn when the archetype recomputes a number; null for a no-model archetype (guess_then_reveal / personal_input from a data_table)",
+        "data_table": "ana_01   // the ana_xx whose data_table supplies the at-rest published numbers"
+      },
+      "feasibility": "high | medium | low   // node-checked when client_model is set. high = model runs + returns expected shape (or data_table present + chart-ready). medium = needs a wrapper/reshape the Analyst hasn't emitted. low = errors/missing/can't be honest. Do NOT inflate.",
+      "sketch": "one-line build hint (controls -> output): 'slider(Elo)+dropdown(team)+button -> animated bars'",
+      "hero_candidate": true
+    }
+  },
+  "_field_notes": {
+    "internal_ids": "img_xx are planning ids ONLY. Unlike int_/edt_/ana_/sct_/cin_ they are NEVER tagged on an element and NEVER added to a validate.py tuple/regex. The Editor curates them into editor.json.interactives (concept_ref); the Interaction Engineer references the same concept via concept_ref and assigns the real, on-page int_NN ids.",
+    "over_generation": "This is the IDEATION pool — propose generously, including marginal concepts. A concept the Editor cuts costs nothing; a finding you never imagined can't be curated. Two concepts may target the same finding (the Editor's curation forbids two BUILT supporting elements sharing one finding; the pool may explore alternatives).",
+    "when_to_run": "Sized by topic_profile (detective.json): fan out widely when is_computational (reproducible headline -> recompute archetypes); moderately when is_visual but not computational (guess/personal-input/scrollytelling); STAY LIGHT (one item noting why, then STOP) when both are false — an interactive with no finding to produce is decoration.",
+    "feasibility_honesty": "For any concept with a client_model, node a quick call (interaction/SKILL.md Step 4) before claiming feasibility. A low concept the Editor sees and cuts beats a high claim the Builder can't deliver.",
+    "hero_candidate": "Mark true only for concepts that could carry the whole piece (usually the explorable on the lead finding). The Editor makes the final hero call from these."
+  }
+}

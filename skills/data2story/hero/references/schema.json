@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "role": "hero",
+    "version": "1.0",
+    "_doc": "Hero output (hero.json). ONE crafted cover per run — the animated <video> (or, only on the recorded last rung, a static <img>) that opens the page above the headline. `hero` is a single object (not a dict — there is exactly one cover). Reuses the Designer's provenance prefix: the cover's single Verify hit carries data-des=\"des_hero_video\" — NO new provenance prefix is minted. Write once after the source ladder resolves and the assets render."
+  },
+  "hero": {
+    "id": "des_hero_video   // FIXED. The single provenance id of the cover's one Verify hit. Always des_hero_video — reuse the Designer prefix, never a new one.",
+    "kind": "video | image   // video on every animated rung (0-4); image ONLY on the recorded rung-5 static fallback.",
+    "backs": "teaser   // the section the hero backs — always the opening 'teaser' beat. Lets the Cinematographer stage it as cin_00 (backs:'teaser').",
+    "subject_is_real_public_figure": "boolean   // true => the source still depicts a recognizable real public figure, so image2video was routed to Kling (Veo/Wan refuse, code 15236754).",
+    "source": {
+      "origin": "interactive_passthrough | scout_still | scout_real_figure | scout_stock_clip | abstract_still | static_fallback   // which ladder rung resolved (matches meta.source_ladder_rung's name).",
+      "still_ref": "sct_03 | des_07 | null   // the registered Scout sct_xx / Designer des_xx the motion was built from (the i2v input still, or the stock clip's own registered item). null when a text2image abstract still was generated fresh and is itself this hero item.",
+      "model": "google/veo-3.1-fast | kwaivgi/kling-v3.0-std | openai/gpt-5.4-image-2 | null   // the generation model used (i2v model on rungs 1-4; text2image model on rung 4's still; null on a pure ffmpeg/passthrough/stock path).",
+      "tool": "image2video | text2image | ffmpeg_kenburns | none   // the actual render path. ffmpeg_kenburns = the non-AI camera-move fallback (real-face hero when even Kling is unavailable).",
+      "prompt": "motion-only prompt for image2video ('flags ripple, smoke drifts; subject and faces held still, no camera shake'), or the text2image still prompt; '' for a stock clip / passthrough.",
+      "duration": "4 | 6 | 8   // the OpenRouter video duration (ONLY 4/6/8 are accepted). Omit/null for a static fallback or a stock clip of fixed length.",
+      "fallback_used": "kenburns | static_poster | null   // copied from the image2video script's printed FALLBACK_USED=<rung>; null when the chosen model rendered cleanly. static_poster => the render degraded to a still and kind became 'image'."
+    },
+    "assets": {
+      "video_webm": "assets/teaser.webm   // VP9 web copy (the optimize_assets.py _web output). null on the static rung-5 fallback.",
+      "video_mp4": "assets/teaser_web.mp4   // H.264 fallback for the <video>. null on the static rung-5 fallback.",
+      "poster": "assets/teaser.jpg   // the frame-0 / source still — ALWAYS present (it is the <video poster> AND the reduced-motion / JS-off / static-fallback <img>)."
+    },
+    "reduced_motion_fallback": "assets/teaser.jpg   // the still shown under prefers-reduced-motion and JS-off — normally the same file as assets.poster. ALWAYS set (a moving hero must degrade to a readable still).",
+    "furniture": {
+      "headline_band": "the headline/kicker band rendered over the cover (text the Programmer paints in the .teaser overlay), e.g. 'Who wins 2026?'",
+      "kicker": "the small eyebrow above the headline, or null.",
+      "credit_line": "the visible source/AI-likeness credit shown small on the cover (pulled from the still_ref's license/identity, or the AI-likeness disclosure for a generated still).",
+      "decorative": [
+        "an ARRAY of purely-decorative furniture items (VS monogram, particle canvas, FC-26-style chips, scrim) — each rendered pointer-events:none with NO data-* attribute so the Verify engine ignores them. [] when the cover has no decorative furniture."
+      ]
+    },
+    "interactive_overlay_ref": "int_01 | null   // set to 'int_01' ONLY on rung 0 (interactive-hero passthrough): the Interaction Engineer owns the pick-a-side overlay, the Hero renders the animated backdrop behind it. null on every other rung.",
+    "verify": {
+      "hit_target": ".teaser   // the SINGLE Verify hit selector — one overlay carries provenance for the whole cover.",
+      "data_attr": "data-des   // the provenance attribute on the hit target (reuse the Designer prefix).",
+      "id": "des_hero_video   // FIXED, mirrors hero.id.",
+      "class_marker": "teaser   // the class the .teaser overlay carries; the rest of the cover (video + furniture, wrapped in .cin-stage) is auto-excluded by isDecorative()."
+    },
+    "disclosure": "the honest provenance/AI-likeness line, e.g. 'Image AI-generated; motion = a camera move on the still (not AI video of a real person)' for a cinemagraph, or 'Photo: <author> / Wikimedia Commons (CC BY-SA 4.0) — identity verified' for a fetched-still hero. Rendered in the credit_line.",
+    "publish_blocker": "boolean   // true ONLY when the cover uses a rights-encumbered asset (a copyrighted self-hosted stock clip → demo-only). Forces the Auditor's advisory publish-gate + the Programmer's 'demo-only — license or swap before publishing' credit. false on every license-clean / AI-generated / fetched-clean path.",
+    "ip_record_ref": "references/hero_recipes.json#ip_record   // pointer to the IP record (Veo/Wan refusal code 15236754, Kling works, the fallback ladder, the AI-likeness disclosure, the stock-clip publish-gate)."
+  },
+  "_field_notes": {
+    "one_cover": "There is exactly ONE hero per run. `hero` is a single object, not a dict of ids. Its provenance is des_hero_video (reused — never a 6th prefix).",
+    "kind_image_is_the_floor": "kind:'video' on rungs 0-4 (the cover is animated by default). kind:'image' is reachable ONLY on rung 5, the recorded static fallback, when every animation rung degraded (fallback_used:'static_poster' OR no clip could be sourced) — and then the assets.poster is shipped as the <img> with a recorded media_blocker.",
+    "single_verify_hit": "The whole cover routes provenance through ONE .teaser overlay (data-des=des_hero_video). The <video>/<img> and all decorative furniture are wrapped in .cin-stage so the frozen isDecorative() (el.closest('.cin-stage')) auto-excludes them from Verify — no verify-engine edit. Decorative furniture additionally carries pointer-events:none and NO data-*; interactive halves (rung 0) are role='link' (off the verify INNER_INTERACTIVE allow-list).",
+    "cin_stage_wrapper": "The Programmer always wraps the cover in .cin-stage: cinematic-ON => it is the cin_00 layer of the live cinematic stage; cinematic-OFF => a degenerate <div class='cin-stage hero-only-stage'> that still carries the poster backdrop. Either way the cover is inside a .cin-stage, so it is verify-immune.",
+    "assets_budget": "Run optimize_assets.py after render; the web-weight cover (webm+mp4) must be < 3 MB. A heavier upscaled hero is tolerated only when the page can afford it (see hero_recipes.json), but the default is the optimized _web copies.",
+    "interactive_overlay_ref": "Non-null ONLY on rung 0. When the Editor placed the centerpiece interactive on the teaser (editor.json.interactives.hero.section=='teaser'), the interaction IS the Interaction Engineer's int_01; the Hero renders the moving backdrop and yields the click surface to int_01 — the two coexist (Hero owns the video + static furniture, the Interaction Engineer owns the pick-a-side overlay).",
+    "publish_blocker_gate": "validate.py Section 8 already HARD-errors a publish_blocker asset with no swap target — a rights-encumbered hero (copyrighted stock clip) must carry the publish_note via its registered des_ asset. A license-clean / AI-generated / fetched-clean cover sets publish_blocker:false."
+  }
+}

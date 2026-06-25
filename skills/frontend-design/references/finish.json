@@ -1,0 +1,75 @@
+{
+  "_note": "Editorial texture / finish layer. Small typographic and surface details that make a page read as designed rather than templated. All vanilla CSS, offline, no JS unless stated (one optional checkbox/no-JS fold + the manual theme toggle). Each entry = structure + the key CSS so the Programmer can paste it. Apply with restraint: a finish reinforces hierarchy, it does not decorate. Tag any added element with data-des for traceability.",
+  "_license_note": "drop-cap / sidenote / newthought / small-caps patterns adapted from Tufte CSS + et-book (MIT, github.com/edwardtufte/tufte-css). Paper-grain SVG-noise technique adapted from CSS-Tricks 'grainy gradients' (the feTurbulence-as-data-URI approach, public technique). color-scheme / prefers-color-scheme guidance adapted from MDN Web Docs (CC-BY-SA 2.5). No third-party CSS is bundled verbatim; these are reimplementations in the project's token vocabulary.",
+  "principle": "Pick a SMALL number of finishes per story (often one opener treatment + one divider + optional grain) and apply them consistently. Drive every color off design_tokens.json variables (var(--ink)/--muted/--line/--accent); never hard-code hexes here.",
+
+  "drop_cap": {
+    "use": "First paragraph of the article (or a major section opener) — a single large initial that anchors the start of reading.",
+    "build": "Apply to the lead paragraph only (e.g. <p class=\"lead\">). Float the first letter; size it to ~3 lines.",
+    "css": "p.lead:first-letter{ float:left; font-family:var(--font-display, Georgia, serif); font-weight:700; font-size:3.4em; line-height:0.8; padding:0.05em 0.12em 0 0; color:var(--accent); }",
+    "rule": "One drop cap per story (the opener). Do not drop-cap every section — that turns a signature into wallpaper."
+  },
+
+  "kicker": {
+    "use": "A short uppercase eyebrow above a headline or section title (category, dateline label, 'PART TWO').",
+    "build": "A small element directly above the heading; uppercase, letter-spaced, muted or accent color.",
+    "css": ".kicker{ font-family:var(--font-ui, system-ui, sans-serif); text-transform:uppercase; letter-spacing:0.12em; font-size:0.72rem; font-weight:600; color:var(--accent); margin:0 0 0.4rem; }",
+    "rule": "Keep it short (1-4 words). It labels; the headline carries the meaning."
+  },
+
+  "dividers": {
+    "use": "Separate sections or beats. Pick ONE divider style per story and reuse it (mixing hairline + ornament + rule looks unsettled).",
+    "hairline": ".divider{ border:0; border-top:1px solid var(--line); margin:3rem 0; }",
+    "ornament": ".divider-orn{ border:0; text-align:center; margin:3rem 0; } .divider-orn::before{ content:'\\00A7'; color:var(--muted); font-size:1.1rem; letter-spacing:0.3em; } /* section mark; swap for an asterism with content:'* * *' */",
+    "asterism": ".divider-ast{ border:0; text-align:center; color:var(--muted); margin:3rem 0; } .divider-ast::before{ content:'\\2042'; font-size:1.4rem; } /* U+2042 asterism */",
+    "rule": "Pick ONE per story. Hairline for serious/quant; ornament/asterism for features and essays."
+  },
+
+  "marginalia": {
+    "use": "Tufte-style sidenotes: a note set in the right margin beside the text it annotates, instead of a footnote at the page bottom. Folds inline below ~720px. No JS.",
+    "build": "A numbered marker in the flow + a margin note floated right. On wide screens the note sits in the margin; on narrow screens a CSS checkbox toggle reveals it inline (the only interactivity, JS-free).",
+    "css_wide": ".sidenote{ float:right; clear:right; width:42%; margin:0 -48% 1rem 0; font-family:var(--font-ui, system-ui, sans-serif); font-size:0.82rem; line-height:1.4; color:var(--muted); } .sidenote-num{ counter-increment:sidenote; } .sidenote-num::after{ content:counter(sidenote); font-size:0.7em; vertical-align:super; color:var(--accent); } article{ counter-reset:sidenote; }",
+    "css_fold": "@media (max-width:720px){ .sidenote{ display:none; float:none; width:auto; margin:0.5rem 0; } .sidenote-toggle{ display:inline; } input.sidenote-check{ display:none; } input.sidenote-check:checked + .sidenote{ display:block; } } @media (min-width:721px){ .sidenote-toggle, input.sidenote-check{ display:none; } }",
+    "markup_note": "Wide: <label class=\"sidenote-num\"></label><span class=\"sidenote\">note text</span>. Fold: a hidden <input type=checkbox class=sidenote-check id=sn1> + <label for=sn1 class=sidenote-num sidenote-toggle> so the marker toggles the note inline on mobile with zero JS.",
+    "rule": "Reserve for genuine asides/sources that would interrupt the line. Don't push primary argument into the margin."
+  },
+
+  "newthought": {
+    "use": "Open a section without a heading — the first few words set in small caps signal a new movement (Tufte 'newthought').",
+    "build": "Wrap the opening words of a section's first paragraph.",
+    "css": ".newthought{ font-variant-caps:small-caps; font-feature-settings:'smcp' 1; letter-spacing:0.03em; }",
+    "rule": "Use as an alternative to a sub-heading for a softer section break; pairs well with the asterism divider."
+  },
+
+  "dateline_byline": {
+    "use": "Reportage credibility line under the headline: author + place + date, in the UI font.",
+    "build": "A small block below the dek: byline, then an em-dashed dateline.",
+    "css": ".byline{ font-family:var(--font-ui, system-ui, sans-serif); font-size:0.85rem; color:var(--muted); margin:0.6rem 0 1.4rem; } .byline .name{ color:var(--ink); font-weight:600; } .byline .dateline{ text-transform:uppercase; letter-spacing:0.06em; font-size:0.78rem; }",
+    "markup_note": "<p class=\"byline\"><span class=\"name\">By …</span> · <span class=\"dateline\">CITY — 21 JUN 2026</span></p>",
+    "rule": "Keep to one line; the dateline grounds the piece as reported. Use only with a real author/source attribution."
+  },
+
+  "pull_quote_variants": {
+    "_note": "Variants of components.json `pull_quote`. Pick one treatment and keep it consistent across the story.",
+    "oversized_serif": ".pq-serif{ font-family:var(--font-display, Georgia, serif); font-size:clamp(1.5rem, 3.6vw, 2.3rem); line-height:1.2; font-style:italic; color:var(--ink); border-left:3px solid var(--accent); padding-left:1rem; margin:2rem 0; max-width:34ch; }",
+    "centered_mark": ".pq-mark{ text-align:center; font-family:var(--font-display, Georgia, serif); font-size:clamp(1.4rem, 3.2vw, 2rem); line-height:1.25; margin:2.5rem auto; max-width:30ch; } .pq-mark::before{ content:'\\201C'; display:block; font-size:3em; line-height:0.6; color:var(--accent); }",
+    "highlight": ".pq-hl{ font-size:clamp(1.3rem, 3vw, 1.8rem); line-height:1.4; margin:2rem 0; } .pq-hl mark{ background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--ink); padding:0.05em 0.15em; border-radius:2px; }",
+    "rule": "A pull quote re-states a striking sentence already in the prose; don't introduce new facts in it."
+  },
+
+  "paper_grain": {
+    "use": "A faint paper/print texture over the whole page so flat surfaces read as printed rather than digital-blank. Especially for newsprint / retro / annual-report themes.",
+    "build": "An inline SVG feTurbulence noise as a data URI on a fixed full-bleed pseudo-element, very low opacity, never intercepting pointer events.",
+    "css": "body::before{ content:''; position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.08; background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\"); }",
+    "tradeoff": "Keep opacity 0.06-0.12 (higher muddies text). pointer-events:none is mandatory so it never blocks clicks. Skip it on terminal_mono / data dashboards where flatness is the intent.",
+    "rule": "Texture is ambience, not content; it must never reduce text contrast below WCAG AA (see motion.json accessibility.contrast)."
+  },
+
+  "token_toggle": {
+    "use": "Let the page follow the reader's OS light/dark preference and offer a manual override, all from the token system (design_tokens.json).",
+    "build": "Declare color-scheme on :root so form controls/scrollbars match; set light tokens in :root; override for dark via prefers-color-scheme AND a manual html[data-theme=dark] hook. A tiny button flips data-theme (the only JS).",
+    "css": ":root{ color-scheme:light dark; --bg:#fffdf8; --surface:#ffffff; --ink:#1a1a1a; --muted:#6b6357; --line:#ddd3c2; --accent:#b3322a; } @media (prefers-color-scheme:dark){ :root:not([data-theme=light]){ --bg:#0e0f13; --surface:#16181f; --ink:#ece7df; --muted:#9aa0ab; --line:#2a2d36; } } html[data-theme=dark]{ --bg:#0e0f13; --surface:#16181f; --ink:#ece7df; --muted:#9aa0ab; --line:#2a2d36; }",
+    "js_note": "Optional toggle button: document.documentElement.dataset.theme = (current === 'dark' ? 'light' : 'dark'). Page works fully with NO JS — it just follows the OS preference. Persist with localStorage if desired.",
+    "rule": "Only add a toggle if the story benefits from both modes; otherwise commit to the one theme that fits the subject (themes.json). Keep both modes on the SAME token names so components don't branch."
+  }
+}

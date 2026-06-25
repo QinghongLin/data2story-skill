@@ -1,0 +1,11 @@
+{
+  "_fixture": "scenario 06 RED — an auditor send-back left OPEN (resolution not in {fixed,blocker_recorded}) trips §15a send_back_open. The same int_02 is the subject of an unmatched HARD playtest send-back (see audit/playtest_report.json) so §15c also trips playtest_hard_unresolved (no auditor entry on int_02 with resolution fixed|blocker_recorded+reason).",
+  "send_backs": [
+    {
+      "send_back_to": "programmer",
+      "element": "int_02",
+      "type": "interactive_verify_coexistence_broken",
+      "resolution": "open"
+    }
+  ]
+}

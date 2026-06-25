@@ -1,0 +1,101 @@
+{
+  "_note": "The de-clutter ruleset: strip every non-informative mark from the chart frame, then format axes/ticks/legends for reading. This is the BBC bbplot 'remove the clutter' philosophy translated into a Vega-Lite config block + per-encoding rules. The Programmer applies _config_block to a chart's \"config\", then the per-axis rules. The Auditor checks the zero-baseline rule and log-domain rule.",
+  "_sources": "BBC bbplot R package (the gridline/tick/axis-line/legend de-clutter rules; bbplot is MIT-licensed — these are re-authored as Vega-Lite config). Project component_implementations.json (scale.zero / labelExpr-is-Vega-expr pitfalls this builds on).",
+
+  "_config_block": {
+    "_note": "The canonical \"config\" for an editorial chart, authored for the ALWAYS-ON DARK cinematic stage (the Data2Story page is unconditionally dark; embedChart sets spec.background='transparent', so the chart sits over the dark stage on a dark .chart-card surface). All guide-text + frame ink here is therefore LIGHT BY DEFAULT — this is the CORRECT default, NOT a placeholder to 'restore' to the old light-mode grey (#555/#333/#cbcbcb). MANDATORY light guide text: config.title.color AND config.title.subtitleColor (a SEPARATE property — Vega's subtitle default is DARK and goes INVISIBLE on the dark stage if unset; this was the bug, PIT-62), config.axis.labelColor + titleColor, config.legend.labelColor + titleColor, plus light-on-dark gridColor/domainColor. The Programmer keeps these light over the dark stage (do not swap them back to a dark --muted/--line). SET GUIDE-TEXT COLORS HERE — IN THIS ONE SHARED CONFIG — AND NEVER PER-CHART: every chart must inherit this _config_block (build each chart's \"config\" from it) so no chart can be missed. Per-chart / 'one chart sets it' is exactly how a guide-text color gets dropped — the WC blog had 10 charts on ONE shared embed() base config that set title.color but OMITTED subtitleColor, so EVERY subtitle was dark-on-dark, yet validate.py Section 17 PASSED because §17 only checks whether `subtitleColor` appears ANYWHERE on the page and one OTHER chart had it locally. The fix is structural: complete THIS shared block (all six guide-text colors light, below), do not patch individual charts. These FRAME/guide inks are NOT data-encoding colors and do NOT redefine design_tokens.json data_color_scales; data-encoding color (sequential/diverging/categorical + the --accent highlight) is owned by design_tokens.json data_color_scales (and encoding_craft.json for CVD-safety), never here.",
+    "view": {"stroke": null, "_": "remove the default chart border box"},
+    "title": {
+      "color": "#ffffff",
+      "subtitleColor": "#ffffff",
+      "_": "DARK-STAGE GUIDE TEXT (PIT-62): force a LIGHT title AND subtitle. subtitleColor is a SEPARATE Vega property from color — setting only color leaves the subtitle at Vega's DARK default, which is invisible on the always-on dark cinematic background. Both required."
+    },
+    "axisY": {
+      "grid": true,
+      "gridColor": "rgba(255,255,255,0.18)",
+      "gridWidth": 1,
+      "domain": false,
+      "ticks": false,
+      "labelPadding": 6,
+      "_": "keep ONLY faint major Y gridlines (light-on-dark ~rgba(255,255,255,.18) for the dark stage); drop the Y axis line + Y ticks"
+    },
+    "axisX": {
+      "grid": false,
+      "domain": true,
+      "domainColor": "rgba(255,255,255,0.45)",
+      "ticks": false,
+      "labelPadding": 6,
+      "_": "category/time X: NO X gridlines; keep a thin light-on-dark baseline (domain ~rgba(255,255,255,.45)) for bars/columns; drop X ticks"
+    },
+    "axis": {"labelColor": "#e8e8e8", "titleColor": "#e8e8e8", "labelFontSize": 12, "titleFontSize": 12, "_": "LIGHT axis ink (#e8e8e8) for the dark stage — not the old dark #555"},
+    "legend": {"orient": "top", "title": null, "labelColor": "#e8e8e8", "titleColor": "#e8e8e8", "_": "legend on TOP, no legend title (the categories speak for themselves) — or drop the legend entirely and label directly (annotation_layers.json line_end_label). LIGHT legend ink (#e8e8e8) for the dark stage so legend text is not dark-on-dark (PIT-62)."},
+    "axisBand": {"grid": false}
+  },
+
+  "gridlines": {
+    "rule": "Minor gridlines: OFF always. Major gridlines: keep ONLY on the quantitative (value) axis, light (~#cbcbcb), thin. The category axis gets NO gridlines.",
+    "vega_lite": "axisY.grid:true + a faint light-on-dark gridColor (rgba(255,255,255,.18) for the always-on dark stage); axisX.grid:false (for vertical category charts). For horizontal bars, swap: gridlines on the X (value) axis, none on the Y (category) axis.",
+    "why": "Gridlines are scaffolding for reading values; one set, faint, is enough. Two sets of heavy gridlines = a cage."
+  },
+
+  "axis_lines_ticks_titles": {
+    "rule": "Drop axis DOMAIN lines and TICKS where the labels already locate the data (almost always on the value axis). Keep a thin baseline (domain) on the category axis of a bar/column chart (it anchors the zero line). DROP an axis TITLE when it is self-evident or stated in the chart's own title/subtitle (e.g. years on the x-axis need no 'Year' title).",
+    "vega_lite": "axis: {domain:false, ticks:false} per axis; title:null on an axis to drop its title; encoding-level \"axis\":{\"title\":null} overrides per field.",
+    "why": "Every removed line is less ink between the reader and the data (the bbplot principle). Keep only what carries information."
+  },
+
+  "legend": {
+    "rule": "Legend on TOP, horizontal, NO title. Better still: for lines/areas with few series, delete the legend and label series directly at the line end (annotation_layers.json). For a sequential color (choropleth/heatmap) keep a legend WITH units.",
+    "vega_lite": "config.legend:{orient:'top', title:null}; or encoding-level \"legend\":null to remove; gradient legend for continuous color keeps title (the units).",
+    "why": "A top legend reads before the chart; a direct label removes the color->name round-trip entirely."
+  },
+
+  "tick_formatting": {
+    "rule": "Format tick labels for humans: currency ($), percent (%), and abbreviated thousands/millions (12k, 3.4M). Put the UNIT in the axis/chart title, not on every tick, when possible.",
+    "vega_lite_format": "Use the encoding's \"format\" with d3-format strings: \"$,.0f\" (currency), \".0%\" (percent — note Vega multiplies by 100 for %), \"~s\" (SI abbreviation: 12k, 3.4M), \",.0f\" (thousands separator).",
+    "vega_lite_labelExpr": "For custom labels use axis.labelExpr — but it is a VEGA EXPRESSION, NOT JavaScript (component_implementations.json). Use Vega helpers: format(datum.value, '$,.0f'), not datum.value.toFixed(). Example abbreviate: \"format(datum.value, '~s')\". Do NOT call JS methods (.toLocaleString(), template literals) inside labelExpr.",
+    "examples": {
+      "currency_axis": "\"axis\":{\"format\":\"$,.0f\"}",
+      "percent_axis": "\"axis\":{\"format\":\".0%\"}   // field value 0.25 renders as 25%",
+      "abbreviated_thousands": "\"axis\":{\"format\":\"~s\"}   // 12000 -> 12k",
+      "labelExpr_custom": "\"axis\":{\"labelExpr\":\"format(datum.value,'~s') + ' t'\"}   // Vega-expr, NOT datum.value+' t'"
+    },
+    "units_in_title": "State units once in the axis/chart title ('Revenue ($m)', 'Share (%)') instead of repeating on each tick.",
+    "anti_pattern": "Raw 1200000 on ticks; '%' suffix typed manually while ALSO using a count field (double scaling); .toFixed()/.toLocaleString() inside labelExpr (Vega can't run JS — it silently fails or errors)."
+  },
+
+  "zero_baseline_rule": {
+    "rule": "BARS, COLUMNS, and filled AREAS MUST start at zero — their length/area encodes magnitude, so a truncated baseline lies about ratios. LINES, dot plots, and scatter MAY truncate the axis (scale.zero=false) — they encode change/position, not magnitude-from-zero, so zooming in to show variation is honest.",
+    "vega_lite": {
+      "bars_keep_zero": "Do NOT set scale.zero=false on a bar/column/area-magnitude y. Leave the default (zero included). If a transform clips it, force \"scale\":{\"zero\":true}.",
+      "lines_may_truncate": "On a line/scatter y where the variation is small relative to the level, set \"scale\":{\"zero\":false} PLUS an explicit \"domain\":[min,max] so the truncation is deliberate, not accidental (component_implementations.json)."
+    },
+    "why": "Truncating a bar exaggerates differences (the classic misleading chart). Truncating a line is normal practice and shows the signal. The Auditor flags any truncated bar/area baseline.",
+    "anti_pattern": "A bar chart with scale.zero=false (overstates differences); a line forced to zero when the action is in a narrow high band (flattens the signal)."
+  },
+
+  "point_overflow_rule": {
+    "rule": "Point/scatter/dot marks must not escape the plotting frame. A datum beyond an explicit scale.domain draws OUTSIDE the plot area (over the axis, the chart-card edge, or the bare background). Two-part fix: (1) give scale.domain HEADROOM to the data max/min (pad the domain past the extremes) OR omit domain so Vega auto-fits the extent; AND (2) set \"clip\": true on the point/scatter mark so nothing renders outside the frame even if a domain is tight. clip is the belt; domain headroom is the suspenders.",
+    "vega_lite": "mark:{type:'point', clip:true}; and either drop scale.domain (auto-fit) or set domain:[min - pad, max + pad]. Both together: clip:true guarantees no draw outside the frame; the domain headroom keeps the real data inside it.",
+    "why": "Bars/areas are bounded by the baseline, but points are positioned freely, so any datum past a tight/wrong explicit domain renders over the axis/outside the card. This is the INNER-plot overflow (mark beyond domain) — distinct from the OUTER-SVG overflow (axis/legend overhead wider than spec.width, fixed by fit_and_legibility.svg_must_fit / PIT-03).",
+    "detect": "Auditor render/vision lens sees points outside the plot or over the card edge — the real catch, since whether a point overflows depends on the DATA vs the domain, which a static check cannot evaluate without running the chart. Static smell only: a point/scatter spec with an explicit scale.domain and NO clip:true on the mark (PIT-65 — soft, no validate.py gate).",
+    "anti_pattern": "A scatter with an explicit scale.domain that ends at the visible-range max while real data exceeds it, mark un-clipped -> dots draw over the axis / outside the card."
+  },
+
+  "log_scale_rule": {
+    "rule": "Use a log scale when values span orders of magnitude (e.g. 10 to 10,000,000). A log scale requires a strictly POSITIVE domain — log is undefined at 0 and negatives. Never combine a log scale with the zero-baseline rule (they're incompatible).",
+    "vega_lite": "\"scale\":{\"type\":\"log\"} with \"domain\":[min>0, max]. Filter or floor any zero/negative values first. Label ticks at powers (1, 10, 100, ...) and tell the reader it's log (subtitle/axis title) — readers misread log axes as linear.",
+    "anti_pattern": "A log scale on data containing 0/negatives (renders broken/empty); an unlabeled log axis the reader assumes is linear."
+  },
+
+  "checklist": [
+    "Guide text LIGHT for the dark stage: config.title.color + config.title.subtitleColor (both — subtitleColor is separate) + config.axis.labelColor/titleColor + config.legend.labelColor/titleColor set light (the dark cinematic background is always on; default Vega guide ink is dark and goes invisible — PIT-62).",
+    "Minor gridlines off; one faint set of major gridlines on the value axis only.",
+    "Axis domain lines + ticks removed where labels suffice; thin baseline kept on a bar category axis.",
+    "Self-evident axis titles dropped; units stated once in the title.",
+    "Legend on top with no title — or deleted in favor of direct end-labels.",
+    "Ticks formatted ($/%/~s) via format/labelExpr (Vega-expr, NOT JS).",
+    "Bars/areas start at zero; lines/scatter may truncate via scale.zero=false + explicit domain.",
+    "Any log scale has a strictly positive domain and is labeled as log."
+  ]
+}

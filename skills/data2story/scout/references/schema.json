@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "role": "scout",
+    "version": "1.0",
+    "_doc": "Scout output. `items` is a dict keyed by sct_xx (resolved the same way detective items are, so verify.py can trace them). `live_status` is an array of dated, display-only real-world status records for the Analyst to join. Write incrementally."
+  },
+  "items": {
+    "sct_01": {
+      "kind": "image | video | audio | embed",
+      "label": "Short human-readable name",
+      "filename": "scout_messi.jpg   // for downloaded assets (image/video/audio). OMIT for embeds.",
+      "embed_url": "https://open.spotify.com/embed/...   // for kind=embed only; copied VERBATIM from a verified source.",
+      "caption": "Reader-facing caption as it should appear under the asset.",
+      "caption_claims": [
+        "the factual assertions the caption makes that identity verification must back, e.g. 'this is Lionel Messi'"
+      ],
+      "source_url": "https://commons.wikimedia.org/wiki/File:...",
+      "retrieved_at": "ISO-8601 UTC timestamp when fetched, e.g. 2026-06-21T14:03:00Z",
+      "license": {
+        "spdx": "CC-BY-SA-4.0   // must be on license_allowlist.json to be re-hosted",
+        "permits_republication": true,
+        "requires_attribution": true,
+        "attribution_text": "Photo: <author> / Wikimedia Commons (CC BY-SA 4.0) — ready to drop into the References footer"
+      },
+      "identity": {
+        "method": "oembed | trusted_source | vlm_view | manual",
+        "verified": true,
+        "verified_title": "what the proof returned, or one line of what you saw in the image",
+        "subject": "the real-world subject this depicts, or 'generic' for ambient/non-specific imagery"
+      },
+      "relates_to": ["det_03"],
+      "purpose": "INFORM | IMMERSE"
+    }
+  },
+  "live_status": [
+    {
+      "subject": "what this status is about, e.g. 'Group C standings as of matchday 3'",
+      "as_of": "2026-06-21",
+      "status": "the current real-world state — a short prose line or a small structured value",
+      "source": {
+        "url": "https://...",
+        "title": "Source page title",
+        "fetched_at": "ISO-8601 UTC"
+      },
+      "data_file": "optional: path of the timestamped CSV/JSON the Analyst should join (e.g. code/live_status.csv)",
+      "relates_to": ["det_05"]
+    }
+  ],
+  "_field_notes": {
+    "kind": "image / video / audio = a file in assets/ (use filename). embed = a platform player (use embed_url, never re-host).",
+    "embeds": "For kind=embed: put the /embed/ player URL in embed_url and the watch/track URL you oEmbed-verified in source_url; set identity.method='oembed', identity.verified=true, and license.permits_republication=false (spdx may be 'All Rights Reserved'). The validate.py license gate skips embeds since they are not re-hosted.",
+    "license.permits_republication": "Set true ONLY for assets you may legally re-host (license on the allowlist). Copyrighted tracks/clips → use kind=embed instead.",
+    "identity.verified": "Hard requirement for real-subject media. validate.py fails any image/video/audio of a named person / specific place / specific object whose identity.verified != true.",
+    "purpose": "INFORM (carries information the prose can't) or IMMERSE (sets mood, e.g. the BGM). Anything that is neither is decoration — don't add it.",
+    "live_status": "DISPLAY-ONLY context, never training input. Each entry must carry a dated source (as_of + source.fetched_at) — that dated source is the traceability stand-in for a reproducible code line."
+  }
+}

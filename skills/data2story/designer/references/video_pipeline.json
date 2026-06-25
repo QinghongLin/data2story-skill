@@ -1,0 +1,53 @@
+{
+  "_note": "VIDEO / cinemagraph tooling knowledge for the Designer — the load-bearing facts about how to make a moving hero (or any motion beat) from a still, and the OpenRouter video-model gotchas. Cross-linked from designer/SKILL.md Step 1 (hero ladder) + Step 3 (generation). The plain per-tool invocations (text2image / image2video / text2video) still live in tools.json; THIS file is the recipe + the model-choice / upscale facts that tools.json does not carry. Generation tools route through OpenRouter (OPENROUTER_API_KEY must be set). SKILL_DIR = the directory containing designer/SKILL.md; replace SKILL_DIR / PROJECT_DIR with resolved, quoted paths before running Bash.",
+
+  "_toc": [
+    "cinemagraph_hero_pipeline — the still->motion hero recipe (text2image -> image2video -> AI-upscale)",
+    "openrouter_video_models — how models are listed (GET /api/v1/videos/models), the 4/6/8 duration constraint, the faces-safe model choice",
+    "ai_upscale — Real-ESRGAN x4plus 4x->downscale (the 2x tile-scramble bug to avoid)",
+    "when_to_animate — image2video vs text2video vs ffmpeg ken-burns; the real-subject / real-face guard",
+    "disclosure — how to honestly label a cinemagraph (AI still + a camera move, not AI video of a real person)"
+  ],
+
+  "cinemagraph_hero_pipeline": {
+    "_what": "A cinemagraph is a still that holds its subject still while a few elements move (flags, smoke, floodlights, water, particles) — the flagship hero form. It reads as premium motion without the cost/risk of a full AI video, and it is the natural way to animate a hero that contains a recognizable real face WITHOUT routing that face through a video model (see openrouter_video_models.faces).",
+    "pipeline": [
+      "1. text2image — generate the hero STILL at the model's native size. Compose it as a held subject + movable atmosphere (e.g. a face-off still with big flags + smoke + floodlights) so the next step has something to animate while the subject stays put. Tool: tools.json text2image (default openai/gpt-5.4-image-2).",
+      "2. image2video — animate that still into a short muted loop with a MOTION-ONLY prompt (describe what moves: 'flags ripple, smoke drifts, floodlights flicker; subject and faces held still, no camera shake'). The motion must be VISIBLE-AT-A-GLANCE, never a near-still 'faint pulse': a clearly-visible PRIMARY motion + 1-2 strong SECONDARY motions, all IN-PLACE / cyclic (flags waving, wheels spinning, smoke rising, crowd surging, sky drifting) so it loops — never translate the subject across/off the frame. (The Hero owns the cover's dramatic-motion floor + the topic->motion library + the seamless-loop post-process; this pipeline is the mechanics it reuses — see hero/references/hero_recipes.json build_recipe.animate + topic_motion_library.) Pick the model by openrouter_video_models.faces below. Tool: tools.json image2video. Keep the still as the <video> poster so it degrades to a frame-0 image.",
+      "3. AI-upscale (optional, quality lever) — the faces-safe video model (Kling v3 std) caps at 720p, so upscale the rendered clip to ~2K width for a crisp full-bleed hero. Use ai_upscale below. Skip on a small/low-GPU machine; 720p is fine.",
+      "4. web-weight — an upscaled clip is heavy (a 2K cinemagraph runs ~9-11 MB). Run optimize_assets.py (Step 3.5) and ship a VP9 .webm + an H.264 .mp4 fallback + the poster still; keep the file under the video budget where the page can afford it, or accept a heavier HERO knowing every other asset stays web-weight."
+    ],
+    "loop_seam": "For a seamless <video loop>, prefer a clip that returns to its first frame. The ffmpeg fallback (when2animate.ffmpeg_kenburns) builds this as a forward+reverse BOOMERANG concat so frame N == frame 0 and the loop never jumps. For the HERO this is a HARD requirement, not 'accept a soft cut': every hero clip is post-processed into a clean loop (default BOOMERANG `[0]reverse[r];[0][r]concat`; alt CROSSFADE the loop point via `xfade` when reverse looks unnatural), the technique recorded on hero.json `loop` (\"boomerang\"|\"xfade\"|\"native\"). The Hero owns this; see hero/references/hero_recipes.json build_recipe.optimize.",
+    "output": "Reference the hero as a <video autoplay loop muted playsinline poster=...> with the still as poster; set the hero item's hero_strategy to the animated rung (e.g. 'abstract_still+image2video', or for a real-face still 'real_still+cinemagraph') and record the model used + disclosure."
+  },
+
+  "openrouter_video_models": {
+    "listing": "OpenRouter lists video models ONLY via the dedicated endpoint `GET https://openrouter.ai/api/v1/videos/models` — the chat `/api/v1/models` endpoint OMITS them. So to discover/confirm a video model id, call the videos/models endpoint; do not assume a model exists because it is absent from the chat models list. (~14 video models at time of writing; the set changes — list it, don't hard-code from memory.)",
+    "duration_constraint": "The video endpoint accepts ONLY duration values 4, 6, or 8 seconds. Any other --duration is rejected. The image2video / text2video scripts default to a value in this range; never request e.g. 5s or 10s.",
+    "faces": {
+      "_why": "The single highest-value video fact: which models will animate a still that contains a recognizable REAL human face. Discovered surveying OpenRouter video models on the same two-face (Messi/Mbappe) hero still.",
+      "DEFAULT_faces_safe": "kwaivgi/kling-v3.0-std — the faces-safe choice. It cleanly animated the real-face still into a cinemagraph (faces held still + undistorted; flags/smoke/floodlights move) where others refused or distorted. Caps at 720p (hence the AI-upscale step). TRY KLING v3 STD FIRST for any cinemagraph that includes a real face.",
+      "REFUSE_real_faces": "google/veo-3.1-fast (deterministic refusal, Vertex support code 15236754 — NOT retry-clearable; retrying only burns quota) and alibaba/wan-2.7 ('input content is suspected to include real human faces'). Do not route a real face through these; the refusal is a hard block, not a transient error.",
+      "MOVES_the_subject": "bytedance/seedance (e.g. seedance-1-5-pro / seedance-2.0) — RUNS on a real-face still but MOVES the players/subject, so it FAILS the 'subject held still' cinemagraph requirement. Fine for a non-specific atmospheric scene where motion of the subject is wanted; wrong for a held-face cinemagraph.",
+      "rule": "For a real-face cinemagraph: Kling v3 std first. For an ABSTRACT/atmospheric scene with no real subject: any video model is fine (seedance default is okay). NEVER feed a recognizable real public figure to Veo/Wan (hard refusal) — and remember the upstream Designer doctrine already routes real subjects to FETCHED stills; image2video of a real face is only ever a cinemagraph via the faces-safe model, with honest disclosure."
+    },
+    "default_models": "tools.json carries the script defaults: image2video default = google/veo-3.1-fast, text2video default = bytedance/seedance-2.0. Those defaults are fine for ABSTRACT subjects; OVERRIDE image2video to --model kwaivgi/kling-v3.0-std whenever the still contains a real face (the veo default will refuse it)."
+  },
+
+  "ai_upscale": {
+    "_why": "The faces-safe video model (Kling v3 std) renders at most 720p. For a crisp full-bleed hero on a 2K+ display, upscale the rendered clip. This is an OPTIONAL quality lever, not required — 720p is acceptable and far lighter.",
+    "tool": "Real-ESRGAN `realesrgan-x4plus` (ncnn-vulkan build) run locally on a capable GPU (verified on an RTX-class card: 720p -> ~2560x1432 true-2K width).",
+    "CRITICAL_scale_bug": "Use the 4x model then LANCZOS-DOWNSCALE to the target width. The 2x path (realesrgan-x2plus / `-s 2`) had a TILE-SCRAMBLE bug (visible tile seams / scrambled tiles) on this pipeline — AVOID the 2x path. So: upscale 4x with realesrgan-x4plus, then downscale (lanczos) to the wanted 2K width.",
+    "verify": "After upscaling a clip with real faces, VERIFY the faces look natural (no plastic/over-smoothed skin, no drift). Keep the original 720p as a backup before overwriting; the upscaled file is much heavier (~9-11 MB vs ~2-3 MB), so this trade is hero-only — never upscale every background.",
+    "skip_when": "No capable local GPU, or weight matters more than crispness -> ship the 720p clip as-is. The upscale never gates the build."
+  },
+
+  "when_to_animate": {
+    "image2video": "Animate a strong STILL you already have (the cinemagraph route, or a slow push-in/parallax on an abstract still). Motion-only prompt. Use the faces-safe model for any real face.",
+    "text2video": "When motion itself is the point and you have no still to start from (a moving scene from scratch). Default bytedance/seedance-2.0. For ABSTRACT scenes only when a real subject would be involved.",
+    "ffmpeg_kenburns": "The NON-AI motion fallback the image2video script falls back to (and a fine deliberate choice): a slow ffmpeg ken-burns push-in + forward/reverse BOOMERANG concat on the local still — faces stay ORIGINAL pixels (zero distortion), tiny files (~0.5 MB webm / ~0.9 MB mp4), seamless loop. This is the documented fallback for a real-face hero when even Kling is unavailable, and is honest motion (a camera move on the still, not AI video). The script prints FALLBACK_USED=kenburns; if even ffmpeg is missing it writes a static _poster and prints VIDEO_UNUSED=1 / POSTER_PATH=<path> (reference the poster as an image, hero preserved as a still).",
+    "real_subject_guard": "Cross-ref designer/SKILL.md Step 3 real-subject rule: NEVER text2image/text2video a specific real identifiable subject (real person, named trophy/stadium/landmark, official logo) — fetch a verified real still instead. image2video of a real face is allowed ONLY as a held-subject cinemagraph via the faces-safe model, with disclosure; it is the one sanctioned animation of a real face, and Veo/Wan will hard-refuse it anyway."
+  },
+
+  "disclosure": "Label a cinemagraph honestly. When the still is AI text2image and the motion is a camera move / boomerang on that still, disclose: image = AI-generated, motion = a camera move on the still (NOT AI video of a real person). When a real face was animated into a held cinemagraph via the faces-safe model, say the subject is an AI-likeness or the motion is added, per the asset's generated/real status — never imply real video footage of a real person. The Programmer renders the disclosure in the figure/credit; the Designer records tool + model + prompt + disclosure on the item so the Inspector's generated-kind drawer can show it."
+}

@@ -1,0 +1,46 @@
+{
+  "_note": "Annotation = how the chart MAKES ITS POINT without the reader hunting. These are Vega-Lite layering techniques the Programmer adds on top of a vega_recipes.json base. Pattern: build the data layer, then layer reference geometry UNDER it (rule/area bands) and labels/callouts OVER it (text/point). Annotations are usually the LAST layers in a layer:[] array. Wire every highlight to content.highlight from designer.json.",
+  "_sources": "Vega-Lite documentation — rule mark, text mark, argmax/argmin aggregates, conditional encoding. Re-authored as actionable rules.",
+
+  "threshold_and_reference_lines": {
+    "job": "Draw the line the data is measured against — a zero baseline, a target, an average, a 'safe' limit, a historical record.",
+    "technique": "A `rule` mark in its own layer. Horizontal reference: encode only y (a constant via a datum or a transform/aggregate value). Vertical reference (an event date / threshold x): encode only x. Use a separate layer so it doesn't inherit the data mark's encoding.",
+    "rule": "Keep reference lines visually quiet: thin, dashed (strokeDash:[4,4]), --muted or a low-opacity --accent, so the DATA reads first and the reference reads second. Always label it (a paired text mark) — an unlabeled line is a riddle.",
+    "spec_fragment": "layer:[ {data}, {\"mark\":{\"type\":\"rule\",\"strokeDash\":[4,4],\"color\":\"#999\"},\"encoding\":{\"y\":{\"datum\": TARGET}}}, {\"mark\":{\"type\":\"text\",\"align\":\"right\",\"baseline\":\"bottom\",\"dx\":-4,\"dy\":-2},\"encoding\":{\"y\":{\"datum\":TARGET},\"text\":{\"value\":\"target\"}}} ]",
+    "anti_pattern": "A reference line as bold as the data (reader can't tell which is the signal); an unlabeled rule; computing the average in JS and hardcoding it instead of an aggregate transform (it drifts from the data)."
+  },
+
+  "range_bands": {
+    "job": "Shade a region of meaning — a confidence interval, a 'normal' band, a recession period, a forecast horizon.",
+    "technique": "A `rect` (or `area`) mark with BOTH bounds: x + x2 for a vertical band (a time span), or y + y2 for a horizontal band (a value range). Place it as the BOTTOM layer so the data draws over it. For a forecast fan, stack several area bands (y/y2 = lower/upper of each interval) at increasing opacity toward the center line (vega_recipes.json layered_line).",
+    "rule": "Low opacity (~0.08-0.18), no stroke, --muted or a tint of --accent. A band is context, not content. Label what the band means once (a text mark or the caption).",
+    "spec_fragment": "first layer: {\"mark\":{\"type\":\"rect\",\"opacity\":0.12,\"color\":\"#888\"},\"encoding\":{\"x\":{\"datum\":SPAN_START},\"x2\":{\"datum\":SPAN_END}}}  // shades a date range across full y",
+    "anti_pattern": "A band so dark it competes with the data; bands for many overlapping intervals that muddy into grey — use the nested-fan opacity ramp instead."
+  },
+
+  "line_end_label": {
+    "job": "Replace a legend with a direct label at the END of each line — the reader's eye is already there, and color->name lookups are slower than reading the name in place.",
+    "technique": "A `text` mark layered over the line, positioned at each series' last point via an `argmax` aggregate on the time field: aggregate the y (and the label/category) by `argmax` of x, so the text lands on the latest datum. Align left with a small dx so the label sits just past the line end. Match the text color to the line (or accent the focal one).",
+    "rule": "Use for FEW series (2-5). Drop the legend entirely (legend:null) when every line is end-labeled. For many series, label only the highlighted one + 'others' (vega_recipes.json line spaghetti rule).",
+    "spec_fragment": "label layer: {\"mark\":{\"type\":\"text\",\"align\":\"left\",\"dx\":6,\"baseline\":\"middle\"},\"encoding\":{\"x\":{\"aggregate\":\"max\",\"field\":\"date\"},\"y\":{\"aggregate\":{\"argmax\":\"date\"},\"field\":\"value\"},\"text\":{\"aggregate\":{\"argmax\":\"date\"},\"field\":\"series\"},\"color\":{\"field\":\"series\"}}}",
+    "anti_pattern": "A separate color legend the reader must map back to lines; end labels that overlap (nudge dy per series or label only the focal ones)."
+  },
+
+  "in_chart_callout": {
+    "job": "A short note pinned to a specific datum — 'COVID lockdown', 'record high', 'policy change' — explaining the moment in the chart, not in a paragraph below.",
+    "technique": "A `text` mark anchored to the datum's x/y, offset with dx/dy so it sits near (not on) the point; control placement with align (left/right/center) + baseline (top/middle/bottom). Pair with a small `point`/`rule` marking the exact spot. For multi-line notes use text with a \\n or stack two text marks. A faint connector (a short rule from datum to text) helps when the label must sit away from a busy area.",
+    "rule": "One or two callouts per chart, max — callouts are for the turning point(s) the story names, not every bump. Keep them short (a few words). Ensure dx/dy keeps them inside the plot (or expand padding).",
+    "spec_fragment": "{\"mark\":{\"type\":\"text\",\"align\":\"left\",\"baseline\":\"bottom\",\"dx\":6,\"dy\":-6,\"lineBreak\":\"\\n\"},\"encoding\":{\"x\":{\"datum\":EVENT_X},\"y\":{\"datum\":EVENT_Y},\"text\":{\"value\":\"lockdown\\nbegins\"}}}",
+    "anti_pattern": "Many callouts crowding the plot; a callout whose text overlaps the data line; explaining the whole story in floating text instead of prose + one anchored note."
+  },
+
+  "highlight_key_datum": {
+    "job": "Make the ONE datum the story is about pop — accent it, mute everything else. The single most important annotation technique.",
+    "technique": "A CONDITIONAL encoding on the existing data mark — no extra layer needed. color: {\"condition\": {\"test\": \"<predicate for the focal datum>\", \"value\": \"<--accent>\"}, \"value\": \"<--muted/grey>\"}. The predicate is a Vega EXPRESSION (datum.country === 'Argentina'), Vega-expr not JS (component_implementations.json). The same condition pattern works for size (emphasize a point), opacity (fade the field), and strokeWidth (thicken the focal line).",
+    "rule": "Default the whole chart to muted/grey; spend the --accent on the focal datum ONLY (design_tokens.json: color the highlighted datum with --accent, mute the rest). Pair with a direct text label so the highlight survives color blindness (encoding_craft.json redundant_encoding — never color alone).",
+    "spec_fragment": "\"color\":{\"condition\":{\"test\":\"datum.country === 'Argentina'\",\"value\":\"#e4572e\"},\"value\":\"#cbcbcb\"}",
+    "anti_pattern": "A rainbow where every category is colored so nothing stands out; relying on color alone for the highlight (add a label/shape); a `test` written in JS syntax (.includes(), template literals) — it must be a Vega expression."
+  },
+
+  "layering_order_rule": "In a layer:[] array, order bottom->top = (1) range bands / reference rects, (2) reference rules, (3) the DATA mark, (4) points/markers, (5) text labels & callouts. Annotations on top, context on the bottom, data in the middle. Resolve shared scales explicitly so layers align."
+}

@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "role": "ideation",
+    "version": "1.0",
+    "_doc": "The story_brief is the bridge artifact produced by the ideation front-stage (a sparring-partner dialogue) and consumed by find-data + the orchestrator's Stage-0 input dispatch. It converts a vague reader idea into a concrete, data-backed topic plus a structured data-needs spec. NOT a newsroom pipeline role: it runs upstream of Detective, before any dataset exists, and emits no provenance ids that reach the HTML. Written to <DATA_DIR>/meta/story_brief.json AFTER find-data's audit (so it stays outside the data-file glob). Real data only: this artifact is never a justification to synthesize data — if no real dataset supports the brief, ideation aborts honestly. The example below is illustrative; replace every value."
+  },
+  "story_brief": {
+    "topic": "How England's councils diverged on household recycling, 2010-2023",
+    "angle": "Neighbouring authorities with similar budgets ended up 30 points apart - the gap is about policy, not wealth.",
+    "audience": "General readers who follow local-government / environment stories; numerate but not specialist.",
+    "questions": [
+      "Which councils improved most, and which went backwards, over the period?",
+      "Does the recycling rate track region, urban/rural, or collection scheme more than income?"
+    ],
+    "data_needs": {
+      "entities": "English local authorities (councils)",
+      "metrics": ["household recycling rate (percent)", "residual waste per person (kg)"],
+      "breakdowns": ["year", "region", "authority type"],
+      "time_range": "2010-2023, annual",
+      "geography": "England, council level",
+      "min_scale": "~300+ council-year rows so contrasts are robust (find-data Gate 2 wants >= ~50 rows)",
+      "subject_class": "concrete"
+    },
+    "candidate_sources": [
+      "DEFRA 'Local authority collected waste management' statistics on gov.uk - a REAL lead surfaced in dialogue, to be verified by find-data, not asserted as fact here."
+    ],
+    "find_data_invocation": {
+      "query": "England local authority household recycling rate by council 2010 to 2023",
+      "mode": "single",
+      "flags": ["--out <DATA2STORY_ROOT>/data/england-council-recycling"]
+    },
+    "acceptance": "A returned dataset matches IFF it has council-level rows, an annual recycling-rate metric, and >= ~5 years of coverage. If it is national-only, or a single year, or has no rate column, checkpoint-2 sends it back.",
+    "open_questions": [
+      "Is council-level granularity published every year, or are there gaps / boundary changes to reconcile?"
+    ]
+  },
+  "_field_notes": {
+    "topic": "one line, headline-ish subject the reader wants to tell.",
+    "angle": "the tension / argument / surprise - the 'so what' that makes it a story, not just a table.",
+    "audience": "who it is for; sets tone and the granularity the data must reach.",
+    "questions": "1-3 concrete questions the DATA must be able to answer. These are the feasibility anchors for the pressure-test.",
+    "data_needs.entities": "the unit(s) of observation: cities? countries? players? species? companies?",
+    "data_needs.metrics": "the numeric variable(s) the story hinges on (>= 1). Without one, the Analyst has nothing to compute.",
+    "data_needs.breakdowns": "dimension(s) of variation the contrast needs: time / geography / category.",
+    "data_needs.time_range": "desired temporal coverage AND granularity (annual? monthly? one snapshot?).",
+    "data_needs.geography": "spatial scope, if any (a country, a region, global).",
+    "data_needs.min_scale": "rough row count / size needed for the claim to hold; ties to find-data Gate 2.",
+    "data_needs.subject_class": "concrete | abstract. concrete = people/places/species/events/objects (real photos exist -> richer multimedia, find-data Gate 4); abstract = rates/indices/derived metrics (chart-led, exempted).",
+    "candidate_sources": "ONLY real leads surfaced during the dialogue (a named gov portal, OWID, a known dataset). NEVER fabricate a source or URL. find-data verifies these; the brief only proposes.",
+    "find_data_invocation.query": "the exact free-text string passed to /find-data (drives its web search).",
+    "find_data_invocation.mode": "single (one source -> one folder) | theme (multi-source assembly).",
+    "find_data_invocation.flags": "optional find-data flags, e.g. --out (recommended, set by ideation), --source.",
+    "acceptance": "the checkpoint-2 test: the minimum a returned dataset MUST contain to count as matching this brief.",
+    "open_questions": "unresolved bits the data search itself might settle (gaps, definitions, boundary changes)."
+  }
+}

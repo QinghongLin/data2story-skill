@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "role": "cinematographer",
+    "version": "1.0",
+    "mode": "photographic | generative | data_driven  // MANDATORY mode selector — there is NO off. 'cinematic' is accepted as a backward-compat ALIAS for 'photographic'.",
+    "mode_reason": "one line: which mode was chosen and why (e.g. 'rich verified real imagery -> photographic'; 'abstract macro-finance topic, no real photo belongs -> data_driven spine')",
+    "_doc": "Scroll-driven cinematic background choreography — a MANDATORY stage (every blog ships a scroll background; there is no 'off'). `scenes` is a dict keyed cin_xx, in narrative order (each backs an edt_xx beat). PRIMARY mode photographic: kind=image/video backgrounds reference VERIFIED media only (Scout sct_xx or Designer des_xx) via media_ref. FALLBACK modes (only when relevant real imagery can't be sourced): generative (gradient + registered des_ AI atmosphere/metaphor stills) and data_driven (the signature annotated chart pinned as the scroll spine over a gradient). A kind=color/gradient scene carries no media_ref. scenes is always non-empty; the Programmer always builds the stage."
+  },
+  "scenes": {
+    "cin_01": {
+      "backs": "edt_01   // the narrative beat (editor section) this scene backs",
+      "order": 1,
+      "background": {
+        "kind": "image | video | color | gradient",
+        "fit": "cover | framed   // cover = full-bleed wide/atmospheric shot (crop is fine). framed = a whole-subject object/portrait shown via object-fit:contain over a blurred darkened cover backdrop, so e.g. a trophy is seen in full, not cropped. See cinematic_recipes.json fit_modes.",
+        "media_ref": "sct_03   // a Scout sct_xx (preferred) or a Designer des_xx — its checked license + identity carry over. REQUIRED for kind=image/video; omit for color/gradient.",
+        "filename": "scout_messi.jpg   // copied VERBATIM from the referenced asset",
+        "treatment": "how it fills the frame, e.g. 'full-bleed cover, gentle ken-burns', or a color/gradient value for kind=color/gradient"
+      },
+      "transition_in": "how the background arrives as the reader scrolls in (crossfade-on-scroll-progress / parallax / hard-cut / pinned)",
+      "scrim": "the readability overlay spec, e.g. 'linear-gradient(180deg, rgba(10,11,15,.45), rgba(10,11,15,.92))'",
+      "motion": "what animates and how (parallax depth, ken-burns scale range) — only where it carries meaning",
+      "scroll_span": "roughly how much scroll the scene occupies, e.g. '~1.2 viewport heights'",
+      "purpose": "IMMERSE   // a cinematic background is mood that aids reading; if it isn't IMMERSE or INFORM, don't add it",
+      "credit": "ready-to-render source credit shown small on the scene, e.g. 'Photo: The White House / Wikimedia Commons (Public Domain) - identity verified' - pulled from the media_ref's scout license/identity (the verifiable-imagery touch)",
+      "notes": "optional"
+    }
+  },
+  "global": {
+    "engine": "the page-level technique, e.g. 'pinned full-bleed background layer (position:fixed/sticky) + scroll-progress crossfade between consecutive scene backgrounds; text columns scroll over a scrim'",
+    "reduced_motion": "what happens under prefers-reduced-motion (REQUIRED): e.g. 'drop parallax/zoom/crossfade -> static per-section backgrounds; page fully readable'",
+    "performance": "lazy-load + crossfade current+next only + mobile srcset / video poster",
+    "centerpiece_scene": "the cin_xx that hosts the Interaction centerpiece (the explorable plays as a scene), or null"
+  },
+  "_field_notes": {
+    "backgrounds_must_be_verified": "Every kind=image/video scene MUST set media_ref to a Scout sct_xx or Designer des_xx (an AI atmosphere still in generative mode is a REGISTERED des_xx). validate.py rejects a data-cin image/video scene whose media_ref does not resolve. A kind=color/gradient scene carries NO media_ref (it asserts nothing factual) and is exempt. This keeps the cinematic background on-thesis (verified + licensed photos; gradients/AI-atmosphere/charts for the fallback modes), not decoration.",
+    "mandatory_mode_selector": "There is NO mode='off'. Pick photographic | generative | data_driven (photographic is the primary/default; generative + data_driven are fallbacks used ONLY when relevant real imagery can't be sourced). Record mode_reason; ALWAYS write scenes. An older mode='cinematic' is a backward-compat alias for photographic.",
+    "abstract_modes": "generative = gradient backdrop + registered des_ AI atmosphere/metaphor stills (captioned 'AI-generated atmosphere — illustration', never a specific real subject); data_driven = the signature annotated chart pinned as the scroll spine, annotations revealing on scroll over a gradient (tag that scene data-ana too). Both reuse the SAME pinned-crossfade / IntersectionObserver engine as photographic. See cinematic_recipes.json generative_atmosphere + data_driven_spine.",
+    "restraint": "Not every beat needs a FRESH photo, but a rest must NEVER go black. In PHOTOGRAPHIC mode a 'rest' beat HOLDS A REAL PHOTO — re-use the previous/upcoming verified sct_/des_ background as a quieter beat (typically the SAME image rendered framed = blurred-darkened cover, and/or under a heavier scrim), so the background reads as a calmer hold of the same photographic surface rather than a near-black panel; one photo flows into the next. HARD in photographic mode: never two consecutive rest scenes, and NEVER a kind:gradient|color rest (a near-black gradient section IS the black-scroll-gap bug — cf PIT-54). Only in the FALLBACK modes (generative/data_driven, which have NO real photos) is a 'rest' a kind:gradient scene — there the gradient/atmosphere is the legitimate medium. Never strobe image after image; the scroll background never simply disappears.",
+    "tagging": "The Programmer tags each rendered background element data-cin=\"cin_xx\" AND data-sct/data-des (from media_ref) so both the scene and its verified source are traceable.",
+    "hero_as_cin_00": "When the blog has a full-bleed hero, you MAY stage it as the FIRST scene cin_00 (order:0, backs:\"teaser\", kind:image|video, media_ref -> the hero's registered des_/sct_ asset, active by default) so the crossfade engine carries the hero seamlessly into cin_01. The hero's transparent furniture overlay opacity-dissolves over the fixed backdrop (opacity ONLY, no scale), and the hero's Verify hit stays on the .teaser overlay (its data-des), NOT on cin_00. See cinematic_recipes.json hero_as_cin_00_continuous_backdrop."
+  }
+}

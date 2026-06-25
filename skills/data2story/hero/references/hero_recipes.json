@@ -1,0 +1,141 @@
+{
+  "_note": "Hero role knowledge — the deterministic SOURCE LADDER for the cover, the winning-pattern BUILD recipe (the flagship animated hero), and the IP RECORD (which video models refuse real faces, which works, the fallback ladder, the AI-likeness disclosure, the stock-clip publish-gate). The Hero SPECS the cover here; the Programmer builds the on-page <video>/<img>; validate.py asserts it. Cross-links the Cinematographer's hero_as_cin_00_continuous_backdrop (the seamless hero->scroll handoff) + the Designer's video_pipeline.json (the still->motion mechanics). Generation routes through OpenRouter (OPENROUTER_API_KEY must be set). SKILL_DIR = the dir containing hero/SKILL.md; replace SKILL_DIR / PROJECT_DIR with resolved, quoted paths before running Bash.",
+
+  "_toc": [
+    "source_ladder — the deterministic 0-5 rung selection (first rung that resolves wins)",
+    "build_recipe — the winning-pattern animated hero (the flagship cover) + the dramatic-motion floor + the seamless-loop requirement + the on-page .cin-stage build contract",
+    "topic_motion_library — topic -> concrete IN-PLACE motion concept (the model consults this when writing the image2video prompt; topic-adaptive, free choice within the guides)",
+    "ip_record — Veo/Wan refuse real faces (code 15236754); Kling works; fallback ladder; AI-likeness disclosure; stock-clip publish-gate",
+    "cross_links — the Cinematographer + Designer references this reuses"
+  ],
+
+  "source_ladder": {
+    "_what": "ONE cover per run. Walk these rungs in order and take the FIRST that resolves — deterministic, not a free pick. Every animated rung renders a short muted loop (poster=frame-0) and runs optimize_assets.py; the cover is kind:'video' on rungs 0-4 and kind:'image' ONLY on the recorded rung-5 fallback. Inputs read: editor.json.interactives.hero, scout.json (sct_ stills/clips), designer.json content.hero_strategy, interaction.json, topic_profile.",
+    "rungs": [
+      {
+        "rung": 0,
+        "name": "interactive_passthrough",
+        "resolves_when": "editor.json.interactives.hero is non-null AND editor.json.interactives.hero.section == \"teaser\" — the Editor placed the centerpiece interactive on the opening beat.",
+        "do": "The interaction IS the Interaction Engineer's int_01. The Hero renders the ANIMATED BACKDROP behind it (build that backdrop by descending rungs 1-4 for the still/motion) and yields the click surface to int_01: set hero.interactive_overlay_ref = \"int_01\". The Hero owns the video + static furniture; the Interaction Engineer owns the pick-a-side overlay. The .teaser overlay still carries the single data-des=des_hero_video Verify hit for the backdrop; int_01's halves are role='link' (off the verify inner-interactive allow-list).",
+        "kind": "video"
+      },
+      {
+        "rung": 1,
+        "name": "scout_still",
+        "resolves_when": "a Scout sct_ (or registered Designer des_) real still exists for the cover subject AND it depicts NO recognizable real public figure (identity.subject is a place/object/generic scene, not a named living person).",
+        "do": "image2video the still into a cinemagraph. DEFAULT model (Veo) is fine for non-faces. source.tool='image2video', source.model='google/veo-3.1-fast', source.still_ref=the sct_/des_ id. Motion-only prompt.",
+        "kind": "video"
+      },
+      {
+        "rung": 2,
+        "name": "scout_real_figure",
+        "resolves_when": "the natural cover subject is a recognizable REAL PUBLIC FIGURE and a verified fetched still of them EXISTS (Scout sct_ / Detective ref_ registered as des_). subject_is_real_public_figure=true. ALLOWED-WITH-CONDITIONS, not banned. (If the real-person subject has NO usable fetched photo, this rung does NOT resolve → take the theme-first NON-PERSON fallback in no_photo_fallback below; never generate the person.)",
+        "do": "image2video the still --model kwaivgi/kling-v3.0-std (the one faces-safe model — Veo/Wan deterministically REFUSE real faces, code 15236754; see ip_record). Motion-only prompt that HOLDS the face enough to avoid warping but ALLOWS SUBTLE natural motion (slight head/body sway, a blink) on top of moving atmosphere/lighting ('flags ripple, floodlights flicker; subject mostly held — only a slight natural sway/blink, no warping, no camera shake'). WARP-QUALITY GUARD: reject any candidate where the face distorts, and fall back to ffmpeg Ken-Burns + boomerang on the SAME still (faces stay original pixels, zero distortion) — record source.tool='ffmpeg_kenburns', source.fallback_used='kenburns'. Set a PROPORTIONATE AI-motion-added disclosure on hero.disclosure (a small caption that motion was added / not real footage — lightweight, NOT a banner). The still is always FETCHED — generating the face from scratch (photoreal OR illustration) stays disallowed.",
+        "kind": "video"
+      },
+      {
+        "rung": 3,
+        "name": "scout_stock_clip",
+        "resolves_when": "a license-clean STOCK CLIP is registered as a Scout sct_ kind:'video'. R5 CONSTRAINT: stock VIDEO is not fetched today (fetch_stock.py returns images only; Pexels-Video/Coverr are not wired), so restrict this rung to a Commons/Openverse CC video OR a verified oEmbed — NOT a paid stock-video API. A copyrighted self-hosted clip is a des_ publish_blocker (see ip_record.stock_clip_publish_gate).",
+        "do": "Use the Scout clip directly as the cover; source.still_ref = its sct_ id, source.tool='none', source.model=null. A CC re-hosted clip is publish_blocker=false; a copyrighted self-hosted clip is publish_blocker=true with a publish_note.",
+        "kind": "video"
+      },
+      {
+        "rung": 4,
+        "name": "abstract_still",
+        "resolves_when": "no fitting real still/clip exists, but the topic can carry an abstract/atmospheric cover (a mood scene, texture, metaphor with NO specific real referent). This is the always-available floor of the animated rungs — it keeps even a sober computational cover MOVING.",
+        "do": "text2image a no-real-referent still (source.tool chain: text2image then image2video), then image2video it (default model fine — no real face). source.model = the text2image model on the still + the i2v model on the motion (record the i2v model in source.model). Disclosure: 'Image AI-generated; motion = a camera move on the still.'",
+        "kind": "video"
+      },
+      {
+        "rung": 5,
+        "name": "static_fallback",
+        "resolves_when": "EVERY animation rung degraded — image2video printed FALLBACK_USED=static_poster / VIDEO_UNUSED=1, OR no clip could be sourced and no still could be generated.",
+        "do": "Ship the poster still as a static <img>: hero.kind='image', assets.video_webm=null, assets.video_mp4=null, source.tool='none'|'ffmpeg_kenburns', source.fallback_used='static_poster'. Record a media_blocker explaining why the cover is static (the ONLY sanctioned static-cover path). The reduced_motion_fallback == the poster.",
+        "kind": "image"
+      }
+    ],
+    "post_render": "After whichever animated rung resolves, ALWAYS run `python3 SKILL_DIR/../designer/scripts/optimize_assets.py PROJECT_DIR/assets/` — it writes the VP9 .webm + H.264 _web.mp4 + repoints filenames, web-weight cover < 3 MB. Reference the optimized _web copies in hero.assets.",
+    "always": "Whatever the rung: ONE .teaser overlay carries data-des=des_hero_video (the single Verify hit); the <video>/<img> + furniture are wrapped in .cin-stage (verify-immune); a reduced-motion <img> is always present; decorative furniture is pointer-events:none + NO data-*.",
+    "ai_face_policy": "When topic_profile.ai_face_policy is resolved (the topic involves real people — see ../references/topic_profile.json + ../detective/SKILL.md), it governs the cover. DEFAULT = animate the real photo: real-person subject WITH a fetched, identity-verified photo => rung 2 (subtle cinemagraph + warp guard + proportionate disclosure). AI face is ALLOWED-WITH-CONDITIONS, NEVER blanket-banned. Generating a real face FROM SCRATCH (photoreal OR illustration) is the ONLY disallowed thing; animating a fetched real photo is allowed.",
+    "no_photo_fallback": "When the real-person subject has NO usable verified photo (topic_profile.ai_face_policy.no_photo_fallback == 'theme_first_no_person'), do NOT generate the person — neither a photoreal fake NOR an illustration of the person — and SKIP rung 2. Take a THEME-FIRST NON-PERSON cover, first that expresses the theme, stopping there: (a) REAL SCENE/OBJECT media — license-clean real imagery of the setting/objects/symbols (NOT the person), animated per rung 1/3; (b) DATA-AS-COVER — the story's signature visualization animated (the data IS the theme); (c) CONCEPTUAL / TYPOGRAPHIC cover; (d) ABSTRACT ATMOSPHERIC via rung 4 — LAST RESORT only. Theme-first: if real scene/object media or the data can carry the theme, do NOT drop to the abstract floor. Sensitivity is NOT a hard gate — animate regardless of context, optimize for quality; a set ai_face_policy.sensitivity_advisory (deceased persons / minors / criminal allegations) is carried through as a one-line NON-BLOCKING note for the Critic, never a build block."
+  },
+
+  "build_recipe": {
+    "_what": "The winning-pattern animated cover — the flagship hero. A held-subject cinemagraph (or atmospheric loop) behind a transparent furniture overlay; the cover degrades to a poster still under reduced-motion / JS-off; provenance routes through a single .teaser hit.",
+    "winning_pattern": "blog_verify_opus48_0622's hero: an AI face-off still (held subjects + movable flags/smoke/floodlights) animated into a muted VP9/H.264 loop, a transparent overlay carrying the headline band + (rung-0) pick-a-side halves + a particle canvas + a VS monogram, an honest AI-likeness credit, all wrapped in the cinematic stage as cin_00 so the cover dissolves seamlessly into the first section background.",
+    "still_compose": "Compose the i2v INPUT still as a held subject + movable atmosphere (face-off + big flags + smoke + floodlights) so step-2 has something to animate while faces/subjects stay put. (Real-subject still = FETCHED via Scout, never generated — see the Designer real-subject rule.)",
+    "animate": "image2video with a MOTION-ONLY prompt (describe ONLY what moves; 'subject and faces held still, no camera shake'). The cover must read as ALIVE at a glance — NEVER near-still. Require a clearly-VISIBLE PRIMARY motion (the eye catches it in the first second) PLUS 1-2 strong SECONDARY motions, ALL of them in-place/cyclic so the clip loops cleanly: GOOD = the canonical hero_v5 — a two-player standoff with national flags WAVING BOLDLY behind, floodlights sweeping, smoke billowing (the subjects held, the atmosphere unmistakably moving); BAD = 'the dusk sky and thin clouds drift slowly, a faint pulse' over an otherwise-static stadium (a subtle cinemagraph that reads as a still photo — this is the weak current output and a richness FAIL). When the SUBJECT itself must stay still (a building, a landscape, a held face), the motion is REQUIRED to come from a BOLD animated foreground: rippling/waving flags, a surging crowd, rising smoke/steam/embers, a sweeping floodlight, strong sky parallax — not a 'faint pulse'. Motion-design DEFAULT: motion is IN-PLACE / CYCLIC (wheels spinning, flags waving, smoke rising, crowd surging, sky drifting), NEVER translating the subject across or off the frame (a train DRIVING off-screen, a rocket FLYING up out of frame cannot loop seamlessly — keep the locomotive in frame with spinning wheels + billowing smoke, the rocket on the pad venting + glowing). Pick the concrete motion concept from topic_motion_library below. Model by ip_record.faces: Kling for any real face, Veo default fine for abstract. Keep the still as the <video> poster so it degrades to frame-0.",
+    "optimize": "optimize_assets.py -> VP9 .webm + H.264 .mp4 + poster, < 3 MB web-weight (a 2K upscaled hero runs ~9-11 MB — upscale is hero-only and optional, see Designer video_pipeline.json ai_upscale; default ships the 720p _web copies). SEAMLESS LOOP (hard requirement): EVERY hero clip is post-processed into a clean loop so head meets tail INVISIBLY — a raw model clip almost always jumps at the loop point. DEFAULT = ffmpeg BOOMERANG / ping-pong (forward then reversed: `-filter_complex \"[0]reverse[r];[0][r]concat\"`) — inherently seamless because the last frame == the first; ALT = CROSSFADE the loop point (`xfade`, blend the last ~0.5s into the first ~0.5s) when reverse looks unnatural (e.g. directional smoke). Resolve the ffmpeg binary via the imageio-ffmpeg wheel (`python3 -c \"import imageio_ffmpeg, sys; sys.stdout.write(imageio_ffmpeg.get_ffmpeg_exe())\"`) — ffmpeg is NOT on PATH; optimize_assets.py already resolves it this way. RECORD the technique in hero.json as a `loop` field: \"boomerang\" | \"xfade\" | \"native\" (\"native\" only when the model clip already returns to frame-0 cleanly; the ffmpeg Ken-Burns fallback is inherently boomerang). The on-page <video> MUST keep the `loop` attribute.",
+    "on_page_build_contract": {
+      "_who": "The Hero SPECS this; the PROGRAMMER builds it; validate.py Section 12 asserts it. Do NOT edit the frozen verify engine — the .cin-stage wrapper makes the cover verify-immune with zero engine edits.",
+      "video": "<video webm+mp4+poster autoplay loop muted playsinline> for an animated cover; a <img> for the rung-5 static fallback.",
+      "cin_stage_wrap": "Wrap the cover in .cin-stage. Cinematic-ON: it IS the cin_00 layer of the live cinematic stage (see cross_links.cinematographer). Cinematic-OFF: a degenerate <div class=\"cin-stage hero-only-stage\"> that still paints the poster as its backdrop. Either way the existing isDecorative() (which excludes el.closest('.cin-stage')) auto-excludes the cover from Verify — no verify-engine edit.",
+      "single_teaser_hit": "Exactly ONE .teaser overlay carries data-des=\"des_hero_video\" — the cover's single Verify hit. Everything else is excluded.",
+      "reduced_motion": "A reduced-motion <img> fallback (the poster) is always in the DOM; under prefers-reduced-motion / JS-off the still shows and autoplay never fires.",
+      "autoplay_retry": "Keep the existing `autoplay muted loop playsinline` + the poster + the reduced-motion <img> (all of them) — those attributes are correct, do NOT change them. ADDITIONALLY wire a JS `video.play()` RETRY on the first user gesture (muted-autoplay can be BLOCKED on iOS Low-Power / some mobile, so the cover would sit frozen on the poster): bind a one-time handler to the broad first-interaction set (mirror the BGM sndKick pattern — `pointerdown`/`touchstart`/`keydown`/`click`, plus `scroll`/`wheel`/`touchmove`), each calling `video.play()`, and remove the listeners only on a resolved `.play()` promise. If `.play()` REJECTS (genuinely blocked), reveal a visible tap-to-play affordance over the cover (a centred play glyph) that calls `video.play()` on click. Skip the retry under prefers-reduced-motion (leave the poster). This is purely additive over the existing attributes — it does not replace autoplay.",
+      "decorative_furniture": "VS monogram, FC-26-style chips, particle canvas, headline band, scrim are all pointer-events:none with NO data-* — the Verify engine ignores them.",
+      "interactive_halves": "On rung 0 the pick-a-side halves are role=\"link\" (off the verify INNER_INTERACTIVE allow-list); the Interaction Engineer owns int_01, the Hero owns the backdrop + static furniture."
+    },
+    "reduced_motion_and_perf": "Under prefers-reduced-motion: no autoplay, show the poster still, the page reads fully. Mobile: the poster is the <video poster> + the JS-off fallback. Virality happens on mobile — keep the cover light."
+  },
+
+  "topic_motion_library": {
+    "_what": "Topic family -> a concrete, REPRODUCIBLE, IN-PLACE motion concept the model picks from when composing the still + writing the image2video motion-only prompt. Topic-adaptive: read topic_profile + the story's actual subject, then choose the FITTING concept here — the choice is FREE within these guides, but the motion must be visible-and-looping (see build_recipe.animate). Favor motions image2video reproduces RELIABLY (atmosphere, cyclic mechanics) over ones it warps (a real face's expression). Cross-ref ip_record.faces for the model.",
+    "families": {
+      "sports_star_athletes": {
+        "concept": "A recognizable star (or a two-player standoff) with NATIONAL FLAGS WAVING BOLDLY behind, floodlights sweeping, the crowd a moving wash, smoke/haze drifting — subjects HELD, atmosphere unmistakably alive. The canonical hero_v5.",
+        "model": "Kling kwaivgi/kling-v3.0-std (it animates real faces; Veo/Wan REFUSE them — code 15236754).",
+        "loop": "boomerang (flags/smoke read fine reversed)."
+      },
+      "object_or_era_no_central_character": {
+        "concept": "The ICONIC object in IN-PLACE motion — a steam locomotive with SPINNING WHEELS + billowing smoke (NOT driving off-frame); a rocket on the pad VENTING vapor + glowing; a loom/piston/flywheel CYCLING; a printing press cranking. The object stays framed; the working parts move.",
+        "model": "Veo default fine (no real face); seedance acceptable for non-specific atmosphere.",
+        "loop": "boomerang for reciprocating parts; xfade if the smoke is strongly directional."
+      },
+      "person_biography": {
+        "concept": "The figure in a CHARACTERISTIC ACT — Einstein writing equations on a board / lecturing / lost in thought; an artist's brush moving on canvas; a pianist's hands on the keys; a writer's pen. Keep the FACE held (animate the hand/chalk/brush + ambient light), per PIT-27 (animating a real face warps).",
+        "model": "Kling for a real fetched face (held); Veo for a generic/AI figure.",
+        "loop": "xfade or boomerang on the limited hand motion."
+      },
+      "abstract_statistical": {
+        "concept": "ATMOSPHERIC motion fitting the theme — drifting particles, flowing data-light streaks, a slowly shifting gradient/aurora, rising bokeh — still CLEARLY moving, still cyclic, still looping. (This pairs with the rung-4 abstract cover.)",
+        "model": "Veo / seedance default fine (no real referent).",
+        "loop": "boomerang (drifting particles loop seamlessly reversed)."
+      }
+    },
+    "more_examples": {
+      "_note": "2-3 more apt, reproducible concepts beyond the four families — favor motions image2video reproduces reliably.",
+      "weather_climate": "Storm clouds churning / rain streaking / a flag straining in wind over a held skyline — bold sky motion, subject framed. Loop: xfade (directional weather). Model: Veo.",
+      "music_concert": "Stage lights sweeping + strobing, haze rolling, a crowd's hands/phones swaying as a moving field — performers held. Loop: boomerang. Model: Kling if a real artist's face is in frame, else Veo.",
+      "city_skyline_landmark": "A landmark held while light shifts dusk->night, traffic-light streaks pulse, water ripples, banners/flags ripple — the building NEVER pans out of frame. Loop: boomerang on ripple/flags. Model: Veo (a named landmark is a FETCHED still per the real-subject guard, animated as a held cinemagraph)."
+    }
+  },
+
+  "ip_record": {
+    "_what": "The load-bearing IP / model facts for animating a cover. Mirrors designer/references/video_pipeline.json openrouter_video_models.faces + PIT-36/37/38/39 (memory: veo_celebrity_face_block). The Hero must apply these when picking the i2v model and writing the disclosure.",
+    "faces": {
+      "REFUSE_real_faces": "google/veo-3.1-fast deterministically REFUSES a still with a recognizable real human face (Vertex support code 15236754 — NOT retry-clearable; retrying only burns quota) and alibaba/wan-2.7 refuses ('input content is suspected to include real human faces'). NEVER route a real public figure through Veo/Wan.",
+      "DEFAULT_faces_safe": "kwaivgi/kling-v3.0-std — the one model that cleanly animates a real-face still into a held cinemagraph (faces held + undistorted; flags/smoke/floodlights move). Caps at 720p (upscale optional). On rung 2 the Hero MUST pass --model kwaivgi/kling-v3.0-std (the image2video script DEFAULT is Veo, which would refuse).",
+      "MOVES_the_subject": "bytedance/seedance — RUNS on a real-face still but MOVES the subject, so it fails the 'subject held still' cinemagraph requirement. Fine for an abstract atmospheric scene; wrong for a held-face hero.",
+      "rule": "Real-face cover -> Kling first; abstract/atmospheric cover -> any model (Veo default fine). The upstream Designer doctrine routes real subjects to FETCHED stills; image2video of a real fetched face is a held cinemagraph via Kling — face held within the warp guard, SUBTLE natural motion (slight sway/blink) allowed on top of moving atmosphere — with proportionate disclosure. ALLOWED-WITH-CONDITIONS: animating a fetched real photo is fine; generating the face FROM SCRATCH (photoreal OR illustration) is NOT. No usable fetched photo -> NEVER generate the person (no fake, no illustration) -> the theme-first non-person fallback (see source_ladder.no_photo_fallback)."
+    },
+    "fallback_ladder": "fetched/abstract still -> image2video (Kling for faces / Veo for abstract) -> (Kling unavailable/refuses on a real face) ffmpeg Ken-Burns + boomerang on the SAME still (faces stay original pixels, tiny files, seamless loop; the script prints FALLBACK_USED=kenburns) -> (no ffmpeg / no API) static _poster (FALLBACK_USED=static_poster, VIDEO_UNUSED=1, POSTER_PATH=...; reference the poster as an <img>, hero kind:'image'). A fallback is a RECORDED outcome on hero.source.fallback_used — never a silent drop.",
+    "disclosure": {
+      "ai_still_camera_move": "For an AI text2image still animated by a camera move / boomerang: 'Image AI-generated; motion = a camera move on the still (not AI video of a real person).'",
+      "real_face_cinemagraph": "For a real face animated into a held cinemagraph via Kling: say the subject is an AI-likeness OR that the motion was added — never imply real video footage of a real person.",
+      "fetched_clean": "For a fetched license-clean still hero: the normal source credit ('Photo: <author> / <source> (<license>) — identity verified').",
+      "render": "The Programmer renders the disclosure in hero.furniture.credit_line; the Hero records tool + model + prompt + disclosure on hero.source / hero.disclosure so the Inspector's generated-kind drawer can show it."
+    },
+    "stock_clip_publish_gate": "A copyrighted self-hosted stock CLIP cover is registered as a Designer des_ asset with publish_blocker:true, license 'All Rights Reserved — demo-only', permits_republication:false, and a real source_url + publish_note. It does NOT pass the validate.py license-allowlist gate as clean; validate.py Section 8 HARD-errors a publish_blocker asset with no swap target, so it MUST carry the publish_note. The Auditor raises an advisory publish-blocker; the Programmer renders a 'demo-only — license or swap before publishing' credit. A CC re-hosted clip / AI-generated / fetched-clean cover sets publish_blocker:false. Prefer a license-clean rung over a gated one.",
+    "duration_constraint": "The OpenRouter video endpoint accepts ONLY duration 4, 6, or 8 seconds — hero.source.duration is one of those. (See video_pipeline.json openrouter_video_models.duration_constraint.)"
+  },
+
+  "cross_links": {
+    "cinematographer": "references/cinematic_recipes.json#hero_as_cin_00_continuous_backdrop — when cinematic mode is ON, the Cinematographer stages THIS cover as scene cin_00 (backs:'teaser', order:0, active by default) so the SAME crossfade engine carries the eye from the hero into cin_01 with no seam. The hero's transparent furniture overlay opacity-DISSOLVES over the fixed backdrop (OPACITY ONLY, never scale). The hero's Verify hit stays on the .teaser overlay (data-des=des_hero_video), NOT on cin_00. Cinematic-OFF: the overlay paints the hero poster directly (the degenerate .cin-stage hero-only-stage).",
+    "designer_video_pipeline": "../designer/references/video_pipeline.json — the still->motion mechanics this reuses: cinemagraph_hero_pipeline (text2image -> image2video -> optional AI-upscale), openrouter_video_models (models listed only via GET /api/v1/videos/models; 4/6/8 duration; the faces table), ai_upscale (Real-ESRGAN x4plus 4x->downscale; avoid the 2x tile bug), when_to_animate, disclosure.",
+    "designer_step1": "../designer/SKILL.md Step 1 — the content.hero_strategy ladder (interactive / real_still / abstract_still, +image2video). The Hero reads designer.json content.hero_strategy and realizes it as the rendered cover; the source_ladder above is the executable form of that strategy.",
+    "designer_tools": "../designer/references/tools.json — image2video DEFAULT model is google/veo-3.1-fast; the Hero OVERRIDES to --model kwaivgi/kling-v3.0-std on rung 2 (real face). text2image default openai/gpt-5.4-image-2.",
+    "interaction": "../interaction/ — on rung 0 the Interaction Engineer owns int_01 (the pick-a-side overlay); the Hero owns the moving backdrop + static furniture. hero.interactive_overlay_ref='int_01' is the coordination handle."
+  }
+}

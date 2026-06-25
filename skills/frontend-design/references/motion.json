@@ -1,0 +1,119 @@
+{
+  "_toc": [
+    "tokens — the :root duration/easing/stagger block to paste verbatim + the reduced-motion override (the one switch that neutralizes all motion).",
+    "rule — how a role PICKS a token (duration by travel distance; easing by intent; scroll is linear; spring is rare).",
+    "choreography — sequencing: list_reveal, reveal_visible_by_default (the MOT6 guardrail), two_act_sticky_transition, stagger_budget.",
+    "micro_interactions — concrete vanilla recipes: count_up, button_press, hover_focus, skeleton_to_content.",
+    "anti_slop_checklist — the AI-motion-slop tells to flag in review + the frequency_gate.",
+    "accessibility — the page-wide a11y baseline (contrast/focus/keyboard/alt/audio).",
+    "performance — page-weight + load baseline."
+  ],
+  "_note": "The motion-token system + recipes for ONE self-contained index.html (file://, vanilla JS/CSS, NO framework/GSAP-npm). The single source of truth for timing/easing/stagger AND for accessibility + performance baselines across the build: the Designer reads it for motion INTENT (what should move and why), the Interaction Engineer for transition TIMING (which token a transition gets), the Programmer for IMPLEMENTATION (the literal :root block + JS snippets to paste). The interaction recipes (engine + scrollytelling/explorable/etc.) live in interaction_playbook.json. (The old thin references/interaction.json is now a deprecation stub — its motion/a11y/perf baseline folded into this file.) Animate transform/opacity ONLY (compositor); respect prefers-reduced-motion; never autoplay sound. House rule: drive ALL motion from the tokens below — no scattered ms literals anywhere in the HTML.",
+
+  "_license_note": "Token values + the duration/easing model are synthesized from Material Design 3 motion guidance (Google, CC-BY 4.0) and IBM Carbon Design System motion tokens (Apache-2.0). The anti-slop tells in anti_slop_checklist are ported from kylezantos/design-motion-principles (MIT). Recipe structure adapted alongside freshtechbro reference material (MIT). Re-expressed and trimmed to an editorial-blog ladder for this skill; credit retained per each project's license.",
+
+  "tokens": {
+    "_note": "Paste this :root block verbatim into the page's <style>. Every animation/transition references these vars; no role hardcodes a ms or a cubic-bezier inline. The reduced-motion @media override is the ONE switch that neutralizes all motion globally — keep it.",
+    "css": ":root{\n  /* durations — ladder grows with travel distance / surface area (M3 + Carbon) */\n  --dur-xs: 100ms;   /* micro: button/toggle/tooltip/hover/focus ring */\n  --dur-sm: 150ms;   /* small state change, chip, checkbox */\n  --dur-md: 250ms;   /* DEFAULT enter / section reveal / crossfade-out */\n  --dur-lg: 400ms;   /* larger surface: chart morph, accordion height, crossfade-in */\n  --dur-xl: 600ms;   /* full-bleed / scrolly act transition */\n  --dur-count: 900ms;/* number count-up / odometer */\n\n  /* easings — M3 emphasized/standard set */\n  --ease-standard: cubic-bezier(0.2, 0, 0, 1);     /* begins AND ends on screen — the default */\n  --ease-out:      cubic-bezier(0.05, 0.7, 0.1, 1);/* entering: starts off-screen, settles on */\n  --ease-in:       cubic-bezier(0.3, 0, 0.8, 0.15);/* exiting: leaves the screen */\n  --ease-in-out:   cubic-bezier(0.4, 0, 0.2, 1);   /* moves within the screen */\n  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);/* gentle overshoot — PLAYFUL ONLY, never a utility */\n\n  /* choreography */\n  --stagger: 60ms;   /* per-item reveal delay; cap total < ~500ms (so ~6 items max) */\n}\n\n@media (prefers-reduced-motion: reduce){\n  :root{\n    --dur-xs: 1ms; --dur-sm: 1ms; --dur-md: 1ms; --dur-lg: 1ms;\n    --dur-xl: 1ms; --dur-count: 1ms; --stagger: 0ms;\n  }\n  /* belt-and-braces: also kill any author keyframe animations that don't read tokens */\n  *, *::before, *::after{ animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }\n}",
+    "duration_ladder": {
+      "--dur-xs": "100ms — micro feedback: button/toggle/tooltip, hover, focus ring.",
+      "--dur-sm": "150ms — small state change: chip, checkbox, swatch.",
+      "--dur-md": "250ms — DEFAULT enter / section reveal / outgoing crossfade.",
+      "--dur-lg": "400ms — larger surfaces: chart morph, accordion height, incoming crossfade.",
+      "--dur-xl": "600ms — full-bleed / scrollytelling act transition.",
+      "--dur-count": "900ms — number count-up / odometer."
+    },
+    "easing_set": {
+      "--ease-standard": "cubic-bezier(0.2,0,0,1) — element begins and ends on screen; the default for most transitions.",
+      "--ease-out": "cubic-bezier(0.05,0.7,0.1,1) — for ENTERING elements (fast in, gentle settle).",
+      "--ease-in": "cubic-bezier(0.3,0,0.8,0.15) — for EXITING elements (gentle start, quick leave).",
+      "--ease-in-out": "cubic-bezier(0.4,0,0.2,1) — for elements MOVING within the screen.",
+      "--ease-spring": "cubic-bezier(0.34,1.56,0.64,1) — gentle overshoot; reserved for playful/celebratory moments (confetti pop, a reveal beat). NEVER on utility actions (dropdowns, toggles, modals)."
+    },
+    "stagger": "--stagger: 60ms per item; delay = index * var(--stagger); cap at ~5-6 items or total reveal exceeds ~500ms and reads as stagger spam.",
+    "reduced_motion": "The @media (prefers-reduced-motion: reduce) block rewrites every --dur-* to 1ms and --stagger to 0ms — one switch neutralizes all token-driven motion. Use 1ms (not 0ms) so transitionend still fires and JS sequencing that waits on it does not stall. The wildcard fallback also caps any stray @keyframes animation that forgot to read a token."
+  },
+
+  "rule": {
+    "_note": "How a role PICKS a token. Distance/area drives duration; intent drives easing.",
+    "duration_by_travel": "Duration grows with how far / how large a thing moves (M3 + Carbon). A 4px hover or a tooltip = --dur-xs; a section reveal = --dur-md; a full-bleed surface or scrolly act = --dur-xl. Do not give a small element a long duration (feels sluggish) or a large surface a short one (feels abrupt).",
+    "utility_vs_polish": "Productivity / utility motion (toggles, filters, dropdowns, controls the reader hits often) should be UNDER 300ms — ~180ms (--dur-sm..md) is the sweet spot. Expressive / polish motion (a hero reveal, a chart morph the reader watches once) lives 200-500ms. Above ~600ms only for deliberate full-bleed/scrolly beats.",
+    "exits_faster": "Exits are faster and subtler than enters — an element leaving should not command attention. Pair --dur-md/--ease-in (out) with --dur-lg/--ease-out (in).",
+    "scroll_is_linear": "Ease EVERYTHING except scroll-LINKED motion. Anything tied 1:1 to scroll position (parallax, scrub, progress rail) must be LINEAR — an easing curve on scroll-linked motion fights the reader's finger and feels broken.",
+    "spring_is_rare": "--ease-spring (overshoot) only for genuinely playful moments. On a utility action it reads as a bug."
+  },
+
+  "choreography": {
+    "_note": "Sequencing multiple elements. The goal is legibility (the eye follows order), not a light show.",
+    "list_reveal": "Reveal a section's children in DOM order, each delayed by index * var(--stagger). Implement by setting `style=\"--i:0\"`, `--i:1`, ... on children and `transition-delay: calc(var(--i) * var(--stagger))`. Cap at ~5-6 items; beyond that drop the stagger and reveal the group as one block, else it reads as 'stagger spam' (see anti_slop_checklist). PROGRESSIVE ENHANCEMENT IS MANDATORY: the `opacity:0` initial state must be gated behind an `html.js-reveal` class that JS adds before any observer wires up, and the gate must EXCLUDE charts/maps/visuals — see reveal_visible_by_default below for the only sanctioned CSS+JS.",
+    "reveal_visible_by_default": {
+      "_note": "GUARDRAIL (added after an e2e test failure). The plain `.reveal > *{opacity:0}` pattern hides content on load: it un-hides only via IntersectionObserver, so above-the-fold blocks and any async-rendering visual (Vega/Leaflet that paints AFTER the observer fires, or with JS slow/off) stay INVISIBLE while still measuring a non-zero box — so naive render checks pass but the reader sees blank. This is the corrected progressive-enhancement form; use it instead of list_reveal_css. Content is visible by default; the opacity gate only exists once JS is confirmed running, and never touches visuals.",
+      "rule": "A reveal that can hide content on load is a HARD FAIL (quality_rubric MOT6). All visuals and above-the-fold content must be visible WITHOUT waiting for IntersectionObserver. Gate the opacity:0 state behind a root class JS adds; never apply it to charts/maps/visuals (they render async and can stay blank); do not gate anything above the fold.",
+      "css": "/* No JS / JS not yet running -> NOTHING is hidden (no html.js-reveal class, so this rule never matches). */\n/* Gate fires only once JS adds .js-reveal to <html>, and never on a figure / [data-vis] / .chart (async visuals must not wait on the observer). */\nhtml.js-reveal .reveal:not(.in) > *:not(figure):not([data-vis]):not(.chart){ opacity:0; transform:translateY(8px); transition: opacity var(--dur-md) var(--ease-out), transform var(--dur-md) var(--ease-out); transition-delay: calc(var(--i, 0) * var(--stagger)); }\nhtml.js-reveal .reveal.in > *{ opacity:1; transform:none; }",
+      "js": "// Confirm JS is running BEFORE arming the gate, so the opacity:0 above only ever applies when something can remove it.\ndocument.documentElement.classList.add('js-reveal');\nconst REVEAL_REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;\nconst revealIO = new IntersectionObserver((entries, obs) => {\n  for (const e of entries) if (e.isIntersecting){ e.target.classList.add('in'); obs.unobserve(e.target); }\n}, { rootMargin: '0px 0px -10% 0px' });\nfor (const el of document.querySelectorAll('.reveal')){\n  // Above-the-fold sections must not wait on the observer: reveal them immediately.\n  const r = el.getBoundingClientRect();\n  if (REVEAL_REDUCE || r.top < window.innerHeight){ el.classList.add('in'); }\n  else revealIO.observe(el);\n}",
+      "note": "The `:not(figure):not([data-vis]):not(.chart)` exclusion is the safety net for async visuals; tag every chart/map mount with one of those (the build already tags visuals data-vis / .chart). If you prefer, gate only text blocks (e.g. `.reveal:not(.in) > p, .reveal:not(.in) > h2`) instead of broad children — same guarantee. Under reduced motion or above the fold the section is marked `.in` at once, so it shows with no transition."
+    },
+    "two_act_sticky_transition": "For a sticky graphic that swaps between two acts: crossfade the OUTGOING graphic with (--dur-md, --ease-in) while the INCOMING fades in with (--dur-lg, --ease-out) — out is faster/subtler than in. Key the swap off the existing IntersectionObserver active-step (the same active-step signal scrollytelling already computes in interaction_playbook.json); just toggle an `.active` class, let CSS transitions do the motion. See the act_transition recipe in interaction_playbook.json for the full structure.",
+    "stagger_budget": "Total choreography (last item's delay + its duration) should stay under ~1s so a reader scrolling past does not wait on it. delay_last = (n-1) * --stagger; keep delay_last + --dur-md < ~1000ms."
+  },
+
+  "micro_interactions": {
+    "_note": "Concrete vanilla recipes. All reference tokens; all reduced-motion safe (because the tokens collapse to 1ms, or the JS branches on the media query).",
+
+    "count_up": {
+      "job": "A headline number ticks from 0 to its real value when it scrolls into view — the reader watches the stat assemble.",
+      "markup": "<span class=\"stat-num\" data-to=\"26.3\" data-decimals=\"1\">0</span>",
+      "technique": "IntersectionObserver(threshold 0.6) fires once per element; requestAnimationFrame ticks the displayed value with an easeOutCubic curve over --dur-count; under prefers-reduced-motion set the final value instantly (no rAF). Read the duration from the CSS token so it stays in sync.",
+      "js": "const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;\nconst DUR = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dur-count')) || 900;\nconst easeOutCubic = t => 1 - Math.pow(1 - t, 3);\nfunction runCount(el){\n  const to = parseFloat(el.dataset.to);\n  const dec = parseInt(el.dataset.decimals || '0', 10);\n  if (REDUCE){ el.textContent = to.toFixed(dec); return; }\n  const start = performance.now();\n  (function tick(now){\n    const p = Math.min((now - start) / DUR, 1);\n    el.textContent = (to * easeOutCubic(p)).toFixed(dec);\n    if (p < 1) requestAnimationFrame(tick);\n    else el.textContent = to.toFixed(dec); // exact final value\n  })(start);\n}\nconst io = new IntersectionObserver((entries, obs) => {\n  for (const e of entries) if (e.isIntersecting){ runCount(e.target); obs.unobserve(e.target); }\n}, { threshold: 0.6 });\ndocument.querySelectorAll('.stat-num').forEach(el => io.observe(el));",
+      "note": "Keep a non-zero text node in the markup (the '0') so the layout does not jump when JS runs, and so the page reads with JS off."
+    },
+
+    "button_press": {
+      "job": "Tactile feedback on press — the control dips slightly under the pointer/key.",
+      "css": "button{ transition: transform var(--dur-xs) var(--ease-standard); }\nbutton:active{ transform: scale(0.97); }",
+      "note": "transform only (compositor). Do not animate box-shadow/background on :active for the press dip — that paints. --dur-xs because this is high-frequency utility motion."
+    },
+
+    "hover_focus": {
+      "job": "An affordance lifts / underlines on pointer hover AND on keyboard focus — discoverable by both.",
+      "css": ".link{ transition: color var(--dur-xs) var(--ease-standard), text-decoration-color var(--dur-xs) var(--ease-standard); }\n.link:hover, .link:focus-visible{ text-decoration-line: underline; }\n.card{ transition: transform var(--dur-sm) var(--ease-standard); }\n.card:hover, .card:focus-visible{ transform: translateY(-2px); }",
+      "rule": "Always PAIR :hover with :focus-visible so keyboard users get the same cue. Never put a hover-scale/lift on EVERY component — pick the few genuinely interactive ones (see anti_slop_checklist hover-scale tell)."
+    },
+
+    "skeleton_to_content": {
+      "job": "A heavy embed (Vega chart, Leaflet map) shows a placeholder while it mounts, then crossfades to the real content — never an instant pop.",
+      "css": ".skeleton{ position:relative; background:var(--surface,#eee); border-radius:6px; }\n.skeleton::after{ content:''; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent); animation: shimmer 1.2s infinite; }\n@media (prefers-reduced-motion: reduce){ .skeleton::after{ animation: none; } }\n@keyframes shimmer{ to{ transform:translateX(100%); } }\n.embed{ opacity:0; transition: opacity var(--dur-md) var(--ease-out); }\n.embed.ready{ opacity:1; }",
+      "technique": "On the chart/map's mount callback (Vega-Embed's promise resolve, Leaflet's whenReady), remove .skeleton and add .ready to the embed so it crossfades in over --dur-md. The shimmer is the ONE allowed infinite animation, and it is reduced-motion-gated. For an explorable_recompute, reuse .embed opacity/crossfade on each recompute so the chart updates instead of flickering.",
+      "note": "Shimmer is decorative and gated off under reduced-motion — there the placeholder is just a static surface and the content appears in 1ms. Never leave a bare instant swap; a 1ms crossfade is still correct sequencing."
+    }
+  },
+
+  "anti_slop_checklist": {
+    "_note": "Concrete 'AI motion slop' tells to flag in review (ported from kylezantos/design-motion-principles). Each line names the CSS signature; if you see it, it is almost always wrong. Motion should be the exception that carries meaning, not the default coat of paint.",
+    "pulsing_glowing_indicators": "FLAG: @keyframes pulse / glow / breathe with animation:...infinite on small UI (badges, dots, icons, buttons). Infinite ambient motion on small controls is distraction, not signal. (The shimmer placeholder is the only sanctioned infinite animation, and it stops the instant content loads + is reduced-motion-gated.)",
+    "blur_everywhere_entrances": "FLAG: filter:blur(...) used as an entrance on >=3 elements. Blur-in is expensive (not compositor-only) and reads as a stock template. Use opacity + small translate instead.",
+    "hover_scale_spam": "FLAG: transform:scale(>1) on :hover applied to >=3 distinct component types. Everything-grows-on-hover is the #1 templated tell. Reserve lift/scale for the few genuinely interactive cards/buttons.",
+    "stagger_spam": "FLAG: animation-delay:calc(var(--i)*...) (or transition-delay) driving >=2 separate lists, or any single list over ~6 items. Cascading reveals everywhere turn the whole page into a slot machine. Cap per choreography.stagger_budget.",
+    "bouncy_springs_on_utility": "FLAG: --ease-spring / any overshoot cubic-bezier on dropdowns, toggles, modals, accordions, filters. Overshoot on a utility control reads as a bug. Spring is for playful/celebratory only.",
+    "uniform_fade_in": "FLAG: the same fade-in (often `@keyframes fadeIn`) bolted onto >=4 components on load. Uniform entrance animation = nothing is emphasized, so nothing matters. Animate the one element that earns it.",
+    "motion_on_mount_for_static_text": "FLAG: entrance animation on static h1/h2/p/nav that the reader did not trigger. Body copy, headings, and nav should be present on load, not slide/fade in. Scroll-reveal a SECTION as the reader arrives is fine; animating chrome on first paint is slop.",
+    "reveal_hides_content_on_load": "FLAG (HARD FAIL, quality_rubric MOT6): `.reveal > *{opacity:0}` (or any reveal initial state) NOT gated behind `html.js-reveal`, or applied to a figure/chart/map, or covering above-the-fold content. Such a reveal hides content on load — visuals render async and stay blank, and with JS slow/off nothing un-hides, yet the box still measures non-zero so render checks miss it. Use choreography.reveal_visible_by_default (visible by default; gate only when JS confirmed; exclude visuals; never gate above the fold).",
+    "frequency_gate": "The deciding question for ANY animation: how often does the reader trigger it? Keyboard-INITIATED actions (typing, tab, enter) -> NEVER animate (must feel instant). High-frequency (a control hit ~100s of times) -> instant or --dur-xs. RARE / once-per-read (a hero reveal, a final celebratory beat) -> may delight (longer duration, even --ease-spring). If in doubt, make it faster or remove it."
+  },
+
+  "accessibility": {
+    "_note": "The a11y baseline for the whole page (folded in from the deprecated interaction.json). Reduced-motion is handled by the tokens above (every --dur-* collapses to 1ms). These rules apply regardless of motion. quality_rubric.json scores against them (COL3 / MOT1-2 / A11Y1-5).",
+    "contrast": "Meet WCAG AA (>=4.5:1 body, >=3:1 large text) against --bg; check muted text and on-image text (use scrims/solid plates to earn the ratio).",
+    "focus": "Visible focus states on all interactive elements (>=2px, sufficient contrast); logical tab order; never outline:none without an equivalent :focus-visible replacement.",
+    "keyboard": "Buttons, sliders, card decks, quizzes, steppers operable by keyboard; use real <button>/<a>/<input> and aria where needed (no click handlers on bare div/span).",
+    "alt_text": "Meaningful alt for images; alt=\"\" for purely decorative ones; aria-labels for icon buttons and chart/map regions; caption charts; one h1 and a non-skipping heading outline; lang set on <html>.",
+    "audio": "Never autoplay sound; provide play/pause and a visual equivalent; ambient/background video is muted and has a poster; mobile play targets >=44x44px."
+  },
+
+  "performance": [
+    "_note: page-weight + load baseline (folded in from the deprecated interaction.json). A viral demo dies on a heavy page.",
+    "Inline data and styles; lazy-load images (loading=lazy) and heavy embeds.",
+    "Limit CDNs to what's used (Vega-Embed, Leaflet, optionally D3/PDF.js).",
+    "Keep the file self-contained and working on file:// (no fetch())."
+  ]
+}

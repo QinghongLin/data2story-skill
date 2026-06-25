@@ -1,0 +1,34 @@
+{
+  "_doc": {
+    "what_this_is": "A WORKED, schema-valid example of verify/run_cells.json for the toy 'city transit ridership' topic. COPY THE STRUCTURE, REPLACE THE CONTENT: it carries two PRE-TESTED runnable snippets covering BOTH grading modes — one montecarlo (reduced_n set, graded '≈ within noise') and one exact derived (reduced_n null, stdout must match byte-for-byte). Keys mirror the 'computation' entries in verify_map.example.json.",
+    "purpose": "run_cells.json holds the in-browser-runnable version of each computation element in verify_map.json (same ids). The Inspector's 'Run' button executes runnable entries via a lazily-loaded Pyodide and compares stdout to expected_stdout.",
+    "self_contained": "SELF-CONTAINED: every input the snippet needs is inlined as a Python literal in `code`. No file reads, no network, no dependence on other cells or page state.",
+    "pyodide_imports_only": "PYODIDE-SAFE IMPORTS ONLY: numpy, pandas, and the Python standard library (math, json, itertools, collections, ...). No requests, no urllib network use, no third-party packages outside numpy/pandas.",
+    "pre_tested": "PRE-TESTED: the snippet has been run and `code` reproduces `expected_stdout` exactly (byte-for-byte after normalising trailing newline). A snippet that does not reproduce its expected_stdout must not ship.",
+    "reduced_n_rule": "HEAVY COMPUTE -> reduced_n: if the published figure needs a large sample (Monte-Carlo etc.), the in-browser snippet runs a SMALLER reduced_n and is graded '≈ within noise', NEVER a hard PASS. The exact, full-N version lives in the notebook (see full_ref).",
+    "this_examples_numbers": "In THIS example, ana_crowd_risk runs a reduced N=10,000 -> 18.6%, within Monte-Carlo noise of the published N=200,000 figure of 18.4% (analytic 18.41%); it is graded '≈ within noise', never a hard PASS. ana_line_share is exact and must match byte-for-byte. Both were pre-tested with python 3.13; the Monte-Carlo cell seeds its RNG so it is deterministic (same output on three consecutive runs).",
+    "byte_identity": "run_cells.json must be byte-identical to the inline `runCells` <script> island embedded in index.html. This file is the on-disk source of truth."
+  },
+
+  "ana_crowd_risk": {
+    "runnable": true,
+    "reduced_n": 10000,
+    "lang": "python",
+    "code": "# Estimate the chance the Red line exceeds its 195k crowding threshold on a weekday.\n# Daily boardings ~ Normal(mean=182.4k, sd=14.0k), fit on the ridership log.\n# Reduced N=10,000 in-browser (the published figure uses N=200,000); within Monte-Carlo noise.\nimport numpy as np\n\nMEAN_K, SD_K, THRESHOLD_K = 182.4, 14.0, 195.0\nN, SEED = 10000, 4326\nrng = np.random.default_rng(SEED)\n\ndaily = rng.normal(MEAN_K, SD_K, N)\np_over = (daily > THRESHOLD_K).mean()\nprint(f\"Red line crowding risk (reduced Monte-Carlo, N={N:,}, seed={SEED})\")\nprint(f\"  mean weekday boardings = {MEAN_K:.1f}k, sd = {SD_K:.1f}k, threshold = {THRESHOLD_K:.0f}k\")\nprint(f\"  P(boardings > {THRESHOLD_K:.0f}k on a weekday) = {p_over*100:.1f}%\")\n",
+    "expected_stdout": "Red line crowding risk (reduced Monte-Carlo, N=10,000, seed=4326)\n  mean weekday boardings = 182.4k, sd = 14.0k, threshold = 195k\n  P(boardings > 195k on a weekday) = 18.6%\n",
+    "note": "Reduced N=10,000 in-browser -> 18.6%, within Monte-Carlo noise of the published N=200,000 figure of 18.4% (analytic P(X>195)=18.41%). Graded '≈ within noise', NOT a hard PASS.",
+    "needs_network": false,
+    "full_ref": "code/build_crowding.py (N=200,000, seed=4326) reproduces forecast_outputs/crowding.json exactly; the notebook cell cell_crowding (verify/transit_forecast.ipynb) runs the full-N version."
+  },
+
+  "ana_line_share": {
+    "runnable": true,
+    "reduced_n": null,
+    "lang": "python",
+    "code": "import pandas as pd\n# Inlined from ridership.csv: average weekday boardings per line (thousands).\ndf = pd.DataFrame(\n    [[\"Red\", 182.4], [\"Blue\", 131.0], [\"Green\", 96.6],\n     [\"Gold\", 58.2], [\"Silver\", 40.8]],\n    columns=[\"line\", \"weekday_boardings_k\"])\ntotal = df[\"weekday_boardings_k\"].sum()\ndf[\"share_pct\"] = (df[\"weekday_boardings_k\"] / total * 100).round(1)\ndf = df.sort_values(\"weekday_boardings_k\", ascending=False)\nprint(\"Average weekday boardings by line (thousands) and share of the network:\")\nfor _, r in df.iterrows():\n    print(f\"  {r.line:7} {r.weekday_boardings_k:6.1f}k  {r.share_pct:5.1f}%\")\ntop = df.iloc[0]\nprint(f\"network total = {total:.1f}k weekday boardings\")\nprint(f\"busiest line = {top.line} at {top.share_pct:.1f}% of the network\")\n",
+    "expected_stdout": "Average weekday boardings by line (thousands) and share of the network:\n  Red      182.4k   35.8%\n  Blue     131.0k   25.7%\n  Green     96.6k   19.0%\n  Gold      58.2k   11.4%\n  Silver    40.8k    8.0%\nnetwork total = 509.0k weekday boardings\nbusiest line = Red at 35.8% of the network\n",
+    "note": "Exact (no Monte-Carlo): recomputes each line's share from the inlined ridership.csv rows. stdout must match byte-for-byte -> graded a hard PASS.",
+    "needs_network": false,
+    "full_ref": "code/story_findings.py cell_findings block over the full ridership.csv."
+  }
+}

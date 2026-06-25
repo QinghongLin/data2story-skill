@@ -1,0 +1,76 @@
+{
+  "_note": "Font-pairing catalog. The Designer picks a named pairing for the chosen theme (see themes.json `type` directions) and records it; the Programmer wires the stacks into --font-display / --font-body / --font-ui (or --font-mono) in :root. Every stack here is self-contained and offline-capable. Pick ONE display + ONE body + at most ONE ui/mono per story.",
+  "_license_note": "Font stacks adapted from system-fonts/modern-font-stacks (CC0-1.0, github.com/system-fonts/modern-font-stacks). Ban list + pairing/contrast rules adapted from anthropic/claude-cookbooks aesthetics notebook (MIT). Font family names are nominative references to the typefaces themselves; no font binaries are bundled by this file.",
+  "principle": "Page runs on file://; casual Google-Fonts calls fail silently offline. Default to tier-1 system or tier-2 web-safe stacks; tier-3 embedded webfont only when subsetted + self-hosted.",
+  "avoid_fonts": ["Inter", "Roboto", "Open Sans", "Lato", "Arial as primary", "Space Grotesk (overused)", "one system font for everything"],
+  "avoid_reason": "These read as templated defaults (the generic-AI look in themes.json anti_patterns). Inter/Roboto/Open Sans/Lato/Space Grotesk are over-shipped; Arial as the primary face signals an unstyled page; one system font for everything flattens the display/body/UI hierarchy this catalog exists to create.",
+
+  "tier1_system": {
+    "_note": "Fonts already installed on common OSes — zero network, instant render, no embedding. First choice. Each pairing lists the full fallback stack to drop verbatim into the CSS variable.",
+    "broadsheet": {
+      "display": "Charter, 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif",
+      "body": "Charter, 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif",
+      "ui": "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      "mood": "authoritative, text-forward newspaper",
+      "subject": "investigative / policy / serious analysis; reportage-led stories"
+    },
+    "tufte_reader": {
+      "display": "'Iowan Old Style', 'Palatino Linotype', 'URW Palladio L', P052, Georgia, serif",
+      "body": "'Iowan Old Style', 'Palatino Linotype', 'URW Palladio L', P052, Georgia, serif",
+      "ui": "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      "mood": "calm, scholarly, generous measure",
+      "subject": "essays, explainers, long reads, marginalia-heavy pieces (pairs with finish.json marginalia)"
+    },
+    "didone_fashion": {
+      "display": "Didot, 'Bodoni MT', 'Noto Serif Display', Sylfaen, serif",
+      "body": "Georgia, 'Times New Roman', serif",
+      "ui": "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      "mood": "high-contrast, editorial, magazine cover",
+      "subject": "fashion, design, culture, premium profiles; high-drama headlines",
+      "note": "Didone display is thin-stroked — reserve for large sizes (h1/h2) and pair with a sturdier body (Georgia) for running text."
+    },
+    "modern_desk": {
+      "display": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      "body": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      "mono": "ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
+      "mood": "clean, neutral, structured dashboard",
+      "subject": "quant rankings, benchmarks, structured data; UI-forward layouts",
+      "note": "Use the `system-ui` keyword for the sans display — NOT Inter/Roboto as a named primary. Roboto appears here only as a late Android fallback inside the system stack."
+    },
+    "field_report": {
+      "display": "Superclarendon, 'Bookman Old Style', 'URW Bookman', 'Georgia Pro', Georgia, serif",
+      "body": "Charter, 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif",
+      "ui": "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      "mood": "warm, sturdy, reported-from-the-ground",
+      "subject": "feature reporting, travel, food, people, year-in-review; warm magazine tone"
+    }
+  },
+
+  "tier2_websafe": {
+    "_note": "Web-safe classics for when a system stack doesn't carry the mood and no embed is justified. Broadly installed across OSes; safe fallbacks.",
+    "georgia": "Georgia, 'Times New Roman', Times, serif",
+    "palatino": "'Palatino Linotype', Palatino, 'Book Antiqua', URW Palladio L, serif",
+    "baskerville": "Baskerville, 'Baskerville Old Face', 'Hoefler Text', Garamond, 'Times New Roman', serif",
+    "helvetica": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "verdana": "Verdana, Geneva, Tahoma, sans-serif",
+    "mono": "ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace"
+  },
+
+  "tier3_embedded_webfont": {
+    "strategy": "Embed AT MOST one subsetted woff2 as a base64 @font-face with font-display:swap and a full fallback stack. Use only when the brand face genuinely carries the story and no tier-1/tier-2 stack matches; otherwise stay on system fonts.",
+    "recipe": "1) Pick ONE face (usually the display). 2) Subset to the glyphs actually used (latin + the digits/punctuation in headlines) with fonttools/pyftsubset or glyphhanger -> woff2. 3) base64-encode the woff2 and inline it: @font-face{font-family:'X';src:url(data:font/woff2;base64,AAAA...) format('woff2');font-display:swap;font-weight:...;} 4) Reference it FIRST in the variable with a tier-1/tier-2 fallback after it: --font-display:'X', Georgia, serif; so text renders immediately on the fallback and swaps when the face decodes.",
+    "tradeoff": "base64 adds ~33% over the binary size and is render-blocking parse weight inside the HTML; keep the subset to ~5KB (display-only, one weight). Never inline a full multi-weight family. If two faces are tempting, drop to a tier-1 pairing instead.",
+    "recommended_faces_if_hosted": ["Fraunces", "Newsreader", "Bricolage Grotesque", "Source Serif 4", "IBM Plex"],
+    "note": "These are recommendations ONLY for when you can self-host/subset; do NOT pull them from Google Fonts at runtime (the call fails silently on file://)."
+  },
+
+  "type_rules": {
+    "_note": "Contrast rules from the cookbook aesthetics notebook — apply on top of design_tokens.json type_scale.",
+    "weight_extremes": "Use weight extremes for contrast (100/200 vs 800/900), not 400 vs 600. A light display over a heavy stat number reads as deliberate; adjacent mid-weights read as accidental.",
+    "size_jumps": "Make size jumps 3x+, not 1.5x. h1 should tower over body; a timid 1.5x step looks like a mistake rather than a hierarchy.",
+    "high_contrast_pairings": "Pair across categories for tension: serif display + geometric/mono UI, or expressive sans display + serif body. Two faces from the same category (two grotesks, two transitionals) muddy rather than contrast.",
+    "one_of_each": "One display family, one body family, one UI/mono family at most (echoes design_tokens.json). The catalog's job is to choose those three deliberately, not to add a fourth."
+  },
+
+  "choosing": "Read the chosen theme's `type` direction in themes.json, then pick the named tier-1 pairing it points to (e.g. field_report, broadsheet, didone_fashion). Drop the stacks into :root as --font-display / --font-body / --font-ui (or --font-mono). Record the pairing name in designer.json page_rhythm so the Programmer wires the same stacks the Designer chose."
+}

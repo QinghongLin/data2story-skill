@@ -1,0 +1,59 @@
+{
+  "_note": "Encoding craft BEYOND color choice — the rules that make a chart accurate and accessible regardless of palette. The Designer/Programmer apply these; the Auditor checks them. For the actual color SCALES (sequential/diverging/categorical hex values) this file CROSS-REFERENCES frontend-design/references/design_tokens.json data_color_scales — it does NOT redefine them here.",
+  "_sources": "chrisvoncsefalvay data-viz scale/colour references (re-authored facts). rohitg00/data-visualization (encoding guidance). Cleveland & McGill 1984 (channel accuracy). Okabe & Ito colorblind-safe palette. All re-authored as rules.",
+
+  "area_not_radius": {
+    "rule": "When size encodes a quantity (bubble, proportional symbol), the QUANTITY must map to the symbol's AREA, not its radius. Mapping to radius makes a value-x4 circle look value-x16 — it lies by the square.",
+    "vega_lite": "Vega-Lite's `size` channel maps the value to AREA by default — this is already correct. Pass the raw value to size; do NOT pre-square it and do NOT build a radius. Set a size legend with real value anchors so readers can decode the areas.",
+    "d3_equivalent": "In D3 (a fallback symbol/bubble map) you must do it yourself: use d3.scaleSqrt() for the radius (radius ∝ √value, so area ∝ value), or compute r = k*Math.sqrt(value). NEVER d3.scaleLinear() on the radius.",
+    "anti_pattern": "d3.scaleLinear() applied to a radius; squaring the value before Vega's size (double-applies area); a bubble legend without value anchors so area is undecodable."
+  },
+
+  "sort_by_value": {
+    "rule": "Order categories by their VALUE (or another meaningful order: time, a fixed semantic order), not alphabetically. Alphabetical order hides the ranking the reader came for.",
+    "vega_lite": "On the category encoding: \"sort\": \"-x\" (descending by the x value) / \"-y\", or \"sort\":{\"field\":\"value\",\"op\":\"sum\",\"order\":\"descending\"}, or an explicit array for a fixed order. Keep the SAME order across faceted panels and stacked segments so they're comparable.",
+    "exceptions": "Keep a natural order where one exists — time (chronological), ordinal categories (age bands, S/M/L, Likert), or a familiar fixed order. Alphabetical is acceptable ONLY for a lookup table the reader scans by name.",
+    "anti_pattern": "A ranking chart left in alphabetical/default order; facets sorted alphabetically so the eye can't compare peaks; stacked segments in a different order per bar."
+  },
+
+  "dual_axis_warning": {
+    "rule": "Avoid two different y-axes on one chart (e.g. price on the left, volume on the right). Dual axes let you scale each series independently, which can MANUFACTURE a correlation that isn't there — the crossing point and apparent co-movement are artifacts of the chosen scales.",
+    "instead": "Prefer (a) indexing both series to a common base (=100 at the start) on ONE axis, (b) small multiples — one panel per series with aligned x (vega_recipes.json small_multiples_facet), or (c) a connected scatter if the relationship itself is the point (chart_chooser.json correlation).",
+    "if_unavoidable": "If a dual axis is truly necessary, make the second axis visually distinct, label both axes with units, and state in the caption that the scales are independent (no causal claim).",
+    "anti_pattern": "Two auto-scaled y-axes presented as if the lines' crossing/co-movement is meaningful; an unlabeled secondary axis."
+  },
+
+  "colorblind_safe": {
+    "rule": "~8% of men have some color-vision deficiency (commonly red-green). Charts must stay readable for them. Do this with palette choice + redundant encoding, NOT by relying on hue alone.",
+    "categorical_palette": "Use a colorblind-safe categorical set — the Okabe-Ito 8-color palette is a safe default: black #000000, orange #E69F00, sky blue #56B4E9, bluish green #009E73, yellow #F0E442, blue #0072B2, vermilion #D55E00, reddish purple #CC79A7. Pull the project's harmonized categorical set from design_tokens.json data_color_scales.categorical; if it isn't CVD-safe, fall back to Okabe-Ito.",
+    "sequential_diverging": "For ORDERED magnitude use a perceptually-uniform, CVD-safe ramp: Viridis or Cividis (sequential). Cividis is tuned specifically for color-vision deficiency. For above/below a midpoint use a CVD-safe DIVERGING ramp (e.g. blue<->orange / blue<->brown), NOT red<->green. Set via scale.scheme ('viridis','cividis') or scale.range from design_tokens.json data_color_scales.",
+    "avoid_red_green": "Never put meaning on a red-vs-green contrast alone (the most common confusion). If you must use red/green semantically (loss/gain), add a second cue (sign, +/-, shape, position).",
+    "vega_lite": "Sequential/diverging: \"scale\":{\"scheme\":\"viridis\"} or \"cividis\". Categorical: \"scale\":{\"range\": [Okabe-Ito or design_tokens categorical]}.",
+    "anti_pattern": "A red/green pass/fail with no other cue; a rainbow (jet) scale for ordered data (not perceptually uniform, not CVD-safe); >~6 categorical hues no one can tell apart."
+  },
+
+  "redundant_encoding": {
+    "rule": "NEVER carry meaning in color alone. Add a second, non-color channel so the chart survives color blindness AND grayscale printing: a direct text label, a shape, a position, or a pattern.",
+    "techniques": [
+      "Lines: label each line at its end (annotation_layers.json line_end_label) AND/OR vary shape of point markers / strokeDash, not just color.",
+      "Scatter categories: encode category as SHAPE in addition to color (Vega-Lite `shape` channel).",
+      "The highlighted datum: accent color PLUS a text label / a bolder stroke / a marker (annotation_layers.json highlight_key_datum).",
+      "Choropleth/heatmap: keep the value legend with numbers; the color is decodable via the legend, not memory."
+    ],
+    "anti_pattern": "A multi-line chart distinguished only by similar hues; a 'red = bad' with no label/sign; relying on the reader to remember which color meant which group."
+  },
+
+  "consistency": {
+    "rule": "One value means ONE color across the whole story. Reuse the SAME data scale (and the SAME --accent for the focal datum) across the map, the bars, and the callouts (design_tokens.json data_color_scales _rule).",
+    "why": "If 'high' is orange in the map it must be orange in the bar chart; re-coloring the same quantity per chart forces the reader to relearn the legend each time."
+  },
+
+  "checklist": [
+    "Symbol size maps to AREA (Vega size default / D3 scaleSqrt), never radius via scaleLinear.",
+    "Categories sorted by value (or a meaningful order), consistent across panels/segments.",
+    "No dual y-axis manufacturing a correlation — index, facet, or connected-scatter instead.",
+    "Palette is CVD-safe (Okabe-Ito categorical / Viridis or Cividis sequential); no meaning on red-green alone.",
+    "Meaning never carried by color alone — a label/shape/position backs it up (redundant encoding).",
+    "The same value uses the same color across every chart in the story (cross-ref design_tokens.json)."
+  ]
+}

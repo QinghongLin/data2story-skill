@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# Generated per-run audit output
+skills/**/audit/
+
+# Generated eval reports (the reports/ dir itself is kept via .gitkeep)
+skills/data2story/evals/reports/*.json
+skills/data2story/evals/reports/*.md
+
+# Superseded reference material (kept locally, never shipped)
+_archive/
+
+# Vendored sparring-partner: personal calibration profile + session living-docs
+skills/sparring-partner/references/profile.md
+brainstorm-*.md
+
+# Secrets — API keys are read from the environment / ~/.env, never from the repo
+.env
+.env.local
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

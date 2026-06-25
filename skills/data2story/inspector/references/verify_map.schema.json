@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://data-journalist-agent.github.io/schemas/verify_map.schema.json",
+  "title": "Inspector verify_map",
+  "description": "Per-element provenance map for the Inspector panel / coding-verifier layer. A FLAT object keyed by atomic element id; the values declare, for every claim/figure/media element on the page, exactly what backs it. The Inspector drawer renders one entry per id. See _doc.",
+  "_toc": {
+    "_comment": "Navigation aid only — a non-validating annotation (JSON Schema ignores unknown keywords). The contract is unchanged; this just maps where each part of the schema lives.",
+    "properties._doc": "Optional human-readable contract notes (purpose, id_prefixes, kind_selects_renderer, gallery_convention, byte_identity). Recommended as the first key of verify_map.json.",
+    "patternProperties.^(ana|det|des|sct|cin|int)_...": "The per-element entry shape — one object per atomic id; its `kind` selects the drawer renderer.",
+    "$defs.computation": "kind=computation — claim + code_file/code_lines + data_preview + expected_output + the runnable Run panel.",
+    "$defs.media": "kind=media — real fetched asset + source_url + license + author + identity (+ gallery via flags||assets||photos).",
+    "$defs.generated": "kind=generated — AI-asset preview + tool/model/prompt/disclosure + the real_default publish-safe fallback.",
+    "$defs.fact": "kind=fact (and the credits variant) — claim + categorised sources[] each with its own facts[].",
+    "$defs.galleryItem": "One gallery cell — its own source_url + license so attribution survives per asset.",
+    "$defs.codeLines": "The [start,end] line-range shape used by computation.code_lines.",
+    "$defs.dataPreview": "The curated input-rows preview shape shown above the Run panel."
+  },
+  "type": "object",
+  "properties": {
+    "_doc": {
+      "description": "Human-readable contract notes. Optional but recommended as the first key.",
+      "type": "object",
+      "properties": {
+        "purpose": {
+          "type": "string",
+          "const": "verify_map.json is the per-element provenance map the Inspector panel reads. Each non-underscore key is an ATOMIC element id that also appears as a data-* attribute in index.html. Clicking that element opens the Inspector drawer, which renders this entry."
+        },
+        "id_prefixes": {
+          "type": "string",
+          "const": "Keys are atomic ids namespaced by producing role: ana_* (analyst computation/finding), det_* (detective fact), des_* (designer element — may resolve to a computation, media, or generated kind), sct_* (scout-verified media), cin_* (cinematographer background imagery). A des_* element with no own analysis resolves through its data-ana/data-det binding."
+        },
+        "kind_selects_renderer": {
+          "type": "string",
+          "const": "The `kind` field selects which drawer renderer is used: 'computation' -> code + data_preview + expected_output + run panel (optionally a client-side reduced-N rerun); 'media' -> asset preview + source_url + license + identity provenance; 'generated' -> AI-asset preview + tool/model/prompt/disclosure + the real_default fallback; 'fact' -> claim + categorised sources[] with per-source facts[]; 'credits' -> the same fact renderer with a 'Credits' badge (a license/source aggregator)."
+        },
+        "gallery_convention": {
+          "type": "string",
+          "const": "A multi-asset element carries a gallery array under one of three keys, tried IN THIS ORDER: flags || assets || photos. The first present non-empty array is rendered as the gallery; each item follows $defs/galleryItem (each item carries its own source_url + license so attribution survives per asset)."
+        },
+        "byte_identity": {
+          "type": "string",
+          "const": "verify_map.json must be byte-identical to the inline `verifyMap` <script> island embedded in index.html. The Inspector reads the inline copy at runtime; this file is the on-disk source of truth and the auditable artifact."
+        },
+        "decorative_no_entry": {
+          "type": "string",
+          "const": "The five kinds (computation | media | generated | fact | credits) are COMPLETE — there is NO decorative/gradient kind, by design. A purely decorative gradient or scrim is `pointer-events:none`, carries NO data-* token, and therefore has NO verify_map entry at all (validate.py Section 9 also forbids a decorative pointer-events:none element from carrying a data-* token). A CREDITED generated background (an AI atmosphere still that asserts provenance) is NOT decorative: it carries a data-* token and a `kind:\"generated\"` entry. So: decorative -> no token, no entry; credited generated background -> token + kind:generated."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "patternProperties": {
+    "^(ana|det|des|sct|cin|int)_[A-Za-z0-9_]+$": {
+      "oneOf": [
+        { "$ref": "#/$defs/computation" },
+        { "$ref": "#/$defs/media" },
+        { "$ref": "#/$defs/generated" },
+        { "$ref": "#/$defs/fact" }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "codeLines": {
+      "description": "Inclusive [start, end] 1-based line span in code_file, or null when the snippet is not a contiguous slice of a single file.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        { "type": "null" }
+      ]
+    },
+    "dataPreview": {
+      "description": "A small inlined table sampled from the element's source data, shown in the drawer so a reader sees the actual rows behind a chart/number.",
+      "type": "object",
+      "required": ["description", "columns", "rows"],
+      "properties": {
+        "description": { "type": "string" },
+        "columns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": ["string", "number", "boolean", "null"] }
+          }
+        },
+        "_rows_truncated": {
+          "description": "Optional human note when rows[] is a sample, e.g. 'showing 12 of 30'.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "galleryItem": {
+      "description": "One asset in a multi-asset gallery (flags || assets || photos). Each item is self-describing: it carries its own source_url + license so per-asset attribution survives. A filename OR a preview path identifies the asset; a label/team/name/subject names it.",
+      "type": "object",
+      "anyOf": [
+        { "required": ["filename"] },
+        { "required": ["preview"] }
+      ],
+      "properties": {
+        "filename": { "type": "string", "description": "Asset path relative to the blog root (e.g. assets/flag_demo.png)." },
+        "preview": { "type": "string", "description": "Alias for filename when the renderer keys on `preview`." },
+        "label": { "type": "string", "description": "Generic caption for the item." },
+        "team": { "type": "string", "description": "Caption when the gallery is a set of national flags." },
+        "name": { "type": "string", "description": "Caption when the gallery is a set of named subjects." },
+        "subject": { "type": "string", "description": "What/who the asset depicts." },
+        "country": { "type": "string" },
+        "source_url": { "type": "string", "description": "Origin URL for THIS asset (per-item attribution)." },
+        "license": { "type": "string", "description": "License string for THIS asset." },
+        "attribution": { "type": "string", "description": "Human-readable credit line." },
+        "identity": { "type": "string", "description": "Read-the-file evidence that the asset is what it claims (real photo vs AI, recognisable subject, etc.)." },
+        "id": { "type": "string", "description": "Optional cross-ref to a scout/source id (e.g. sct_pl_demo)." },
+        "source_title": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "computation": {
+      "description": "A claim/figure backed by code that produces a number. Renderer shows: claim, the code slice, a data_preview, the expected_output, and a run panel (optionally a client-side reduced-N rerun graded against expected).",
+      "type": "object",
+      "required": ["kind", "title", "claim", "cell_id", "code_file", "code", "run"],
+      "properties": {
+        "kind": { "const": "computation" },
+        "title": { "type": "string" },
+        "claim": { "type": "string", "description": "The published sentence(s) this element substantiates." },
+        "cell_id": {
+          "type": "string",
+          "description": "The notebook cell tag (e.g. cell_setup) that re-derives this. Inverse of cell_registry[cell_id].backs."
+        },
+        "code_file": { "type": "string", "description": "Repo-relative path to the source script, e.g. code/build_model.py." },
+        "code_lines": { "$ref": "#/$defs/codeLines" },
+        "code": { "type": "string", "description": "The exact code slice shown in the drawer." },
+        "data_preview": {
+          "oneOf": [{ "$ref": "#/$defs/dataPreview" }, { "type": "null" }]
+        },
+        "expected_output": {
+          "description": "The literal stdout the code produces, shown so the reader can compare. null when the element has no textual output (e.g. a card grid).",
+          "type": ["string", "null"]
+        },
+        "run": {
+          "description": "How (and whether) the element can be re-executed.",
+          "type": "object",
+          "required": ["type", "needs_network"],
+          "properties": {
+            "type": {
+              "description": "montecarlo = stochastic resample (graded approximately); derived = exact recompute from inlined tables; ratings = network-backed aggregation surfaced read-only.",
+              "enum": ["montecarlo", "derived", "ratings"]
+            },
+            "reduced_n": {
+              "description": "In-browser sample size for a montecarlo rerun (smaller than the published N).",
+              "type": ["integer", "null"]
+            },
+            "needs_network": { "type": "boolean" },
+            "note": { "type": "string" },
+            "client_model": {
+              "description": "Hook describing the in-page model used for a live reduced-N rerun.",
+              "type": "object",
+              "properties": {
+                "fn": { "type": "string", "description": "Global function the panel calls, e.g. window.DEMO_MODEL.run." },
+                "returns": { "type": "string" },
+                "at_rest": { "type": "string", "description": "Where the exact published figures are cached for the static fallback." }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "methodology": { "type": "string", "description": "Optional path to a longer method writeup." },
+        "credits_ref": { "type": "string", "description": "Optional cross-ref to a scout credits id." },
+        "photos": {
+          "description": "Optional gallery of subject photos attached to this computation.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/galleryItem" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "media": {
+      "description": "A real (fetched) media asset — image/video/audio. Renderer shows the asset preview plus its source_url, license, author and identity (read-the-file provenance).",
+      "type": "object",
+      "required": ["kind", "title", "media_type", "preview", "source_url", "license", "author", "identity"],
+      "properties": {
+        "kind": { "const": "media" },
+        "title": { "type": "string" },
+        "media_type": { "enum": ["image", "video", "audio_embed", "audio"] },
+        "preview": {
+          "description": "Asset path, or an array of paths for a multi-asset element.",
+          "type": ["string", "array"],
+          "items": { "type": "string" }
+        },
+        "source_url": {
+          "description": "Origin URL, or an array aligned with preview[].",
+          "type": ["string", "array"],
+          "items": { "type": "string" }
+        },
+        "license": { "type": "string" },
+        "author": { "type": "string", "description": "Credit / rights statement." },
+        "identity": { "type": "string", "description": "Evidence the asset is what it claims to be (real vs AI, recognisable subject)." },
+        "embed_url": { "type": "string", "description": "Platform embed URL for media_type audio_embed/video." },
+        "publish_note": { "type": "string", "description": "Republication-rights caveat / publish-gate swap instruction." },
+        "flags": { "type": "array", "items": { "$ref": "#/$defs/galleryItem" } },
+        "photos": { "type": "array", "items": { "$ref": "#/$defs/galleryItem" } },
+        "assets": { "type": "array", "items": { "$ref": "#/$defs/galleryItem" } }
+      },
+      "additionalProperties": true
+    },
+    "generated": {
+      "description": "An AI-generated asset. Renderer shows the generated preview, the full tool/model/prompt, the disclosure label, and a real_default fallback that ships when the AI asset must be swapped at publish.",
+      "type": "object",
+      "required": ["kind", "title", "media_type", "preview", "tool", "model", "prompt", "purpose", "disclosure", "role"],
+      "properties": {
+        "kind": { "const": "generated" },
+        "title": { "type": "string" },
+        "media_type": { "enum": ["image", "video", "audio_embed", "audio"] },
+        "preview": { "type": "string" },
+        "tool": { "type": "string", "description": "Generator tool / script, e.g. openrouter-text2video (generate_media.py)." },
+        "model": { "type": "string", "description": "Model id used to generate the asset." },
+        "prompt": { "type": "string", "description": "The full generation prompt (auditable)." },
+        "purpose": { "type": "string", "description": "Why the asset exists, e.g. IMMERSE." },
+        "disclosure": { "type": "string", "description": "On-page disclosure that the asset is AI-generated." },
+        "role": { "type": "string", "description": "Producing role, e.g. designer / cinematographer." },
+        "real_default": {
+          "description": "The real asset shown by default (the AI one is opt-in / toggle), so nothing copyrighted or fabricated ships unflagged.",
+          "type": "object",
+          "required": ["preview", "source_url", "source_title", "license"],
+          "properties": {
+            "preview": { "type": "string" },
+            "source_url": { "type": "string" },
+            "source_title": { "type": "string" },
+            "license": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "fact": {
+      "description": "A non-computed factual claim grounded in external sources. Renderer shows the claim, its category, and the categorised sources[], each with its own facts[] bullet list.",
+      "type": "object",
+      "required": ["kind", "title", "claim", "category", "sources"],
+      "properties": {
+        "kind": { "enum": ["fact", "credits"], "description": "'fact' = a claim grounded in external sources. 'credits' = the same fact shape used as a license/source aggregator (e.g. a card-deck's data + photo licences); the drawer renders it with a 'Credits' badge instead of 'Fact'." },
+        "title": { "type": "string" },
+        "claim": { "type": "string" },
+        "category": {
+          "description": "Free-form category tag used to colour/group the fact in the drawer (e.g. background, interpretive_hook, controversy, why_it_matters).",
+          "type": "string"
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["url", "title", "facts"],
+            "properties": {
+              "url": { "type": "string" },
+              "title": { "type": "string" },
+              "facts": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1,
+                "description": "The specific statements this source supports."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "computation_ref": { "type": "string", "description": "Optional cross-ref to a computation id whose number this fact contextualises." },
+        "map_markers": {
+          "description": "Optional geo markers when the fact is rendered on a map.",
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

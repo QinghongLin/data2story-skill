@@ -1,0 +1,35 @@
+{
+  "_about": "WORKED, schema-valid example of verify/cell_registry.json for the toy 'city transit ridership' topic. COPY THE STRUCTURE, REPLACE THE CONTENT. It is the FORWARD index from the reproducible notebook's cells to the page claims they back — the inverse of verify_map[id].cell_id. Here cell_findings re-derives the per-line shares behind ana_line_share, and cell_crowding re-runs the Monte-Carlo behind ana_crowd_risk; the setup/intro/close cells back no specific on-page claim ([]). On a real blog the Inspector can DERIVE this from your verify_map + analyst calculations; this example shows the shape it produces.",
+  "_doc": {
+    "purpose": "cell_registry.json declares, per reproducible-notebook cell, what the cell computes and which atomic claim ids (ana_*/det_*/...) it backs. It lets the Inspector and an auditor cross-check that every published claim is reproduced by some cell and that no cell is orphaned.",
+    "inverse_relationship": "backs[] is the INVERSE of verify_map[id].cell_id: if verify_map['ana_01'].cell_id == 'cell_findings', then cell_registry['cell_findings'].backs must contain 'ana_01'. A consistency check should confirm both directions agree.",
+    "this_example_pairs": "Here that means: verify_map['ana_line_share'].cell_id == 'cell_findings' -> cell_registry['cell_findings'].backs contains 'ana_line_share'; verify_map['ana_crowd_risk'].cell_id == 'cell_crowding' -> cell_registry['cell_crowding'].backs contains 'ana_crowd_risk'.",
+    "cell_id_stability": "Keys are the stable cell tags carried in the notebook (notebook cell metadata.tags). Renaming a tag requires updating both this file and every verify_map[*].cell_id that points at it."
+  },
+
+  "cell_intro": {
+    "computes": "Markdown: title, data-provenance table, the reproduction discipline, and how to run (download + run locally). Backs no on-page claim.",
+    "backs": [],
+    "needs_network": false
+  },
+  "cell_setup": {
+    "computes": "Imports, constants, the DATA_DIR resolver (local-first, no Colab branch), the guarded reads of ridership.csv, and REPRO_OUT. Backs no on-page claim.",
+    "backs": [],
+    "needs_network": false
+  },
+  "cell_findings": {
+    "computes": "Re-derives the journalism findings from ridership.csv: each line's average weekday boardings and its share of the 509k network total, and asserts they equal the published figures.",
+    "backs": ["ana_line_share"],
+    "needs_network": false
+  },
+  "cell_crowding": {
+    "computes": "Re-runs the full N=200,000 (seed=4326) Monte-Carlo for the Red line's crowding risk and asserts the reproduced probability lands within Monte-Carlo noise of the published 18.4%.",
+    "backs": ["ana_crowd_risk"],
+    "needs_network": false
+  },
+  "cell_close": {
+    "computes": "Markdown: provenance summary table (finding -> cell -> script -> data) plus dataset licenses. Backs no on-page claim.",
+    "backs": [],
+    "needs_network": false
+  }
+}
