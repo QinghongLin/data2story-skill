@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
 - **Progressive disclosure.** Each role's `SKILL.md` holds only its instructions; bulky reference material (output schemas, field rules, lookup tables) lives in that role's `references/` folder as JSON and is loaded only when needed.
 
 ## Updates
-* [ ] [2026.6] Version 0.0.1: Optimized visual effects.
+* [x] [2026.6] Version 0.1.0: Optimized visual effects.
 * [x] [2026.6.9] Released the arXiv paper, GitHub repository.
 * [x] [2026.5.11] Data2Story was accepted as a Spotlight paper at the [ACM Conference on AI and Agentic Systems workshop](https://www.caisconf.org/).
 
