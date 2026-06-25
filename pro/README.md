@@ -101,8 +101,6 @@ data2story-skill/pro/
 
 Think of it as a small newsroom in a box: the paper's **seven roles**, each reading what the previous one produced and adding its own artifact — a fixed pipeline that runs once, end to end. Five of those seven roles are staffed as small **teams** (a lead + specialist members), so the newsroom runs **14 agents** in total while the seven-role structure of the paper stays intact. (Idea mode's `ideation` front-stage runs *upstream* of this table — it secures a real dataset before the newsroom starts and is not one of the 14 newsroom agents.)
 
-![The Data2Story newsroom pipeline](../assets/pipeline.png)
-
 | # | Role | Team | What it does | Produces |
 |---|------|------|--------------|----------|
 | 1 | **Detective** | Detective (lead) | Researches external context — domain background, history, why the data matters | `detective.json` |
