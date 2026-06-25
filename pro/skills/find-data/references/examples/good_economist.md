@@ -50,7 +50,7 @@ This is the **target shape** for any `--mode single` output of `find-data`.
 - Subjects: rockets, agencies (SpaceX, NASA, Roscosmos), launch pads, satellites
 - Reference media findable: yes (Wikimedia Commons has photos of named agencies + iconic launches)
 
-**Overall verdict**: `ready` → invoke `/data2story data/Economist/data/2018-10-20_space-launches/`
+**Overall verdict**: `ready` → invoke `/data2story-pro data/Economist/data/2018-10-20_space-launches/`
 
 ---
 

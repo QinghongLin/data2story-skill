@@ -22,7 +22,7 @@ then route to the appropriate workflow.
 4. Print the gate summary; exit with 0 if ready, 1 if blocked.
 
 **Use case**: user wants to spot-check a folder (e.g., one cloned by hand
-from upstream Pudding) before invoking `/data2story`.
+from upstream Pudding) before invoking `/data2story-pro`.
 
 ---
 

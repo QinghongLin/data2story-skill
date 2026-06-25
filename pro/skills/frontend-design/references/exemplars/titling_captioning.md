@@ -1,7 +1,7 @@
 # Exemplar — Titling & Captioning (the few-shot corpus)
 
 **What this is.** A few-shot GOOD/BAD corpus for the **Copywriter** role
-(`data2story/copywriter/`): real, published headlines, standfirsts, section
+(`data2story-pro/copywriter/`): real, published headlines, standfirsts, section
 headings and captions paired with the templated / AI-tell version they replace,
 each with a *Why* and the **device** that earns the GOOD. Every GOOD line is mined
 from a shipped data-journalism piece (sourced in `_sources`); the BAD line is the
@@ -25,7 +25,7 @@ from, not strings to paste** — re-derive the same device for the actual datase
   "what to look for") — never "this chart shows" / "the x-axis shows".
 
 The full principle list, the **AT1–AT9 AI-tell kill-list**, and the **D1–D16 device
-taxonomy** live in `data2story/copywriter/SKILL.md`; this file is the worked corpus.
+taxonomy** live in `data2story-pro/copywriter/SKILL.md`; this file is the worked corpus.
 Cross-links to `pitfalls.json` PIT-56 / PIT-57 / PIT-58 are noted inline.
 
 ---
@@ -253,17 +253,17 @@ URL at use time.
 
 ## See also
 
-- **`data2story/copywriter/SKILL.md`** — the role: the positive principles, the full
+- **`data2story-pro/copywriter/SKILL.md`** — the role: the positive principles, the full
   AT1–AT9 kill-list, the D1–D16 device taxonomy, the caption takeaway-rule, and the
   `copywriter.json` output shape (strings only; naming, not editing).
 - **`frontend-design/references/pitfalls.json`** — PIT-56 (templated headline),
   PIT-57 (standfirst spoils the hero's reveal number), PIT-58 (caption labels an
   axis instead of stating a finding); the Auditor's `check_15_titling_caption_quality`
   greps for them.
-- **`data2story/critic/references/rubric.json`** — `narrative_pacing.titling_caption_cap`:
+- **`data2story-pro/critic/references/rubric.json`** — `narrative_pacing.titling_caption_cap`:
   a generic/templated headline, a pre-spoiling standfirst, an axis-only caption, or a
   marketing word in a head/caption caps `narrative_pacing` at 3.
-- **`data2story/auditor/references/checks.json`** — `check_15_titling_caption_quality`
+- **`data2story-pro/auditor/references/checks.json`** — `check_15_titling_caption_quality`
   (the grep that catches a templated H1 / AT-tell title root / axis-only caption /
   marketing word in h1/h2/figcaption).
 - **`dataviz-craft/references/annotation_layers.json`** — pair a chart caption's

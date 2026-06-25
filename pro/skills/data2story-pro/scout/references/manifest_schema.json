@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "data2story-pro/scout/references/manifest_schema.json",
+  "title": "Data2Story per-asset media provenance manifest (S2 canonical block)",
+  "_doc": "ONE shared shape for every sourced media asset's provenance, so the Scout, the Designer, and the fetch scripts (fetch_stock.py / fetch_openverse.py / fetch_images.py / fetch_music.py) all speak it. This is the 'S2 canonical media manifest block'. It is the same object `validate.py`'s media check and the Designer's `data-sct`/`data-des` registration rule are written against — keep them in lock-step. The gold World Cup blog's assets/cinematic_imagery_manifest.json is the real-world reference instance (it carries two extra cinematographer fields — `category`, `suggested_beat`, `orientation` — that are allowed but not required here). A side-loaded manifest is only a scratchpad: an asset is not 'registered' until it is also a keyed item in scout.json (sct_*) / designer.json (des_*) carrying this same license+identity. The license gate is the allowlist: re-host an asset only when license.spdx is on scout/references/license_allowlist.json AND license.permits_republication is true; identity.verified must be true for any specific real subject.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "file", "source_url", "site", "license", "identity"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable provenance id, prefixed by the registering role: sct_* (Scout) or des_* (Designer). This MUST match the key under which the asset is registered as an item in scout.json / designer.json — the side manifest and the role JSON share the id.",
+      "pattern": "^(sct|des)_[A-Za-z0-9_]+$"
+    },
+    "file": {
+      "type": "string",
+      "description": "Local path to the downloaded asset, relative to PROJECT_DIR (e.g. 'assets/bg_stadium_floodlit.jpg'). For an embed (player carries its own license) this block does not apply — use scout.json's embed_url instead; the validate.py license gate skips embeds."
+    },
+    "source_url": {
+      "type": "string",
+      "description": "The human-facing landing/page URL the asset came from (e.g. the Unsplash/Pexels photo page, the Commons File: page). NOT the raw CDN/binary URL — this is the click-through provenance link a reader can open to confirm the source."
+    },
+    "site": {
+      "type": "string",
+      "description": "Short human-readable provider name, used in attribution + provenance UI.",
+      "examples": ["Unsplash", "Pexels", "Pixabay", "Wikimedia", "Openverse"]
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spdx", "permits_republication", "requires_attribution", "attribution_text"],
+      "properties": {
+        "spdx": {
+          "type": "string",
+          "description": "License identifier. For re-hosting it MUST be on scout/references/license_allowlist.json `allow` (CC0-1.0, CC-BY-*, CC-BY-SA-*, PD/PDM-1.0/Public Domain, or the stock licenses Unsplash-License / Pexels-License / Pixabay-License). NC/ND and 'All Rights Reserved' are rejected by the gate.",
+          "examples": ["Unsplash-License", "Pexels-License", "Pixabay-License", "CC0-1.0", "CC-BY-SA-4.0", "CC-BY-2.0", "PDM-1.0"]
+        },
+        "permits_republication": {
+          "type": "boolean",
+          "description": "True ONLY for assets you may legally re-host (license on the allowlist). validate.py hard-fails any re-hosted asset whose permits_republication is not true. Copyrighted tracks/clips -> use an embed instead, never this block."
+        },
+        "requires_attribution": {
+          "type": "boolean",
+          "description": "True when the license requires crediting the author (all CC-BY / CC-BY-SA). False for CC0/PD and for the stock licenses (Unsplash/Pexels/Pixabay) where attribution is appreciated but not required. Either way, populate attribution_text."
+        },
+        "attribution_text": {
+          "type": "string",
+          "description": "Non-empty, footer-ready credit string: photographer/author + source + license, e.g. 'Photo: Jane Doe / Unsplash (Unsplash License - free commercial use, no attribution required)' or 'Photo: A. Author / Wikimedia Commons (CC BY-SA 4.0)'. Must be non-empty even when requires_attribution is false (courtesy credit + provenance). The Designer's registration rule rejects an empty attribution_text.",
+          "minLength": 1
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "verified", "subject"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "description": "How the asset's subject was proven, by the cheapest sufficient method (see scout/references/media_verification.json). 'oembed' for embeds, 'trusted_source' for a Wikidata-QID/Commons page naming the subject, 'vlm_view' for opening the image with the Read tool and confirming it depicts the subject (and is a real photo, not an AI render of a real thing).",
+          "enum": ["oembed", "trusted_source", "vlm_view", "manual"]
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "True only when one identity method passed. validate.py HARD-REJECTS any asset depicting a specific real person/place/object whose identity.verified is not true. For generic/ambient imagery (no specific real subject) it may be true with subject describing the generic scene."
+        },
+        "subject": {
+          "type": "string",
+          "description": "The real-world subject this depicts, or a one-line description of the generic/ambient scene (e.g. 'Levi's Stadium at night' or 'a football resting on pitch grass; generic, no players'). For stock photos, note whether the scene is illustrative/generic vs a verified specific venue, and end with whether it is a real photograph (not AI).",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

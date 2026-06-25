@@ -388,7 +388,7 @@
         "pipeline",
         "testing"
       ],
-      "ref": "data2story/SKILL.md Stage 7 (REQUIRED terminal step, MUST exit 0) + contract-gate verify_* routing; inspector/scripts/validate.py Section 7 (files + panel shell); inspector/scripts/generate_viewer.py (Stage 7 island-fill, nonzero exit on gap); critic rubric.json data_method_transparency (runnable coding verifier); cf PIT-11 (island byte-identity / generated-artifact desync, a DIFFERENT — filled-state — check)"
+      "ref": "data2story-pro/SKILL.md Stage 7 (REQUIRED terminal step, MUST exit 0) + contract-gate verify_* routing; inspector/scripts/validate.py Section 7 (files + panel shell); inspector/scripts/generate_viewer.py (Stage 7 island-fill, nonzero exit on gap); critic rubric.json data_method_transparency (runnable coding verifier); cf PIT-11 (island byte-identity / generated-artifact desync, a DIFFERENT — filled-state — check)"
     },
     {
       "id": "PIT-30",
@@ -396,7 +396,7 @@
       "symptom": "An interactive is on the page but produces no cognitive update: it re-teaches the hero's finding, the reader drives a control and learns nothing new, or it was added because 'more interactives is better.' It looks busy but earns nothing.",
       "root_cause": "Abundance was pursued without the quality gate. A supporting playground was built with no DISTINCT finding it lets the reader produce/feel, or it duplicates the hero centerpiece, so it is decoration that happens to move.",
       "fix": "Every supporting playground MUST declare an explicit INFORM or IMMERSE purpose bound to a DISTINCT finding (no two playgrounds share one finding; none re-teaches the hero). The kill-rule stands: kill any interaction that doesn't change what the reader understands. More is NOT better — the curated SET (hero + supporting) survives only when EACH earns its place; an unearned widget caps visual_design at 3. Cut it at the media-purpose gate before the Programmer builds it.",
-      "detect": "Critic — for each supporting playground, confirm interaction.json/editor.json declares a purpose (INFORM/IMMERSE) bound to a finding distinct from the hero and from every other supporting; a playground with no purpose, a duplicate finding, or one the reader can't produce anything from is a hard fail (caps visual_design/insight_value at 3, send to the Critic/Editor-curation loop). The media-purpose gate (data2story SKILL.md) cuts a purposeless playground BEFORE it is built.",
+      "detect": "Critic — for each supporting playground, confirm interaction.json/editor.json declares a purpose (INFORM/IMMERSE) bound to a finding distinct from the hero and from every other supporting; a playground with no purpose, a duplicate finding, or one the reader can't produce anything from is a hard fail (caps visual_design/insight_value at 3, send to the Critic/Editor-curation loop). The media-purpose gate (data2story-pro SKILL.md) cuts a purposeless playground BEFORE it is built.",
       "severity": "hard",
       "tags": [
         "pipeline",
@@ -488,7 +488,7 @@
         "media",
         "pipeline"
       ],
-      "ref": "data2story/designer/scripts/openrouter-image2video (model selection); cf PIT-27 (face-warp on animation), PIT-39 (video model list + duration), PIT-16 (seamless loop)"
+      "ref": "data2story-pro/designer/scripts/openrouter-image2video (model selection); cf PIT-27 (face-warp on animation), PIT-39 (video model list + duration), PIT-16 (seamless loop)"
     },
     {
       "id": "PIT-37",
@@ -533,7 +533,7 @@
         "api",
         "pipeline"
       ],
-      "ref": "data2story/designer/scripts/openrouter-image2video + openrouter-text2video (config.json endpoints; add the /videos/models listing + duration∈{4,6,8} guard)"
+      "ref": "data2story-pro/designer/scripts/openrouter-image2video + openrouter-text2video (config.json endpoints; add the /videos/models listing + duration∈{4,6,8} guard)"
     },
     {
       "id": "PIT-40",
@@ -611,13 +611,13 @@
       "symptom": "A genuinely visual/computational topic ships threadbare — one stock image, cinematic mode off, a flat static cover photo, and a generic topically-unrelated CC0 loop for BGM — and NOTHING flags it: zero validation errors, every hard gate green. The run is presented as 'done' even though it under-delivered at every richness decision, because the pipeline rewards omission (the safe minimal path) rather than richness.",
       "root_cause": "The gates were built to cut EXCESS (the media-purpose gate kills purposeless additions) but had no floor against IMPOVERISHMENT: each step independently chose the cheapest safe option (Scout sourced 1 image, the Cinematographer fell back to off, the cover stayed a static still, the soundtrack stayed a generic loop) and each choice passed its own local check. With no richness floor reading the topic profile, a rich topic that owes a dynamic hero + cinematic + an asset floor + a best-fit soundtrack can satisfy every gate while delivering none of them.",
       "fix": "Enforce a richness FLOOR keyed off topic_profile (the inverse of the media-purpose gate): the richness checks ERROR on a topic the classifier marks visual/computational, WARN otherwise — so when topic_profile.is_visual==true OR is_computational==true the impoverished path is BLOCKED (sent back), and on any other topic it is a warning, never silently shipped (absent-profile / privacy-sensitive are exempt). On a visual topic that means a dynamic hero (not a bare static still), cinematic ON when supply exists, a license-clean topic-asset floor (>=3 distinct, >=5 cover-able for cinematic), and the best-FIT real soundtrack (rung 2 climbed, not a generic loop). Each required-rich element still earns its place via the existing purpose gates — the floor forbids impoverishment, it never forces a fabricated/decorative asset (which itself caps visual_design at 3). The richness verdict cross-references the already-hard computational floors (substantive verify, >=1 earned interactive) so one 'richness' read covers all of it.",
-      "detect": "Inspector/pipeline — validate.py richness_* checks (richness_cinematic_undersupplied / richness_static_hero / richness_asset_floor / richness_hollow_verify_cells) load topic_profile and ERROR on a topic the classifier marks visual/computational, WARN otherwise (absent-profile / privacy-sensitive exempt). Orchestrator — the richness gate (data2story SKILL.md, beside the media-purpose gate) surfaces 'richness floor not met' in the closing summary; on a topic the classifier marks rich it blocks (sends back) unless a legitimate blocker is recorded, rather than reporting a silent 'done'. Critic — on a visual topic the impoverished path (1 image + no cinematic + static hero + generic-loop BGM) caps visual_design at 3 (inverse of the decorative-media cap).",
+      "detect": "Inspector/pipeline — validate.py richness_* checks (richness_cinematic_undersupplied / richness_static_hero / richness_asset_floor / richness_hollow_verify_cells) load topic_profile and ERROR on a topic the classifier marks visual/computational, WARN otherwise (absent-profile / privacy-sensitive exempt). Orchestrator — the richness gate (data2story-pro SKILL.md, beside the media-purpose gate) surfaces 'richness floor not met' in the closing summary; on a topic the classifier marks rich it blocks (sends back) unless a legitimate blocker is recorded, rather than reporting a silent 'done'. Critic — on a visual topic the impoverished path (1 image + no cinematic + static hero + generic-loop BGM) caps visual_design at 3 (inverse of the decorative-media cap).",
       "severity": "soft",
       "tags": [
         "media",
         "pipeline"
       ],
-      "ref": "validate.py Section 12 (richness_cinematic_undersupplied / richness_static_hero / richness_asset_floor / richness_hollow_verify_cells + topic_profile loader); data2story/SKILL.md richness gate; auditor flagship_contract.json (cinematic_supply_floor / dynamic_hero_on_visual / topic_asset_floor, complement of missing_engagement_floor); critic rubric.json visual_design + insight_value richness-floor cap; cf PIT-46 (cinematic dropped for lack of supply), PIT-47 (generic loop where a real anthem fits), PIT-48 (an ABSENT topic_profile no-ops this whole floor — now a hard error); the engagement half of the impoverished path (a descriptive topic shipping NO earned interactive) is now a HARD block-with-escape — validate.py Section 12 missing_engagement_floor + flagship_contract.json missing_engagement_floor"
+      "ref": "validate.py Section 12 (richness_cinematic_undersupplied / richness_static_hero / richness_asset_floor / richness_hollow_verify_cells + topic_profile loader); data2story-pro/SKILL.md richness gate; auditor flagship_contract.json (cinematic_supply_floor / dynamic_hero_on_visual / topic_asset_floor, complement of missing_engagement_floor); critic rubric.json visual_design + insight_value richness-floor cap; cf PIT-46 (cinematic dropped for lack of supply), PIT-47 (generic loop where a real anthem fits), PIT-48 (an ABSENT topic_profile no-ops this whole floor — now a hard error); the engagement half of the impoverished path (a descriptive topic shipping NO earned interactive) is now a HARD block-with-escape — validate.py Section 12 missing_engagement_floor + flagship_contract.json missing_engagement_floor"
     },
     {
       "id": "PIT-46",
@@ -768,7 +768,7 @@
       "tags": [
         "copy"
       ],
-      "ref": "data2story/copywriter/SKILL.md (positive principles + AT1-AT9 kill-list + D1-D16 devices); frontend-design/references/exemplars/titling_captioning.md (T1-T8 GOOD/BAD headline pairs, esp. T8 the AT1 antidote); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality + report_types.json titling_generic_headline; cf PIT-57 (standfirst spoiler), PIT-58 (axis-only caption)"
+      "ref": "data2story-pro/copywriter/SKILL.md (positive principles + AT1-AT9 kill-list + D1-D16 devices); frontend-design/references/exemplars/titling_captioning.md (T1-T8 GOOD/BAD headline pairs, esp. T8 the AT1 antidote); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality + report_types.json titling_generic_headline; cf PIT-57 (standfirst spoiler), PIT-58 (axis-only caption)"
     },
     {
       "id": "PIT-57",
@@ -781,7 +781,7 @@
       "tags": [
         "copy"
       ],
-      "ref": "data2story/copywriter/SKILL.md Step 1 (standfirst primes, never pre-spoils); data2story/editor/SKILL.md writing rules (standfirst primes, never pre-spoils — the body-side twin); frontend-design/references/exemplars/titling_captioning.md S1/S2 (standfirst GOOD/BAD); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality; cf PIT-42 (read the reveal number from the model, never hardcode), PIT-56 (templated headline)"
+      "ref": "data2story-pro/copywriter/SKILL.md Step 1 (standfirst primes, never pre-spoils); data2story-pro/editor/SKILL.md writing rules (standfirst primes, never pre-spoils — the body-side twin); frontend-design/references/exemplars/titling_captioning.md S1/S2 (standfirst GOOD/BAD); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality; cf PIT-42 (read the reveal number from the model, never hardcode), PIT-56 (templated headline)"
     },
     {
       "id": "PIT-58",
@@ -794,7 +794,7 @@
       "tags": [
         "copy"
       ],
-      "ref": "data2story/copywriter/SKILL.md Step 3 (caption takeaway-title rule + forbidden openers); frontend-design/references/exemplars/titling_captioning.md C1-C5 (caption GOOD/BAD pairs); dataviz-craft/references/annotation_layers.json (annotate the point on the chart so the caption asserts it); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality + report_types.json caption_states_no_finding; cf PIT-56 (templated headline), PIT-57 (standfirst spoiler)"
+      "ref": "data2story-pro/copywriter/SKILL.md Step 3 (caption takeaway-title rule + forbidden openers); frontend-design/references/exemplars/titling_captioning.md C1-C5 (caption GOOD/BAD pairs); dataviz-craft/references/annotation_layers.json (annotate the point on the chart so the caption asserts it); critic rubric.json narrative_pacing.titling_caption_cap; auditor checks.json check_15_titling_caption_quality + report_types.json caption_states_no_finding; cf PIT-56 (templated headline), PIT-57 (standfirst spoiler)"
     },
     {
       "id": "PIT-59",
@@ -807,7 +807,7 @@
       "tags": [
         "pipeline"
       ],
-      "ref": "data2story/SKILL.md (Stage 0 input dispatch resolves DATA_DIR/DATA_NAME before Create PROJECT_DIR + Archival; gate every {DATA_NAME}-dependent action on input acquisition having run); ideation/SKILL.md (returns the validated DATA_DIR the orchestrator sets DATA_NAME from); cf PIT-48 (a stage reading the wrong/absent source silently); (no validate.py kind — manual ordering invariant)"
+      "ref": "data2story-pro/SKILL.md (Stage 0 input dispatch resolves DATA_DIR/DATA_NAME before Create PROJECT_DIR + Archival; gate every {DATA_NAME}-dependent action on input acquisition having run); ideation/SKILL.md (returns the validated DATA_DIR the orchestrator sets DATA_NAME from); cf PIT-48 (a stage reading the wrong/absent source silently); (no validate.py kind — manual ordering invariant)"
     },
     {
       "id": "PIT-60",
@@ -905,7 +905,7 @@
         "interaction",
         "testing"
       ],
-      "ref": "data2story/interaction/references/interaction_recipes.json share_result_card (the crash-proof share/copy-result recipe: synchronous canvas Blob + ClipboardItem image+text + writeText fallback + always-present Download, no Web Share API); inspector/scripts/validate.py Section 20 (web_share_api_used); cf PIT-08 (clipboard/audio actions need the user-activation gesture window), PIT-31 (a control that fires but does nothing for the user)"
+      "ref": "data2story-pro/interaction/references/interaction_recipes.json share_result_card (the crash-proof share/copy-result recipe: synchronous canvas Blob + ClipboardItem image+text + writeText fallback + always-present Download, no Web Share API); inspector/scripts/validate.py Section 20 (web_share_api_used); cf PIT-08 (clipboard/audio actions need the user-activation gesture window), PIT-31 (a control that fires but does nothing for the user)"
     }
   ]
 }

@@ -1,7 +1,7 @@
 # Completeness gates — find-data's pass/warn/fail criteria
 
 These are the four gates `find-data` runs before declaring a dataset folder
-ready for `/data2story`. They are intentionally CHEAP (file I/O + HTTP HEAD,
+ready for `/data2story-pro`. They are intentionally CHEAP (file I/O + HTTP HEAD,
 no LLM judgment in the deterministic layer) — narrative-quality checks
 happen later, inside Detective.
 
@@ -67,7 +67,7 @@ classification of subjects).
 
 | Class | Verdict | What it means for Designer |
 |---|---|---|
-| **Concrete subjects exist** (people/places/species/events/objects) AND ≥ 1 reference image findable on Wikimedia Commons | **pass** | Designer can fetch reference photos as per `data2story/skill/detective/SKILL.md:46-72` |
+| **Concrete subjects exist** (people/places/species/events/objects) AND ≥ 1 reference image findable on Wikimedia Commons | **pass** | Designer can fetch reference photos as per `data2story-pro/skill/detective/SKILL.md:46-72` |
 | **Concrete subjects exist** but reference images not found in quick search | **warn** | Designer will work harder; flag in `validate.json` |
 | **Abstract data** (rates, indices, generic counts, derived metrics) | **pass — exempted** | Designer will use charts only; no penalty |
 

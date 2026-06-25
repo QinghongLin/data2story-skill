@@ -87,10 +87,10 @@
 
   "cross_refs": {
     "interaction_playbook": "frontend-design/references/interaction_playbook.json — the recipes (personal_input_where_you_land, sortable_table, scored_quiz, explorable_recompute, tune_the_assumption), the centerpiece_doctrine restraint this floor sits under, verify_coexistence + bare_number_readout (every reader-operated lever here must comply).",
-    "topic_profile": "data2story/references/topic_profile.json — the is_computational / is_visual gate that routes a topic to THIS file (is_visual=false). The 'Inflation forecast' + 'Election results' examples there are exactly the dry computational flagships this playbook targets.",
+    "topic_profile": "data2story-pro/references/topic_profile.json — the is_computational / is_visual gate that routes a topic to THIS file (is_visual=false). The 'Inflation forecast' + 'Election results' examples there are exactly the dry computational flagships this playbook targets.",
     "themes": "frontend-design/references/themes.json — the analytical theme identities named in theme_directions (swiss_international / editorial_dark / annual_report / terminal_mono).",
     "typography": "frontend-design/references/typography.json — the type pairings that carry a photo-free page (typographic_structure_carries_the_page).",
     "design_tokens": "frontend-design/references/design_tokens.json — accent discipline (one accent for the one datum) the signature chart relies on.",
-    "inspector": "data2story/inspector/ — the runnable-verify / Pyodide layer that is the abstract topic's flagship transparency lever (runnable_verify_as_hero_transparency)."
+    "inspector": "data2story-pro/inspector/ — the runnable-verify / Pyodide layer that is the abstract topic's flagship transparency lever (runnable_verify_as_hero_transparency)."
   }
 }
