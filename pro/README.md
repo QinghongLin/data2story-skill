@@ -1,6 +1,5 @@
 # Data2Story
 
-![Data2Story](../assets/logo.png)
 
 A data-journalist agent skill that turns any dataset into a verifiable, evidence-grounded multimodal story — a self-contained HTML article where every sentence traces back to the data or source that justifies it.
 
@@ -12,11 +11,9 @@ A data-journalist agent skill that turns any dataset into a verifiable, evidence
 
 ## What it does
 
-![From data to a multimodal story](../assets/teaser.png)
 
 https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
 
-![A gallery of Data2Story articles](../assets/gallery.png)
 
 - **Dataset → finished article.** Point it at a CSV, a folder of data, or a paper, and a fixed pipeline of seven roles — a virtual newsroom — produces a publishable HTML story end to end.
 - **Or start from an idea.** Hand it a bare topic instead of a dataset and it runs an `ideation` front-stage: it converges your hunch into a concrete, data-backed topic through a `sparring-partner` dialogue, then acquires a real, validated dataset via `find-data` (with a checkpoint after each) before the newsroom runs. Real data only — if no real dataset supports the idea, it stops honestly rather than inventing one.
