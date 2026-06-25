@@ -16,6 +16,8 @@ https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
 - **Verifiable.** Each run writes to its own versioned project folder and snapshots the exact skill versions used, so every result can be traced and re-checked.
 - **Progressive disclosure.** Each role's `SKILL.md` holds only its instructions; bulky reference material (output schemas, field rules, lookup tables) lives in that role's `references/` folder as JSON and is loaded only when needed.
 
+> **Extended build.** A 14-agent "pro" build — cinematic scroll, interactive playgrounds, an animated cover, and a runnable in-page verify layer — lives in [`pro/`](pro/). This top-level version is the paper's canonical 7-role pipeline; `pro/` is a superset for richer stories. See [`pro/README.md`](pro/README.md).
+
 ## Updates
 * [x] [2026.6] Version 0.1.0: Optimized visual effects.
 * [x] [2026.6.9] Released the arXiv paper, GitHub repository.

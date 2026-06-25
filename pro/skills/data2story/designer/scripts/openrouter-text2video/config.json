@@ -1,0 +1,8 @@
+{
+  "tool": "openrouter-text2video",
+  "submit_endpoint": "https://openrouter.ai/api/v1/videos",
+  "poll_endpoint": "https://openrouter.ai/api/v1/videos/{jobId}",
+  "content_endpoint": "https://openrouter.ai/api/v1/videos/{jobId}/content",
+  "default_model": "bytedance/seedance-2.0",
+  "env_key": "OPENROUTER_API_KEY"
+}

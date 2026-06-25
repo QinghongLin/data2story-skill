@@ -1,0 +1,93 @@
+{
+  "_note": "For each issue, use the Edit tool to make minimal, surgical changes. Prefer inline styles.",
+  "fix_1_wrap_unwrapped_visuals": {
+    "before": "<p>Some text...</p>\n<img src=\"assets/hero.png\" data-des=\"des_01\" alt=\"Hero\">\n<p>More text...</p>",
+    "after": "<p>Some text...</p>\n<div class=\"visual-container\" style=\"margin: 2rem 0;\">\n  <img src=\"assets/hero.png\" data-des=\"des_01\" alt=\"Hero\" style=\"max-width: 100%; height: auto; display: block; margin: 0 auto;\">\n</div>\n<p>More text...</p>"
+  },
+  "fix_2_add_chart_spacing": {
+    "before": "<div id=\"des_02\" data-des=\"des_02\" data-ana=\"ana_05\" class=\"chart-container\">",
+    "after": "<div id=\"des_02\" data-des=\"des_02\" data-ana=\"ana_05\" class=\"chart-container\" style=\"margin: 2rem auto; max-width: 720px;\">"
+  },
+  "fix_3_image_centering": {
+    "before": "<img src=\"assets/photo.jpg\" data-des=\"des_03\">",
+    "after": "<img src=\"assets/photo.jpg\" data-des=\"des_03\" style=\"max-width: 100%; height: auto; display: block; margin: 0 auto;\">"
+  },
+  "fix_4_responsive_constraints": {
+    "before": "<video width=\"1920\" height=\"1080\" ...>",
+    "after": "<video style=\"max-width: 100%; height: auto; display: block; margin: 2rem auto;\" ...>"
+  },
+  "fix_5_recenter_full_bleed": {
+    "before": "<figure class=\"visual-container full-bleed\" style=\"position: relative; left: 50%; width: 100vw; margin-left: -50vw;\">",
+    "after": "<figure class=\"visual-container full-bleed\" style=\"width: 100vw; max-width: none; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);\">",
+    "note": "If the wrapper still has a max-width from another selector, override it on the full-bleed element."
+  },
+  "fix_6_chart_mount_width": {
+    "before": "<div class=\"chart-container\">\n  <div>\n    <div id=\"chart_des_08\"></div>\n  </div>\n</div>",
+    "after": "<div class=\"chart-container\">\n  <div style=\"width: 100%; min-width: 0;\">\n    <div id=\"chart_des_08\" style=\"width: 100%; min-width: 0; display: block;\"></div>\n  </div>\n</div>",
+    "note": "Fixes blank charts caused by the actual Vega mount collapsing to 0px, without changing the chart data or spec."
+  },
+  "fix_7_center_chart_output": {
+    "before": "<div id=\"chart_des_08\" class=\"chart\"></div>",
+    "after": "<div id=\"chart_des_08\" class=\"chart\" style=\"text-align:center\"></div>",
+    "after_style": ".chart .vega-embed svg{display:block;margin:0 auto;max-width:100%;}",
+    "note": "Centers a chart Vega renders narrower than its container (facet/concat/step charts ignore width:container and otherwise left-align). Harmless for full-width charts. Prefer the style rule `.chart .vega-embed svg{display:block;margin:0 auto}` (centers the rendered SVG, mount stays block + width:100%). NEVER use `.vega-embed{display:inline-block}` to center — an inline-block wrapper is shrink-to-fit, so Vega measures it as 0 width and width:container charts render at 0×H (invisible)."
+  },
+  "fix_8_chart_width_measure": {
+    "before": "vegaEmbed(document.getElementById('chart_des_08'), spec, {actions:false, renderer:'svg'});  // spec has width:'container'",
+    "after": "function _cw(el){ var w=Math.round(el.getBoundingClientRect().width||el.clientWidth||0); if(w<40){ var p=el.parentElement; w=p?Math.round(p.getBoundingClientRect().width):0; } return Math.min(w<40?640:w, 720); }\nfunction _paint(){ var el=document.getElementById('chart_des_08'); if(!el) return; spec.width=_cw(el); vegaEmbed(el, spec, {actions:false, renderer:'svg'}).catch(function(e){ console.warn(e); }); }\nif(document.readyState==='loading') window.addEventListener('DOMContentLoaded', function(){ requestAnimationFrame(_paint); }); else requestAnimationFrame(_paint);\nwindow.addEventListener('resize', function(){ clearTimeout(window.__rt); window.__rt=setTimeout(_paint,200); });",
+    "note": "Fixes blank/invisible width:container charts whose container measures 0px at inline-script time — the OTHER half that fix_6's mount-width does NOT cover. Measure the real pixel width AFTER layout (DOMContentLoaded + requestAnimationFrame), fall back to parent width or 640 if still 0, cap at the column max, and re-render on resize. Canonical helper: programmer component_implementations.json -> charts_vega_lite.responsive_embed. Apply when charts are blank but the mount is already block + width:100% (fix_6 alone was not enough)."
+  },
+  "fix_center_wide_breakout": {
+    "before": "<div class=\"breakout\" style=\"width:min(1100px,92vw); margin-inline:auto;\">",
+    "after": "<div class=\"breakout\" style=\"width:min(1100px,92vw); margin-inline:calc((100% - min(1100px,92vw))/2);\">",
+    "note": "margin-inline:auto (and margin:0 auto) CANNOT center an element WIDER than its parent — auto margins only distribute LEFTOVER space, so with no leftover they both collapse to 0 and the element left-aligns + overflows right (PIT-02). Center it with explicit math: margin-inline:calc((100% - min(Wpx,Nvw))/2) using the SAME width expression as the element's width. NEVER use transform:translateX(-50%) to fake it — the layout box stays put so the overflow/horizontal-scroll remains. For a true full-bleed use fix_5_recenter_full_bleed instead."
+  },
+  "fix_svg_fit_container": {
+    "before": ".chart-card svg{height:auto;}",
+    "after": ".chart-card svg{max-width:100%!important; height:auto; display:block; margin-inline:auto;}",
+    "after_alt": ".vega-embed svg{max-width:100%!important; height:auto; display:block; margin-inline:auto;}",
+    "note": "A Vega-rendered <svg> is routinely WIDER than spec.width because axes, axis titles and legends draw OUTSIDE the plotting area, so it overflows its container/backing card on the right (PIT-03). Clamp the DRAWN svg to its card with max-width:100%!important (the !important overrides Vega's inline width attribute) + height:auto to preserve aspect + margin-inline:auto to keep it centered. Apply to the shared chart-mount class (.chart-card svg and/or .vega-embed svg). Distinct from fix_7 (which centers a chart Vega renders NARROWER than the mount); this one constrains a chart rendered WIDER than the mount. They compose — keep both."
+  },
+  "fix_uniform_fullscreen_scrim": {
+    "before": "<section style=\"background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)), url(assets/bg1.jpg);\">...</section>\n<section style=\"background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)), url(assets/bg2.jpg);\">...</section>",
+    "after": "<!-- backgrounds: flat tint per image, NO per-section gradient -->\n<div class=\"bg-layer\" style=\"position:fixed; inset:0; z-index:-2;\">...background images...</div>\n<div class=\"bg-scrim\" style=\"position:fixed; inset:0; z-index:-1; background:rgba(0,0,0,.5); pointer-events:none;\"></div>\n<!-- content sits above z-index:-1 with no scrim of its own -->",
+    "note": "Per-section dark scrim gradients create a visible horizontal SEAM where sections meet over a shared cinematic background (adjacent scrims don't align at the boundary) — PIT-04. Replace them with ONE uniform full-screen filter: a single fixed overlay positioned ABOVE the background images (z-index:-2) but BELOW the content (overlay at z-index:-1), pointer-events:none. If a per-image tint is still needed for contrast, make it flat and identical per image; never stack a second per-section gradient. Seamless because there is exactly one continuous overlay, not N misaligned ones."
+  },
+  "fix_no_horizontal_scroll": {
+    "before": "<div class=\"deck\" style=\"display:flex; overflow-x:auto; gap:16px;\">\n  <article class=\"card\">...</article> ...\n</div>",
+    "after": "<div class=\"deck\" style=\"display:grid; grid-template-columns:repeat(auto-fit, minmax(min(280px,100%),1fr)); gap:16px;\">\n  <article class=\"card\">...</article> ...\n</div>",
+    "note": "A horizontal-scroll carousel (overflow-x:auto flex row / scroll-snap strip) hides content off-canvas, fights the page's vertical reading flow, and frequently triggers the render audit's horizontalOverflow on mobile. Kill the carousel: convert it to a VERTICAL responsive grid (grid-template-columns:repeat(auto-fit, minmax(...,1fr))) so every card is visible and the page scrolls one way only. Use minmax(min(280px,100%),1fr) so a single card never forces overflow at narrow widths. Removes overflow-x and any scroll-snap/JS arrows."
+  },
+  "fix_9_chart_fault_isolation_iife": {
+    "before": "<script>\n  var spec1 = buildChart1(); vegaEmbed(document.getElementById('des_01'), spec1, {actions:false});\n  draw(null, document.getElementById('des_02'));  // <-- throws, aborts the whole <script>\n  var spec3 = buildChart3(); vegaEmbed(document.getElementById('des_03'), spec3, {actions:false});\n</script>",
+    "after": "<script>\n  (function(){ try { var spec1 = buildChart1(); embedChart('des_01', spec1, table01); } catch(e){ console.error('chart des_01 setup', e); } })();\n  (function(){ try { var spec2 = buildChart2(); embedChart('des_02', spec2, table02); } catch(e){ console.error('chart des_02 setup', e); } })();\n  (function(){ try { var spec3 = buildChart3(); embedChart('des_03', spec3, table03); } catch(e){ console.error('chart des_03 setup', e); } })();\n</script>",
+    "note": "FM1 (PIT-55) — all charts/interactions share ONE inline <script> run sequentially, so the FIRST synchronous uncaught throw (here `draw(null,…)` derefs null) aborts the whole block and blanks every later chart AND the hero. Wrap each chart/playground setup in its OWN `(function(){ try{…}catch(e){console.error('<id> setup', e)} })()` IIFE so a throw logs and the next chart still mounts. Calling `embedChart` (its body is already try-wrapped) is not enough on its own — the per-chart prep around it runs in the shared block, so wrap the whole setup. render_capture.js surfaces the throw→mass-blank correlation as findings.cascadeScriptAbort; validate.py Section 14 WARNs a multi-mount <script> with no try (chart_no_fault_isolation). Canonical: component_implementations.json charts_vega_lite.fault_isolation_RULE."
+  },
+  "fix_10_no_sentinel_null_guard": {
+    "before": "function render(d){ var v = Number(d.value); el.style.width = v + '%'; }\nrender(null);  // baseline 'nothing yet' -> d.value throws / Number({}) -> NaN -> width:NaN%",
+    "after": "function val(d){ if(d==null) return null; var x = (d && typeof d === 'object' && 'value' in d) ? d.value : d; if(x===''||x==null) return null; var n = Number(x); return isNaN(n) ? null : n; }\nfunction render(d){ var v = val(d); if(v==null) return; el.style.width = v + '%'; }\nrender(BASELINE_ROW);  // baseline runs on REAL data, never a sentinel",
+    "note": "FM2 (PIT-05/PIT-55) — never pass a renderer a sentinel a callee derefs (`draw(null)`/`render(undefined)`/`update({})` as a placeholder), and never `Number({value,flag})` (→ NaN → width:NaN% paints nothing). Add a value-accessor that unwraps `{value}` and treats null/''/undefined/object-without-a-number as MISSING (skip the datum); compute the at-rest state from the inlined data_table/client_model exactly as the published baseline. render_capture.js findings.zeroWidthBars is the ground-truth detector; the `Number(`/`parseFloat(`-on-an-object grep is the static fallback. Canonical: component_implementations.json charts_vega_lite.no_sentinel_baseline_RULE."
+  },
+  "fix_11_chart_revisible_repaint": {
+    "before": "vegaEmbed(document.getElementById('des_05'), spec, {actions:false, renderer:'svg'});  // chart inside a hidden tab/accordion/cinematic-revealed beat -> measures 0 at parse -> stays blank when shown",
+    "after": "embedChart('des_05', spec, table05);  // embedChart re-paints on first-visible (IntersectionObserver) + on the mount's box growing (ResizeObserver), not just on resize",
+    "note": "FM3 (PIT-01) — a width:container chart that starts in a display:none / 0-box container (a tab, an accordion, a cinematic-revealed beat, a data_driven spine, a column that lays out after the inline <script> runs) measures 0px and renders invisible, and a resize-only re-render never fires when it later becomes visible. Route it through the canonical `embedChart` helper, which now also observes first-visible + box-growth and re-paints. Apply when a chart is blank specifically because its container is hidden/0-box at script time. Canonical: component_implementations.json charts_vega_lite.responsive_embed (embed_js)."
+  },
+  "fix_12_leaflet_invalidate_size": {
+    "before": "var map = L.map('mapMount').setView([lat,lng], 5);  // container hidden/0-height at init, no invalidateSize -> grey/half-painted/0-tile map",
+    "after": "/* CSS: #mapMount{height:480px} BEFORE init (a 0-height container yields a broken map) */\n(function(){ try {\n  if (typeof L === 'undefined'){ document.getElementById('mapMount').innerHTML = STATIC_LOCATION_TABLE; console.error('Leaflet unavailable (CDN blocked) — static table fallback'); return; }\n  var el = document.getElementById('mapMount');\n  var map = L.map(el, {scrollWheelZoom:false}).setView([lat,lng], 5);\n  /* tiles + markers + fitBounds */\n  if (typeof IntersectionObserver==='function'){ var mio = new IntersectionObserver(function(es){ es.forEach(function(en){ if(en.isIntersecting){ map.invalidateSize(); mio.disconnect(); } }); }, {threshold:0.01}); mio.observe(el); }\n  var mt; window.addEventListener('resize', function(){ clearTimeout(mt); mt=setTimeout(function(){ map.invalidateSize(); }, 200); });\n} catch(e){ console.error('map mapMount setup', e); } })();",
+    "note": "FM4 — a Leaflet map in a hidden / 0-height container renders grey/half-painted/mis-tiled until told its real size. Fix: (1) a FIXED CSS height on the mount BEFORE L.map() init; (2) `map.invalidateSize()` on first-visible (IntersectionObserver — a map inside a tab/accordion/cinematic beat measures 0 at init); (3) a debounced `invalidateSize()` on resize; (4) wrap the whole setup in a try/catch IIFE (FM1) + a `typeof L` CDN-load guard that falls back to a static location table (FM5). render_capture.js findings.brokenMaps (a >0-area .leaflet-container with 0 tiles, or 0-height) is ground truth. Canonical: component_implementations.json maps_leaflet (FM4/FM5)."
+  },
+  "fix_13_chart_cdn_fallback_and_handler_trycatch": {
+    "before": "vegaEmbed(document.getElementById('des_07'), spec, {actions:false});  // no CDN-load guard\nslider.addEventListener('input', function(){ recompute(slider.value); });  // unguarded handler body throws on an edge value and wedges the widget",
+    "after": "embedChart('des_07', spec, table07);  // embedChart guards `typeof vegaEmbed!=='function'` -> renders table07 (the inlined data) as a static <table> fallback\nslider.addEventListener('input', function(){ if(vOn()) return; try { recompute(clamp(slider.value)); } catch(err){ console.error('int_07 input', err); } });  // Verify guard first, then try/catch + edge-safe recompute",
+    "note": "FM5 — (a) a chart/map page using the Vega/Leaflet CDN must degrade when the lib is absent: route charts through `embedChart` (which falls back to the inlined data_table as a static <table> when `typeof vegaEmbed!=='function'`), mirror it for Leaflet with a `typeof L` guard. (b) Wrap every feature-side interaction handler BODY in try/catch (after the `if(vOn())return;` Verify guard) and make the recompute edge-value-safe — driving a control to its min/max/empty must not divide-by-zero, index past the array, or `Number()` an object. The Playtester drives an edge value and asserts no throw (playtest_drive.js FIRES step); validate.py Section 14 WARNs a Vega-CDN chart page with no `typeof vegaEmbed` guard / no static-table fallback (chart_no_cdn_fallback). Canonical: component_implementations.json charts_vega_lite.responsive_embed + interactive_elements FM5."
+  },
+  "verify_after_fixes": [
+    "All data-* attributes still present; no content text modified; all asset paths unchanged; no closing tags broken.",
+    "grep '<img' PROJECT_DIR/index.html | grep -v 'max-width'  # images still lacking max-width",
+    "grep '<video' PROJECT_DIR/index.html | grep -v 'max-width'  # videos lacking responsive styling",
+    "grep -nE 'vegaEmbed\\(|L\\.map\\(' PROJECT_DIR/index.html  # each setup wrapped in its own try/catch IIFE? (FM1)",
+    "grep -nE 'invalidateSize' PROJECT_DIR/index.html  # present wherever L.map( is used? (FM4)"
+  ]
+}

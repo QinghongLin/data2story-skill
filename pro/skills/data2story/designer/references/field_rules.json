@@ -1,0 +1,35 @@
+{
+  "items": "dict keyed by des_01, des_02, ... — one per visual element. Includes charts, generated assets (images/videos), interactives, stat callouts, and audio.",
+  "label": "short name (under 60 chars).",
+  "type": "one of chart, asset, interactive, stat_callout, audio, instance.",
+  "purpose": "REQUIRED. INFORM (the asset carries data/information the prose cannot) or IMMERSE (it sets mood/atmosphere that aids reading). An asset that serves neither must NOT be created — never add media just to use a channel.",
+  "section": "which edt_xx section this belongs to (or 'teaser').",
+  "content_by_type": {
+    "chart": "chart_type, data_source (ana_xx ID), axis/encoding fields, highlight, interaction, style.",
+    "asset": "asset_type (image or video), filename, tool (text2image, text2video, image2video, wikimedia_download, scout_fetch), prompt, model, and depending on tool: source_url (remote source for downloaded refs), source_image (local PNG/JPG path under assets/ when using image2video), frame_role (first or last, only for image2video), duration and aspect_ratio (for video). When the file is a Scout-verified asset (scout_*), set tool='scout_fetch' and media_ref to its sct_xx, and copy filename VERBATIM from the sct_ block — its license/identity live in scout.json, do NOT duplicate them here.",
+    "interactive": "interaction_type, initial_state, trigger, transition, payoff, data_source.",
+    "stat_callout": "value, label, data_source (ana_xx ID).",
+    "audio": "audio_type (generated/sourced_bgm/embed/sonification/ambient), why_audio, trigger, content, fallback, novelty_note, ui_form. For generated audio: filename, tool, prompt, model. For sourced_bgm (a license-clean web track the Scout found — see audio_rules.json): filename + media_ref (the sct_xx in scout.json carrying its license/attribution). For sonification: mapping, legend, tempo, the synced visual. Do not create an audio item when audio is skipped — record the omission in meta.media_decisions.audio instead.",
+    "instance": "instance_ref (inst_xx ID from detective.json), embed_type (spotify/youtube/image/audio_url), embed_url or filename, caption. HARD RULE — no ID substitution: embed_url and filename must be copied VERBATIM from the corresponding inst_xx block in detective.json. Do not invent or 'improve' YouTube/Spotify IDs, and do not pair instance_ref: inst_03 with an embed_url pointing at a different track. If detective's instance is missing, malformed, or verified: false, drop the instance rather than substituting your own ID. If you need a different example, send it back as a meta.media_blockers entry (category: 'instance') — do not silently swap the ID. A Scout-sourced embed (an official player the Scout verified) is NOT a detective instance — do not use type:'instance' for it (that requires a resolvable detective instance_ref). Render it as an `audio` item with audio_type='embed' + media_ref pointing at its scout.json sct_xx (kind 'embed'); copy embed_url VERBATIM."
+  },
+  "brief": "natural-language description of the visual. The Programmer is an LLM and benefits from prose alongside structured fields. Be specific: what the reader sees, what they can interact with, what the visual communicates.",
+  "rationale": "why this mode was chosen over alternatives.",
+  "based_on": "array of ana_xx IDs this visual represents. For charts, match the findings whose data_tables are used.",
+  "media_ref": "optional sct_xx ID — set it whenever this visual uses a Scout-verified asset / embed / BGM track. It points at the scout.json record that holds the checked license + identity, so the Programmer tags the element data-sct and the contract gate (validate.py) can verify it. Copy filename/embed_url VERBATIM from the sct_ block; never duplicate or alter its provenance here.",
+  "meta.media_strategy": "records that media selection is data-driven, not quota-driven, and that the designer should avoid repeating recent visual patterns.",
+  "meta.media_decisions": "for each major media category, record whether it is used and why. Where the Designer explains audio/video choices or unusually sparse media choices.",
+  "meta.media_blockers": "array of failed generation attempts or unavailable media sources. Each entry: category, reason, attempted_command when relevant, fallback_des. For actual failures, not deliberate data-driven omissions.",
+  "data_source_rules": [
+    "The data_source field in chart content is an ana_xx ID (or array of IDs). The Programmer looks up the corresponding data_table in analyst.json and inlines the data directly.",
+    "The data_source must reference an ana_xx item that has a data_table.",
+    "The axis/encoding column names in your spec must match the column names in the data_table.",
+    "If a chart needs data from multiple findings, use an array: \"data_source\": [\"ana_02\", \"ana_03\"]."
+  ],
+  "page_rhythm_rules": {
+    "tone": "overall visual mood (dark/light + editorial/playful/minimal/dense).",
+    "text_visual_pattern": "how text and visuals alternate.",
+    "centrepiece": "which des_xx is the biggest, most elaborate visual.",
+    "anti_sameness_notes": "how this page avoids repeating recent blog patterns.",
+    "typography_notes": "any Programmer-facing notes about typography, spacing, dividers."
+  }
+}

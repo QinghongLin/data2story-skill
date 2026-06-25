@@ -1,0 +1,7 @@
+{
+  "tool": "openrouter-text2music",
+  "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "default_model": "google/lyria-3-pro-preview",
+  "env_key": "OPENROUTER_API_KEY",
+  "note": "Atmospheric sound-design / SFX only (ambient beds, textures; sharp foley best-effort). NOT the front-of-blog BGM — the BGM must be a sourced real track (sourced_bgm via Scout), never generated here. Not TTS — use a separate TTS tool for narration."
+}

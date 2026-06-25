@@ -1,0 +1,18 @@
+{
+  "importance": "data_table is the most important field. It contains pre-computed, chart-ready data that the Programmer inlines directly into Vega-Lite charts. The Programmer does NOT have access to the raw data — this is their only data source.",
+  "when_to_include": "For every finding, ask: 'Could a chart show this?' If yes, include a data_table with the full aggregated values.",
+  "patterns": {
+    "trend": "e.g. 'registrations grew 4.5x' → data_table with year-by-year counts.",
+    "group_comparison": "e.g. 'industry posts at 19.8% vs academic 10.0%' → data_table with ALL groups and their rates.",
+    "ranking": "e.g. 'Breast Cancer is #1 with 152 trials' → data_table with ALL ranked items, not just top-N.",
+    "distribution": "e.g. '94.2% have no phase' → data_table with all category counts and percentages.",
+    "anomaly_or_single_scalar": "e.g. 'median is 160' → no data_table needed; the content field carries the value."
+  },
+  "include_all_values": "Include ALL values, not just the highlighted one. If the finding says 'neurological has the highest gain at 16.1%', the data_table should include ALL categories with their values. The Designer may show all, highlight one, or filter.",
+  "format": {
+    "description": "one-line description of what this table contains.",
+    "columns": "array of column names (strings).",
+    "rows": "array of arrays (each inner array = one row, positional with columns)."
+  },
+  "maps_to_vega_lite": "columns + rows → [{\"col1\": val1, \"col2\": val2}, ...]. Compact (important for token budget) and maps directly to Vega-Lite inline data."
+}

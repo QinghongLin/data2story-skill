@@ -1,0 +1,25 @@
+{
+  "items": "dict keyed by det_01, det_02, ... — sequential IDs. Each item is one discrete finding or piece of context.",
+  "label": "short name (under 60 chars) — used as a reference handle by downstream roles.",
+  "content": "full prose paragraph. Write as if this were a section of a well-written research memo. This replaces what was previously in detective.md sections.",
+  "category": "one of origin, background, related_work, why_it_matters, controversy, interpretive_hook, benchmark, scope_suggestion. See categories.json.",
+  "sources": "array of source objects. Each source has url, title, and facts (array of specific claims/numbers extracted from THAT source). One fact, one source — every fact must be tied to the specific URL it came from. If a single item draws on multiple sources, list them all, each with its own facts. Never attribute a fact from source A to source B's URL. This is the most important traceability rule: a reader should be able to click the URL and find the exact fact on that page.",
+  "calculation": "optional. When you derive a value (a baseline probability, a unit conversion, a rate from two numbers), record the method so derived values are traceable.",
+  "reference_media": "separate array for downloaded background images and video URLs. Each entry has an id (det_media_01, ...), filename (for downloaded images) or url (for videos), and relates_to linking to item IDs. These are contextual visuals, not embeddable examples.",
+  "instances": {
+    "_description": "array of concrete, embeddable examples that can appear directly in the blog — real-world assets that illustrate specific data points (a song to listen to, a photo of a specific artwork, an audio demo).",
+    "id": "inst_01, inst_02, ...",
+    "type": "spotify | youtube | image | audio_url | audio_file",
+    "label": "human-readable name (e.g., 'Blinding Lights — The Weeknd').",
+    "embed_url": "for embeddable types (Spotify embed URL, YouTube embed URL).",
+    "filename": "for downloaded assets (saved to PROJECT_DIR/assets/inst_*).",
+    "source_url": "where it came from.",
+    "license": "usage rights.",
+    "relates_to": "which det_xx items this illustrates.",
+    "why": "one sentence explaining why this specific example matters.",
+    "verified": "true once the embed has passed the oEmbed check (see instance_verification.json). Required for spotify and youtube types.",
+    "verified_title": "the title returned by oEmbed (used to confirm the ID matches what label claims).",
+    "when_to_collect": "3-8 instances for datasets with rich individual examples (music, art, food, sports). Skip for abstract/statistical datasets (GSM8K, HLE, clinical_trials).",
+    "what_makes_a_good_instance": "it should make the reader feel a data point that would otherwise be just a number. A song you can play, a photo you can see, a sound you can hear."
+  }
+}

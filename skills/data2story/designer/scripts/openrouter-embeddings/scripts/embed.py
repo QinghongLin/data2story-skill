@@ -45,9 +45,9 @@ def main():
 
     key = os.environ.get("OPENROUTER_API_KEY")
     if not key:
-        for env_path in (os.path.expanduser("~/.env"),):
+        for env_path in ("/Users/forrest/Desktop/data2blog/.env", os.path.expanduser("~/.env")):
             try:
-                with open(env_path, encoding="utf-8") as f:
+                with open(env_path) as f:
                     for line in f:
                         line = line.strip()
                         if line.startswith("OPENROUTER_API_KEY="):
@@ -70,16 +70,16 @@ def main():
         resp = call([args.text])
         vec = resp["data"][0]["embedding"]
         os.makedirs(os.path.dirname(os.path.abspath(args.output)) or ".", exist_ok=True)
-        with open(args.output, "w", encoding="utf-8") as f:
+        with open(args.output, "w") as f:
             json.dump({"model": args.model, "embedding": vec, "dim": len(vec)}, f)
         print(f"saved 1 embedding ({len(vec)} dims) → {args.output}")
         return
 
     # JSONL batch mode
-    records = [json.loads(l) for l in open(args.jsonl, encoding="utf-8") if l.strip()]
+    records = [json.loads(l) for l in open(args.jsonl) if l.strip()]
     print(f"embedding {len(records)} records (batch_size={args.batch_size})")
     os.makedirs(os.path.dirname(os.path.abspath(args.output)) or ".", exist_ok=True)
-    with open(args.output, "w", encoding="utf-8") as out:
+    with open(args.output, "w") as out:
         for i in range(0, len(records), args.batch_size):
             batch = records[i:i + args.batch_size]
             texts = [r["text"] for r in batch]

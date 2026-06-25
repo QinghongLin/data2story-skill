@@ -1,10 +1,9 @@
 {
   "teaser_types": {
     "_note": "The teaser is the first thing the reader sees — before the headline, before any prose. It must create curiosity on its own. Choose ONE. Generate the asset if it is an image or video; save to PROJECT_DIR/assets/teaser.*.",
-    "_hook_rule": "The teaser must help LAND THE STORY'S HOOK fast: it should signal the SUBJECT and surface (or immediately precede) the surprising finding/number/tension, so the reader meets the hook in the first beat. A purely atmospheric mood teaser (a generic texture/scene with no subject or number) is allowed ONLY if the headline/hook lands immediately after it. Light rule — keep creative freedom over form; just don't let a mood teaser delay the hook. Topic-agnostic: the 'subject + surprise' can be a stat callout, a guess-first prompt, a one-line overlay on the image, or the headline butting right up against the visual.",
-    "interactive_experience": "The core finding can be felt before being explained. Reader participates, then sees the data. Highest engagement — use whenever the topic allows. (Lands the hook by construction — the reader produces the surprise.)",
-    "video": "Motion, transformation, or atmosphere that a still image can't convey. If atmospheric, pair it with the subject/number or let the hook land immediately after.",
-    "generated_image": "Strong emotional or cinematic visual. Full-bleed. If it's pure mood, make sure the subject + surprising number land right after (or as a small overlay) — don't open on generic atmosphere that delays the hook."
+    "interactive_experience": "The core finding can be felt before being explained. Reader participates, then sees the data. Highest engagement — use whenever the topic allows.",
+    "video": "Motion, transformation, or atmosphere that a still image can't convey.",
+    "generated_image": "Strong emotional or cinematic visual. Full-bleed, no text."
   },
   "per_section_modes": {
     "_note": "For every edt_xx section, decide the presentation. Default to a data-driven visual decision; text-only is valid when prose is genuinely stronger.",
@@ -15,8 +14,8 @@
     "scrollytelling": "The narrative builds step by step — each scroll step triggers a visual change (map zoom, chart filter, new layer). Implement with IntersectionObserver + CSS transitions.",
     "before_after_slider": "Two states need direct comparison — drag a slider to reveal the difference. Works for maps, charts (two periods), or images.",
     "card_deck_swipe": "Many comparable items the reader wants to browse one by one — swipeable cards (artworks, wines, players, cases) with key info + image if available.",
-    "reader_quiz_guess_first": "The finding is surprising — let the reader guess before revealing. Maximizes the surprise factor. Build via the `scored_quiz` recipe in `../../frontend-design/references/interaction_playbook.json` (guess-then-reveal scored against the data's own spread; both bars drawn from the inlined data_table, never hardcoded px; percentile band derived from the data, never a fabricated '% of readers').",
-    "interactive_demo_minigame": "The finding is experiential — reader should discover it, not just read it. Build via the `playable_game` recipe in `../../frontend-design/references/interaction_playbook.json` (a tiny self-contained loop where the reader makes the data's choice repeatedly and watches the aggregate converge to the published rate).",
+    "reader_quiz_guess_first": "The finding is surprising — let the reader guess before revealing. Maximizes the surprise factor.",
+    "interactive_demo_minigame": "The finding is experiential — reader should discover it, not just read it.",
     "generated_image": "Emotional beat, analogy, or scene that data cannot show.",
     "generated_video": "Motion adds something still cannot.",
     "event_reenactment_video": "The section describes a specific event, incident, or anecdote — generate a short video that shows what happened. Strongly prefer over a static image whenever the prose describes something that happened.",
