@@ -1,6 +1,6 @@
 ---
 name: find-data
-description: "Find a dataset for a Data2Story blog. Accepts a topic, a URL, or a DIP-style category. Downloads + validates against 4 completeness gates before handing off to /data2story. Local-first: searches Economist/Pudding/TidyTuesday clones before going online. Supports --validate-only to audit a folder you already have."
+description: "Find a dataset for a Data2Story blog. Accepts a topic, a URL, or a DIP-style category. Downloads + validates against 4 completeness gates before handing off to /data2story-pro. Local-first: searches Economist/Pudding/TidyTuesday clones before going online. Supports --validate-only to audit a folder you already have."
 argument-hint: "<topic | URL | category | folder-path> [--mode single|theme] [--source Economist|Pudding|tidytuesday] [--out ./datasets/<name>] [--validate-only]"
 allowed-tools: Bash(python:*), Read, Write, Glob, Grep, WebSearch, WebFetch, AskUserQuestion
 ---
@@ -8,7 +8,7 @@ allowed-tools: Bash(python:*), Read, Write, Glob, Grep, WebSearch, WebFetch, Ask
 # find-data
 
 Turn an idea, URL, or category into a `phase2/datasets/<name>/` folder
-that the `/data2story` pipeline can run on without crashing.
+that the `/data2story-pro` pipeline can run on without crashing.
 
 You are the **gatekeeper before the 7-agent newsroom**. Detective, Analyst,
 Editor, Designer, Programmer, Auditor, Inspector all assume the data is
@@ -84,7 +84,7 @@ python "SKILL_DIR/tools/audit.py" "<folder>"
 This writes `<folder>/validate.json` and prints the gate summary. Read it back
 with `Read`, surface the verdict, and stop.
 
-If `overall.ready_for_data2story` is true → print the `/data2story <folder>`
+If `overall.ready_for_data2story` is true → print the `/data2story-pro <folder>`
 command for the user to copy.
 
 If it's false → list the specific gate failures and recommend remediations.
@@ -238,10 +238,10 @@ files: <N>
 [INFO] Multimodal: concrete subjects (agencies, rocket types)
 
 overall: READY
-next:    /data2story <OUT_DIR>
+next:    /data2story-pro <OUT_DIR>
 ```
 
-If overall is BLOCKED, do NOT print the `/data2story` command. Instead print:
+If overall is BLOCKED, do NOT print the `/data2story-pro` command. Instead print:
 
 ```
 overall: BLOCKED
@@ -272,7 +272,7 @@ present) so the user has a running history:
   generated README, leave the `{PRIMARY SOURCE URL}` placeholder and warn the user.
 - **Cap WebSearch at 5 results, cap WebFetch at 3 calls per invocation.** This is a
   gating skill, not a research tool — depth is Detective's job.
-- **Do not run /data2story yourself.** Your last word is the verdict + the command for
+- **Do not run /data2story-pro yourself.** Your last word is the verdict + the command for
   the user to copy. Hand-off is manual.
 
 ## Reference files

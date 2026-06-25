@@ -32,7 +32,7 @@ https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
 
 ## Installation & usage
 
-Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL.md` — it works first-class with Claude Code, and equally with Codex, Cursor, Gemini CLI, and other agents.
+Data2Story is an agent skill. The orchestrator lives in `skills/data2story-pro/SKILL.md` — it works first-class with Claude Code, and equally with Codex, Cursor, Gemini CLI, and other agents.
 
 1. Set your API key. Media generation routes through [OpenRouter](https://openrouter.ai/) by default:
 
@@ -48,22 +48,22 @@ Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL
 
 2. Run the skill on a dataset. Point it at your own dataset folder — a CSV, a JSON file, or a folder of data:
 
-   - **Claude Code** — make the skills available. Data2Story depends on its sibling skills (`frontend-design/`, `dataviz-craft/`, and — for idea mode — `find-data/` + `sparring-partner/`) via relative paths, so copy the **whole `skills/` tree** under `~/.claude/skills/` (not just `skills/data2story/`), or simply run from inside this `pro/` folder. Then:
+   - **Claude Code** — make the skills available. Data2Story depends on its sibling skills (`frontend-design/`, `dataviz-craft/`, and — for idea mode — `find-data/` + `sparring-partner/`) via relative paths, so copy the **whole `skills/` tree** under `~/.claude/skills/` (not just `skills/data2story-pro/`), or simply run from inside this `pro/` folder. Then:
 
      ```
-     /data2story data/<your_dataset>/
+     /data2story-pro data/<your_dataset>/
      ```
 
    - **Codex / other agents** — open the repo and ask the agent to follow the orchestrator:
 
      ```
-     Read skills/data2story/SKILL.md and run the Data2Story pipeline on data/<your_dataset>/
+     Read skills/data2story-pro/SKILL.md and run the Data2Story pipeline on data/<your_dataset>/
      ```
 
    **Two speeds — premium (default) or fast.** By default Data2Story runs the full **premium** flagship: the 14-agent newsroom — cinematic scroll, interactive playgrounds, an animated cover, and the runnable verify layer (~1–1.5 h). Append **`--fast`** for the **7-role baseline** — charts + static images + the in-page traceability inspector, ~15 min:
 
    ```
-   /data2story data/<your_dataset>/ --fast
+   /data2story-pro data/<your_dataset>/ --fast
    ```
 
    Run interactively with no flag and it asks which you want; an automated/headless call with no flag defaults to premium.
@@ -71,7 +71,7 @@ Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL
    **No dataset? Start from an idea.** Pass a bare topic or question instead of a path:
 
    ```
-   /data2story "how have global coffee prices moved against rainfall in Brazil?"
+   /data2story-pro "how have global coffee prices moved against rainfall in Brazil?"
    ```
 
    It will converge the topic with you and find a real, validated dataset before building anything. (A `http(s)://` link is also accepted — it is fetched and validated like a dataset.)
@@ -83,7 +83,7 @@ Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL
 ```
 data2story-skill/pro/
 ├── skills/
-│   ├── data2story/        the agent: SKILL.md (orchestrator) + one folder per role
+│   ├── data2story-pro/    the agent: SKILL.md (orchestrator) + one folder per role
 │   │                      each role = SKILL.md + references/ (JSON) + scripts/ (the tools it runs)
 │   │                        · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
 │   │                        · inspector/scripts/ — verify.py + generate_viewer.py + validate.py (contract gate)

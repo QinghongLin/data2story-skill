@@ -8,7 +8,7 @@ allowed-tools: Read
 
 A shared library for choosing and building **charts that carry one idea cleanly**. This is not a pipeline stage; it is a reference the **Designer** reads to pick the right chart type for the message, the **Programmer** reads to build it as an editorial Vega-Lite spec, and the **Auditor/Critic** reads to judge whether a chart is honest and legible.
 
-It is the chart-craft counterpart to `frontend-design` (page/visual identity). For color scales it does **not** redefine anything — it cross-references `frontend-design/references/design_tokens.json` `data_color_scales`. For Vega-Lite mechanics (mount/centering/`width:container`/`scale.zero`/`labelExpr`) it **extends** `data2story/programmer/references/component_implementations.json`, it does not duplicate it.
+It is the chart-craft counterpart to `frontend-design` (page/visual identity). For color scales it does **not** redefine anything — it cross-references `frontend-design/references/design_tokens.json` `data_color_scales`. For Vega-Lite mechanics (mount/centering/`width:container`/`scale.zero`/`labelExpr`) it **extends** `data2story-pro/programmer/references/component_implementations.json`, it does not duplicate it.
 
 ## When to use
 

@@ -270,7 +270,7 @@ the deck has a real, credited photo (no silhouette placeholders).
 Charts must measure their real pixel width at embed time (Vega's
 `width:"container"` returns 0 before layout settles, leaving an invisible
 0-width SVG). **Don't re-roll this** — use the responsive `embedChart` helper:
-see `data2story/programmer/references/component_implementations.json` (the in-flagship
+see `data2story-pro/programmer/references/component_implementations.json` (the in-flagship
 version is the `embed(...)` fn that calls `getBoundingClientRect().width`, clamps,
 sets `spec.width`, and re-paints on resize). Pair it with snippet #3's SVG fit
 rule.
@@ -555,5 +555,5 @@ scrims), pitfalls.json PIT-04 (gradient banding seam), motion.json
 - **`frontend-design/references/interaction_playbook.json`** — the interaction
   patterns (explorable-on-real-model, hover-only map zoom, first-gesture audio,
   toggles) with their accessibility contracts.
-- **`data2story/programmer/references/component_implementations.json`** — the
+- **`data2story-pro/programmer/references/component_implementations.json`** — the
   canonical responsive `embedChart` helper and other component code.
