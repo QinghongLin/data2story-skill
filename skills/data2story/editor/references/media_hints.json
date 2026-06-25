@@ -4,7 +4,7 @@
     "map": "data has a geographic dimension (locations, regions, routes, coordinates).",
     "video": "section describes an event, action, transformation, or process.",
     "image": "emotional beat, atmosphere, or scene that data alone cannot convey.",
-    "audio": "topic involves music, sound, or data that can be heard.",
+    "audio": "every story carries a real sourced background track for mood while reading (a now-playing card, never AI-composed) — BGM is mandatory on every blog, so this hint applies by default; additionally the topic may involve music, sound, an opt-in atmospheric SFX cue for an un-findable sound, or a genuinely decodable sonic pattern.",
     "interactive": "reader should explore, discover, or participate (quiz, demo, slider, scrollytelling).",
     "instance": "a concrete embeddable example from detective.json (inst_xx) should appear here."
   },
@@ -27,5 +27,5 @@
     "sound_speech_music": "audio only when hearing adds meaning, evidence, atmosphere, or embodied understanding.",
     "abstract_interpretation": "text-only can be the right choice."
   },
-  "audio_restraint": "Audio deserves special restraint. Use [MEDIA: audio] only when the topic has a meaningful sonic dimension or when a carefully specified sonification would help the reader understand a pattern. For generic social, geographic, animal, or policy datasets, audio is usually optional rather than expected."
+  "audio_restraint": "Audio's mandatory form is a REAL sourced background track the reader can play while reading (mood/immersion), chosen to fit the story and presented as a now-playing card — never AI-composed — so the front BGM is required on EVERY blog: always carry [MEDIA: audio] for it. BGM is never skipped, including on sober/computational/privacy topics (a restrained pensive/ambient track there is the RIGHT BGM, not filler) — the Scout walks the BGM ladder from a real sourced track at the top down to the license-clean classical-recording floor as the guaranteed bottom rung, so a fitting track always exists. An optional atmospheric sound_design SFX cue (text2music) is fine only for a needed sound with no findable real recording, and is never the front BGM. Reach for a sonification only when the data has a genuinely decodable sonic pattern. The BGM autostarts on the reader's first click/tap, then is reader-controlled; the page must work fully when muted."
 }

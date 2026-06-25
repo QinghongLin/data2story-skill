@@ -1,0 +1,155 @@
+{
+  "_note": "The decision core: name the message intent, then pick a ranked chart candidate. The Designer uses this at chart_spec time; the Auditor uses it to check the chart type matches the stated intent. Each candidate is tagged vega_lite_native: true (build it from vega_recipes.json) or false (build it from d3_fallback_recipes.json). DO NOT default to a chart because it looks impressive — pick from the message intent and the channel-accuracy hierarchy.",
+  "_sources": "FT Visual Vocabulary (the 9-intent taxonomy + intent->chart method; re-authored, NOT FT prose). rohitg00/data-visualization (the purpose-first frame). Cleveland & McGill 1984 (channel-accuracy ordering). All re-authored.",
+
+  "how_to_use": [
+    "1. Say the ONE sentence the chart must make ('Argentina's win probability rose fastest in the last month').",
+    "2. Map that sentence to a purpose (comparison / composition / distribution / relationship / trend) — see purpose_first_frame.",
+    "3. Narrow the purpose to a precise INTENT below (e.g. trend -> change_over_time).",
+    "4. Read the ranked candidates; pick the first that fits the data shape and reader. Earlier = the FT/Pudding default for that intent.",
+    "5. Check the key variable lands in a high-accuracy channel (channel_accuracy_hierarchy).",
+    "6. If the pick is vega_lite_native:false, flag it for d3_fallback_recipes.json. Otherwise use vega_recipes.json."
+  ],
+
+  "purpose_first_frame": {
+    "_note": "A coarse first cut from rohitg00/data-visualization. Pick the purpose, then jump to the precise intent. One sentence can have only one primary purpose — if it has two, it is two charts.",
+    "comparison": "Compare values across categories or items -> intents: ranking, magnitude, deviation.",
+    "composition": "Show parts of a whole, static or over time -> intents: part_to_whole, change_over_time (stacked).",
+    "distribution": "Show the spread/shape of one variable across many observations -> intent: distribution.",
+    "relationship": "Show how two (or three) variables move together -> intent: correlation.",
+    "trend": "Show change along time -> intent: change_over_time.",
+    "spatial_or_flow": "Geography -> intent: spatial. Movement/transfer between nodes -> intent: flow."
+  },
+
+  "channel_accuracy_hierarchy": {
+    "_note": "Cleveland & McGill 1984: how accurately the eye reads a quantity from each visual channel, most->least accurate. Encode the variable that MUST be read precisely in the highest channel the chart allows; use lower channels for secondary/categorical variables only.",
+    "order": ["position on a common scale", "position on non-aligned scales", "length", "angle / slope", "area", "volume", "color saturation / shade", "color hue"],
+    "rules": [
+      "The number the reader must compare precisely -> position or length (bar, dot, line). This is why bars beat pie for comparison.",
+      "Angle/slope (pie, donut) reads worse than length — use pie only for a 2-3 slice part-to-whole, never for ranking.",
+      "Area (bubble, treemap) reads ~worse than length; acceptable for magnitude at a glance, not for precise comparison. Size by AREA not radius (encoding_craft.json).",
+      "Color hue carries CATEGORY (which group), color shade/saturation carries ORDERED magnitude (low->high). Never ask hue to carry precise quantity.",
+      "If two encodings disagree on importance, put the headline variable in the higher channel."
+    ]
+  },
+
+  "intents": {
+    "deviation": {
+      "question": "How far above/below a baseline, zero, or a reference is each item? (surplus/deficit, vs target, vs average, +/- change)",
+      "candidates": [
+        {"type": "diverging_bar", "vega_lite_native": true, "when": "One value per category, signed; bars left/right (or up/down) of a zero line. The default."},
+        {"type": "diverging_stacked_bar", "vega_lite_native": true, "when": "Likert / sentiment: agree vs disagree stacked outward from a center."},
+        {"type": "spine_chart", "vega_lite_native": true, "when": "Two opposing categories back-to-back from a central axis (e.g. men vs women)."},
+        {"type": "surplus_deficit_line", "vega_lite_native": true, "when": "Deviation over time; an area between the line and a baseline, colored by sign."}
+      ],
+      "rules": ["Anchor on a zero (or explicit reference) line — see annotation_layers.json rule mark.", "Use a diverging color scale (cross-ref design_tokens.json data_color_scales 'diverging'); positive vs negative must read instantly."]
+    },
+
+    "correlation": {
+      "question": "Do two (or three) variables move together? Is there a relationship?",
+      "candidates": [
+        {"type": "scatter", "vega_lite_native": true, "when": "Two quantitative variables, one point per observation. The default."},
+        {"type": "bubble", "vega_lite_native": true, "when": "Add a third quantitative variable as point AREA (not radius)."},
+        {"type": "connected_scatter", "vega_lite_native": true, "when": "Two variables traced over time — the path shows the trajectory (e.g. unemployment vs inflation by year)."},
+        {"type": "line_plus_column", "vega_lite_native": true, "when": "Two related series on shared time but different units; layer a line over columns. CAUTION: dual y-axis implies false correlation — see encoding_craft.json dual_axis_warning."},
+        {"type": "xy_heatmap", "vega_lite_native": true, "when": "Relationship between two CATEGORICAL/binned variables; cell color = count or value."}
+      ],
+      "rules": ["Correlation is not causation — say so in the annotation, not the chart.", "Add a trend/regression layer only if it aids reading; keep raw points visible.", "Do not start a scatter axis at zero by default — see axis_label_polish.json scale.zero=false."]
+    },
+
+    "ranking": {
+      "question": "What is the order — who is highest/lowest, and by how much?",
+      "candidates": [
+        {"type": "ordered_bar_or_column", "vega_lite_native": true, "when": "Rank by value; horizontal BAR when labels are long or there are many items. The default. Sort by value, not alphabetically (encoding_craft.json)."},
+        {"type": "dot_strip_plot", "vega_lite_native": true, "when": "Rank many items compactly; one dot per item on a line — less ink than bars."},
+        {"type": "lollipop", "vega_lite_native": true, "when": "Ranked like a bar but de-cluttered: a thin stem + a dot; good when bars feel heavy."},
+        {"type": "slope_chart", "vega_lite_native": true, "when": "Rank at two time points / two conditions — slope shows who rose and fell."},
+        {"type": "ordered_proportional_symbol", "vega_lite_native": true, "when": "Rank where the magnitude gap is huge; symbol AREA per item, ordered."}
+      ],
+      "rules": ["ALWAYS sort by the value (sort:'-x' or a field sort), never leave alphabetical.", "Highlight the item the story is about with --accent; mute the rest (annotation_layers.json).", "Truncating a ranked bar's baseline is dishonest — bars start at zero (axis_label_polish.json zero_baseline_rule)."]
+    },
+
+    "distribution": {
+      "question": "What is the spread, shape, center, and outliers of one variable across many observations?",
+      "candidates": [
+        {"type": "histogram", "vega_lite_native": true, "when": "Shape of one continuous variable; bin + count. The default. Choose bin width deliberately."},
+        {"type": "boxplot", "vega_lite_native": true, "when": "Compare distributions across groups compactly (median, IQR, outliers). Vega-Lite has a native boxplot mark."},
+        {"type": "violin", "vega_lite_native": true, "when": "Show full density per group, not just quartiles. In Vega-Lite via a density transform + area mark (faceted) — heavier; use only if shape matters more than comparison."},
+        {"type": "population_pyramid", "vega_lite_native": true, "when": "Two back-to-back distributions (e.g. age by sex) — a spine of mirrored bars."},
+        {"type": "dot_strip_plot", "vega_lite_native": true, "when": "Small n — show every observation as a dot on a line; honest and uncluttered."},
+        {"type": "beeswarm_strip", "vega_lite_native": true, "when": "Show every observation with no overplotting; a jittered/offset strip. Strip is native; true beeswarm packing may need a D3 force — prefer strip first."},
+        {"type": "cumulative_curve", "vega_lite_native": true, "when": "Emphasize percentiles / 'what share is below X' — a CDF line."}
+      ],
+      "rules": ["Show the data, not just summary stats, when n is small (dot strip > box).", "State the bin width / bandwidth; it changes the story.", "Do not imply a smooth density from very few points."]
+    },
+
+    "change_over_time": {
+      "question": "How does a value change along time?",
+      "candidates": [
+        {"type": "line", "vega_lite_native": true, "when": "Continuous series over time, one or few groups. The default. Lines MAY truncate the y-axis (scale.zero=false) — they show change, not magnitude-from-zero."},
+        {"type": "column", "vega_lite_native": true, "when": "Few discrete time periods where each period's MAGNITUDE matters; columns must start at zero."},
+        {"type": "area", "vega_lite_native": true, "when": "One series where the magnitude/volume reads better filled; or stacked area for composition over time (watch occlusion)."},
+        {"type": "slope_chart", "vega_lite_native": true, "when": "Exactly two time points across many items — slope = who rose/fell."},
+        {"type": "fan_chart", "vega_lite_native": true, "when": "A forecast with uncertainty: a central line + nested confidence bands (layer area bands by interval)."},
+        {"type": "connected_scatter", "vega_lite_native": true, "when": "Time as the path between two variables (see correlation)."},
+        {"type": "calendar_heatmap", "vega_lite_native": true, "when": "Daily values over months/years; a grid of day cells colored by value (rect mark over day-of-week x week-of-year)."}
+      ],
+      "rules": ["Label the line END instead of a legend when there are few series (annotation_layers.json text+argmax).", "More than ~4-5 lines = spaghetti; switch to small multiples (vega_recipes.json facet) or highlight one + grey the rest.", "Mark the key event/turning point with a rule + text (annotation_layers.json)."]
+    },
+
+    "part_to_whole": {
+      "question": "How does the total break into parts? What share is each component?",
+      "candidates": [
+        {"type": "stacked_column", "vega_lite_native": true, "when": "Composition across a few categories or time periods; segments sum to the total. The default for >3 parts."},
+        {"type": "proportional_stacked_bar", "vega_lite_native": true, "when": "Compare composition across items where each is normalized to 100% — share, not absolute."},
+        {"type": "pie_or_donut", "vega_lite_native": true, "when": "ONE total, 2-3 big slices, share is approximate. Use SPARINGLY — angle reads worse than length (channel hierarchy). Never for ranking or >4 slices."},
+        {"type": "treemap", "vega_lite_native": false, "when": "Hierarchical part-to-whole with many items; nested rectangles by area. -> d3_fallback_recipes.json (Vega-Lite has no treemap layout)."},
+        {"type": "waterfall", "vega_lite_native": true, "when": "How a starting total reaches an ending total via signed steps (bar mark with explicit y/y2 running sums)."},
+        {"type": "arc_or_gauge", "vega_lite_native": true, "when": "A single share as a fraction of a ring; one number, decorative. Use rarely."}
+      ],
+      "rules": ["If the reader must compare slice sizes precisely, use a bar, not a pie.", "Order segments meaningfully (largest first, or a fixed semantic order), consistent across panels.", "100%-stacked hides absolutes — pair with the total elsewhere if it matters."]
+    },
+
+    "magnitude": {
+      "question": "How big is each value, in absolute (not ranked, not part-of-whole) terms?",
+      "candidates": [
+        {"type": "column", "vega_lite_native": true, "when": "Compare absolute sizes across a few categories; vertical. The default. Starts at zero."},
+        {"type": "bar", "vega_lite_native": true, "when": "Same, horizontal — for long labels or many categories."},
+        {"type": "paired_bar", "vega_lite_native": true, "when": "Two sub-values per category side by side (grouped); compare within and across (vega_recipes.json grouped)."},
+        {"type": "proportional_symbol", "vega_lite_native": true, "when": "Magnitude at a glance where exactness is secondary; circle AREA per item (not radius)."},
+        {"type": "isotype", "vega_lite_native": true, "when": "Counts as repeated icons (1 icon = N units); engaging, approximate. Repeat a shape/emoji mark."},
+        {"type": "lollipop", "vega_lite_native": true, "when": "Magnitude with less ink than bars; stem + dot."},
+        {"type": "radar", "vega_lite_native": true, "when": "One item's profile across ~4-8 comparable axes (e.g. a player's stats). Reads poorly for >1-2 series and exaggerates area — use sparingly; in Vega-Lite via polar/arc or a normalized line on a theta scale."}
+      ],
+      "rules": ["Bars/columns MUST start at zero — see axis_label_polish.json zero_baseline_rule.", "Size = AREA, never radius, for symbols (encoding_craft.json).", "Avoid radar for precise comparison; the area is misleading."]
+    },
+
+    "spatial": {
+      "question": "Where — how does the value vary across geography?",
+      "candidates": [
+        {"type": "choropleth", "vega_lite_native": true, "when": "A rate/density/normalized value per region; fill regions by a sequential or diverging scale. Vega-Lite geoshape OR Leaflet GeoJSON (component_implementations.json maps_leaflet). NOT for raw counts (area bias)."},
+        {"type": "proportional_symbol_map", "vega_lite_native": true, "when": "Absolute COUNTS by location; a sized circle (by area) per point/region centroid — avoids the choropleth area bias."},
+        {"type": "flow_map", "vega_lite_native": false, "when": "Movement between places (migration, trade) — curved/weighted lines between origins/destinations. -> d3 (geo + curves)."},
+        {"type": "dot_density_map", "vega_lite_native": true, "when": "Show every unit as a dot to convey raw density without region shading."},
+        {"type": "hex_or_contour_map", "vega_lite_native": false, "when": "Aggregate dense points into hex bins or density contours. Hexbin/contour generators -> d3."}
+      ],
+      "rules": ["Choropleth needs a NORMALIZED value (rate, per-capita, density) — raw counts mislead because big regions dominate.", "Prefer proportional symbols for counts.", "Reuse ONE sequential scale (design_tokens.json) consistent with any bars/callouts of the same metric.", "For interactive pan/zoom maps, Leaflet (maps_leaflet recipe) is usually the build."]
+    },
+
+    "flow": {
+      "question": "How do quantities move or transfer between nodes/states?",
+      "candidates": [
+        {"type": "sankey", "vega_lite_native": false, "when": "Flow volume between stages/categories; ribbon width = quantity. -> d3_fallback_recipes.json (d3-sankey)."},
+        {"type": "chord", "vega_lite_native": false, "when": "Bidirectional flows among a fixed set of nodes around a circle. -> d3 (d3.chord)."},
+        {"type": "network", "vega_lite_native": false, "when": "Relationships/links among many entities; force-directed graph. -> d3 (d3-force). Also covers citation networks (component_implementations.json)."},
+        {"type": "waterfall", "vega_lite_native": true, "when": "Sequential additive/subtractive flow to a total — the ONE native flow-ish chart (see part_to_whole)."}
+      ],
+      "rules": ["Most flow charts are NOT Vega-Lite-native — build with D3 and respect the SVG-mark ceiling (d3_fallback_recipes.json).", "Flow diagrams get illegible fast — cap nodes/links, aggregate the long tail into 'other'."]
+    }
+  },
+
+  "native_false_index": {
+    "_note": "Quick lookup of every candidate above tagged vega_lite_native:false — all route to d3_fallback_recipes.json.",
+    "types": ["treemap", "flow_map", "hex_or_contour_map", "sankey", "chord", "network"]
+  }
+}

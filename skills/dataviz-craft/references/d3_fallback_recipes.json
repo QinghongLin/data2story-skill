@@ -1,0 +1,73 @@
+{
+  "_note": "D3 is the FALLBACK, not the default. Use it ONLY for chart types Vega-Lite cannot express — sankey, treemap, chord, sunburst, force-network (all tagged vega_lite_native:false in chart_chooser.json). For everything else build a Vega-Lite spec (vega_recipes.json). D3 is an allowed CDN (component_implementations.json). These are recipe OUTLINES — D3 module + layout generator + the data shape — not full code. Inline the data; one self-contained index.html on file://.",
+  "_sources": "chrisvoncsefalvay d3-patterns (re-authored as outlines). Vega-Lite gallery (used to confirm what is NOT native). D3 module docs (d3-sankey, d3-hierarchy, d3-chord, d3-force). Re-authored.",
+
+  "when_to_reach_for_d3": [
+    "The intent maps to a type tagged vega_lite_native:false in chart_chooser.json (treemap, flow_map, hex/contour map, sankey, chord, network).",
+    "Vega-Lite genuinely cannot express the LAYOUT (a node-link layout, a hierarchical pack/partition, a flow ribbon). If Vega-Lite CAN do it, do it in Vega-Lite — do not drop to D3 for styling or familiarity.",
+    "An EXPLORABLE centerpiece that recomputes a custom layout live (component_implementations.json interactive_elements) — but reuse Vega-Lite + re-embed first if the chart type is native."
+  ],
+
+  "performance_rule": {
+    "rule": "SVG handles roughly <= ~2000 marks (nodes + links + cells) smoothly. Beyond that, interaction stutters — switch the rendering to CANVAS (or aggregate the data: bin, cap nodes, fold the long tail into 'other').",
+    "detail": "Each SVG element is a DOM node; thousands of them make layout/repaint expensive, especially during d3-force ticks or zoom. Canvas draws to a single bitmap (no per-mark DOM). For a force graph, also stop the simulation after it settles (a tick cap or alphaMin) rather than running forever.",
+    "anti_pattern": "A 10k-node force graph in SVG (jank, frozen tab); animating thousands of SVG nodes on every tick; never aggregating a dense flow."
+  },
+
+  "recipes": {
+    "sankey": {
+      "intent": "flow — volume between stages/categories; ribbon width = quantity",
+      "d3_modules": ["d3-sankey", "d3-shape (sankeyLinkHorizontal)", "d3-scale (node color)"],
+      "outline": "Shape data as {nodes:[{name}], links:[{source,target,value}]}. Run the d3.sankey() layout (set nodeWidth, nodePadding, extent) over the graph -> it assigns x0/x1/y0/y1 to nodes and a width to links. Draw nodes as <rect>, links as <path d=sankeyLinkHorizontal()> with stroke-width = link.width, stroke-opacity low. Label nodes with the value.",
+      "editorial": "Color links by source (or by a category); mute, accent the focal path. Cap nodes/links — aggregate the long tail into 'other' (a sankey with many thin ribbons is unreadable). Order nodes to minimize crossings.",
+      "perf": "Usually well under the SVG ceiling; keep it that way by capping flows."
+    },
+
+    "treemap": {
+      "intent": "part_to_whole — hierarchical, many items; nested rectangles by AREA",
+      "d3_modules": ["d3-hierarchy (d3.hierarchy + d3.treemap)", "d3-scale (color)"],
+      "outline": "Build d3.hierarchy(root).sum(d=>d.value).sort(...). Run d3.treemap().size([w,h]).padding(p) -> leaves get x0/y0/x1/y1. Draw a <rect> + clipped <text> per leaf. Optionally make it zoomable (click a node to re-layout its subtree).",
+      "editorial": "Rectangle AREA encodes the value (area-not-radius spirit, encoding_craft.json) — area reads worse than length (channel hierarchy), so use treemap for 'show the whole composition with many parts at a glance', not precise comparison. Color by top-level category; label only rectangles big enough to fit text. Sequential shade for an ordered value (design_tokens.json).",
+      "perf": "Hundreds of leaves are fine in SVG; thousands -> canvas or aggregate small leaves into 'other'."
+    },
+
+    "chord": {
+      "intent": "flow — bidirectional flows among a fixed set of nodes around a circle",
+      "d3_modules": ["d3-chord (d3.chord, d3.ribbon)", "d3-shape (d3.arc)"],
+      "outline": "Input is a square matrix[i][j] = flow from i to j. d3.chord().padAngle(...)(matrix) -> groups (arcs around the ring) + chords (ribbons between them). Draw group arcs with d3.arc(), ribbons with d3.ribbon(). Color by source group; label arcs.",
+      "editorial": "Only for a SMALL fixed node set (~<12) — chord gets illegible fast. Mute, accent the focal relationships; dim others on hover. Sort groups meaningfully.",
+      "perf": "Bounded by node count squared (the matrix); keep nodes few."
+    },
+
+    "sunburst": {
+      "intent": "part_to_whole — hierarchical composition as concentric rings (radial treemap)",
+      "d3_modules": ["d3-hierarchy (d3.hierarchy + d3.partition)", "d3-shape (d3.arc)"],
+      "outline": "d3.hierarchy(root).sum(...). d3.partition().size([2*PI, radius]) -> each node gets x0/x1 (angle) and y0/y1 (radius). Draw one <path d=d3.arc()> per node; inner ring = root's children, outer rings = descendants. Often made zoomable (click a wedge to re-root).",
+      "editorial": "Same caveat as treemap/pie — ANGLE+AREA read worse than length (channel hierarchy); use a sunburst when the HIERARCHY is the point, not for precise comparison. Color by branch; label only wide-enough wedges. Prefer a treemap or stacked bar if comparison matters more than hierarchy.",
+      "perf": "Hundreds of arcs fine; deep/wide trees -> canvas or collapse."
+    },
+
+    "force_network": {
+      "intent": "flow/relationship — links among many entities; force-directed graph (incl. citation networks, component_implementations.json)",
+      "d3_modules": ["d3-force (forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide)", "d3-drag", "d3-zoom"],
+      "outline": "Data = {nodes:[{id}], links:[{source,target}]}. d3.forceSimulation(nodes).force('link', forceLink(links).id(d=>d.id).distance(...)).force('charge', forceManyBody().strength(-)).force('center', forceCenter(w/2,h/2)). On each 'tick' update <line> (links) + <circle> (nodes) positions. Add d3.drag() to nodes and d3.zoom() to the <g>. Size nodes by a metric (AREA via scaleSqrt — encoding_craft.json); color by type (accent self / muted refs).",
+      "editorial": "Stop the simulation once it settles (alphaMin or a tick cap) — don't run forever (perf + jitter). Tooltip on hover (title/year); click opens the link. Aggregate/cap nodes for big graphs.",
+      "perf": "THE most likely type to blow the SVG ceiling. Beyond ~2000 nodes+links switch to canvas rendering and cap the simulation; consider pre-computing the layout for very large graphs."
+    },
+
+    "flow_map_and_hexbin": {
+      "intent": "spatial — flows between places (flow map) or aggregated point density (hexbin/contour)",
+      "d3_modules": ["d3-geo (geoPath, a projection)", "d3-hexbin (hexbin layout)", "d3-contour (contourDensity)", "d3-shape (curves for flow lines)"],
+      "outline": "Flow map: project origin/destination coords with a d3 projection; draw curved <path> per flow, width = volume, over a base geography (or a Leaflet base, component_implementations.json). Hexbin: bin projected points with d3.hexbin(), draw <path d=hexbin.hexagon()> per bin colored by count. Contour: d3.contourDensity() over points -> <path> bands.",
+      "editorial": "These are the spatial types Vega-Lite/Leaflet can't natively express. For a simple choropleth or proportional-symbol map, DON'T come here — use Vega-Lite geoshape or Leaflet (chart_chooser.json spatial). Sequential scale from design_tokens.json; cap/aggregate flows.",
+      "perf": "Hexbin/contour aggregate by design (good for dense data); many raw flow lines -> canvas."
+    }
+  },
+
+  "do_not": [
+    "Do NOT reach for D3 for any chart type Vega-Lite can express (bar/line/area/scatter/heatmap/boxplot/choropleth/etc.) — those are vega_recipes.json.",
+    "Do NOT exceed ~2000 SVG marks without switching to canvas or aggregating.",
+    "Do NOT skip the editorial rules (sort, area-not-radius, CVD-safe color, annotate the key datum) just because it's D3 — encoding_craft.json + annotation_layers.json still apply.",
+    "Do NOT add a charting framework — D3 from the allowed CDN only, inline, no build step."
+  ]
+}

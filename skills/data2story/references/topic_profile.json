@@ -1,0 +1,90 @@
+{
+  "_doc": "S3 shared topic classifier — ONE lightweight, run-once profile of the dataset/story so every media decision keys off the SAME judgement instead of each role re-deciding 'is this a visual topic?' independently (which is what made media density drift run-to-run). This file is a REFERENCE TEMPLATE describing the shape + how the booleans are derived; it is NOT a fixed value. It is populated per-run — the Detective classifies the dataset at Stage 1 (or the Scout at Stage 1.5 if the Detective didn't) and writes the resolved profile into its own role JSON (e.g. detective.json `topic_profile`, or scout.json) so downstream roles read it from there. Keep this template and the consumers in lock-step.",
+  "_derivation": {
+    "tags": "Pick every tag in `vocabulary` that genuinely applies to the dataset's subject (a small set, usually 1-4). Be honest: a statistical/abstract dataset with no real-world people/places/events gets few or none of the visual tags.",
+    "is_visual": "TRUE if `tags` contains ANY of: visual_subject, event, sport, culture, place, emotional. (geographic alone does NOT make it visual — a choropleth is a chart, not photography; abstract/privacy_sensitive never make it visual.) Drives whether rich media is sourced at all.",
+    "is_computational": "TRUE if the story's headline/lead claim involves a CALCULATION the reader could in principle reproduce (a probability, a rate, a ranking, a model output, an aggregate) — as opposed to a purely descriptive/qualitative claim. Independent of is_visual: a topic can be both (World Cup: a computed champion probability over an emotional sport), either, or neither.",
+    "note": "is_visual and is_computational are NOT mutually exclusive and are derived independently — one from the visual tags, one from the nature of the headline.",
+    "ai_face_policy": "OPTIONAL — present ONLY when the topic involves real people the story leans on (a profiled person, an athlete, a politician). Omit it entirely for topics with no real-person subject. It is the settled cover-policy for a real-person subject, so the Hero/Designer don't re-decide it per run. The settled stance is: animating a real person's FETCHED, identity-verified photo is ALLOWED (a subtle cinemagraph via the faces-safe model + proportionate disclosure); generating a real person's face FROM SCRATCH (photoreal OR illustration) is NOT. Fields: `real_person_subject` (bool — is a real person the natural cover subject?); `animate_real_photo` (\"subtle_cinemagraph\" — the default when a usable verified photo exists: animate it, faces held enough to avoid warping but subtle natural motion (slight head/body sway, blink) allowed on top of moving atmosphere, with a warp-quality guard → ffmpeg Ken-Burns fallback if the face distorts); `no_photo_fallback` (\"theme_first_no_person\" — when NO usable verified photo exists: a theme-first cover that is NEVER an AI-generated person, neither photoreal fake NOR illustration; ordered ladder real-scene/object → data-as-cover → conceptual/typographic → abstract atmospheric); `disclosure` (\"required_proportionate\" — disclosure is required whenever a real photo is AI-animated, kept lightweight: a small caption, not a banner); `sensitivity_advisory` (string|null — a one-line, NON-BLOCKING taste note for genuinely sensitive subjects (deceased persons, minors, criminal allegations): 'is animating this likeness tasteful here?'; null otherwise — there is NO hard gate, animate regardless of context and optimize for quality)."
+  },
+  "vocabulary": {
+    "visual_subject": "the story centers on concrete real subjects that photograph well — named people, specific objects, branded things (a star player, a trophy, a product).",
+    "geographic": "the story has a spatial/place dimension worth a map (countries, regions, coordinates). NB: this enables maps, but does NOT by itself make the topic 'visual' for photography purposes.",
+    "event": "a real-world happening with a time + place (a tournament, an election, a launch, a disaster).",
+    "sport": "athletic competition (teams, players, matches, stadiums).",
+    "culture": "music, film, art, food, fashion, language, tradition.",
+    "place": "specific locations that carry the story emotionally (cities, landmarks, venues, landscapes).",
+    "emotional": "the story has strong human/affective stakes (celebration, loss, triumph, struggle) that imagery can amplify.",
+    "abstract": "the subject is conceptual/quantitative with no inherent imagery (finance, logistics, web analytics, pure statistics).",
+    "privacy_sensitive": "the data is about identifiable individuals in a way where sourcing/showing their real images would be intrusive or unethical (health records, personal browsing, victims). Suppresses real-person media regardless of other tags."
+  },
+  "consumers": {
+    "scout_when_to_run": "scout/SKILL.md 'When to run' — the Scout ALWAYS runs and ALWAYS sources a real-image set + a fitting real BGM, on EVERY topic (cinematic + BGM are mandatory pipeline stages). is_visual only keys the FLAVOUR: is_visual true → the obvious strong subject photos; !is_visual (abstract / statistical) → still a relevant real-image set (historical / archival / atmospheric photos of the era + subject), never 'skip lightly'. The one IMAGE exception is privacy_sensitive: do not source real-person imagery even if other visual tags are set (lean on non-person archival photos). BGM has NO exception — a privacy_sensitive topic still gets a BGM (a quiet, non-intrusive classical recording fits); there is no audio.used=false path on any topic.",
+    "designer_richness": "designer/SKILL.md — how hard to push multimedia breadth. is_visual true => lean into image/video channels; is_computational true => the lead finding warrants a runnable/interactive treatment (feeds the verify layer's runnable cells).",
+    "cinematographer_always_on": "cinematographer/SKILL.md Step 1 — the cinematic scroll background is MANDATORY (always on, never off); is_visual only selects the MODE: when is_visual is true AND >=5 verified, license-clean cover-able images are registered the mode is `photographic`; when imagery is thin/absent it falls back to `generative` (AI atmosphere) or `data_driven` (a chart-spine background) so even an abstract topic still ships a tasteful immersive layer. This file is the canonical source of the is_visual half of that mode decision, not an on/off switch.",
+    "audio_bgm_expected": "scout/SKILL.md + designer/SKILL.md audio channel — a fitting front-of-blog BGM is MANDATORY on EVERY topic, with NO exception (privacy_sensitive included: it gets a quiet, non-intrusive classical recording — never silence). There is NO audio.used=false / no-BGM outcome: the Scout's classical-recording floor (rung C) is the guaranteed terminal rung, so a license-clean track always exists. is_visual does NOT gate BGM: a restrained real track still fits an abstract subject (it sets a reading tone). A missing BGM on ANY topic is a HARD ERROR (validate.py bgm_missing — not a warn-and-send-back); a tonally-wrong track caps visual_design at 3 (decorative cap).",
+    "auditor_flagship_contract": "auditor/references/flagship_contract.json — the IF-THEN flagship checks read these flags. cinematic_background now fires ALWAYS (cinematic is mandatory; mode adapts by is_visual); bgm_music fires on EVERY topic (no privacy exemption — the classical-recording floor guarantees a clean track); runnable_verify_for_computed_headline only when is_computational."
+  },
+  "template": {
+    "tags": ["sport", "event", "emotional", "place", "geographic"],
+    "is_visual": true,
+    "is_computational": true,
+    "classified_by": "detective | scout",
+    "classified_at": "ISO-8601 UTC timestamp, e.g. 2026-06-22T13:00:00Z",
+    "rationale": "one line: why these tags, and why is_visual/is_computational came out as they did (e.g. 'World Cup forecast — a computed champion probability (computational) over a globally emotional sporting event with real venues + national imagery (visual)').",
+    "ai_face_policy": {
+      "_when": "include this object ONLY if real people are subjects of the story; omit it otherwise",
+      "real_person_subject": true,
+      "animate_real_photo": "subtle_cinemagraph",
+      "no_photo_fallback": "theme_first_no_person",
+      "disclosure": "required_proportionate",
+      "sensitivity_advisory": null
+    }
+  },
+  "examples": [
+    {
+      "_name": "World Cup forecast (the gold blog)",
+      "tags": ["sport", "event", "emotional", "place", "geographic"],
+      "is_visual": true,
+      "is_computational": true,
+      "rationale": "computed champion probabilities (computational) over an emotional global sporting event with real stadiums + national fans (visual); geographic supports the host-cities map.",
+      "ai_face_policy": {
+        "real_person_subject": true,
+        "animate_real_photo": "subtle_cinemagraph",
+        "no_photo_fallback": "theme_first_no_person",
+        "disclosure": "required_proportionate",
+        "sensitivity_advisory": null,
+        "_note": "real players are the natural cover subjects → a fetched verified player still is animated into a subtle cinemagraph (faces held within the warp guard, atmosphere/flags moving) with a small AI-motion-added caption; if no usable player photo were licensable the cover would go theme-first (stadium/flags/data), NEVER an AI-generated player."
+      }
+    },
+    {
+      "_name": "Cookie / web-tracking analytics",
+      "tags": ["abstract", "privacy_sensitive"],
+      "is_visual": false,
+      "is_computational": true,
+      "rationale": "a quantitative finding about tracking behaviour (computational), but no real subjects to photograph and showing identifiable browsing would be intrusive (privacy_sensitive) — Scout stays light, no real-person media. is_visual stays false (no photography), but cinematic is still MANDATORY: the topic ships a data_driven chart-spine (or restrained generative) scroll background instead of an inert column. BGM is still MANDATORY here — privacy_sensitive does NOT suppress the soundtrack; this topic gets a quiet, non-intrusive classical recording (rung C), never silence.",
+      "_ai_face_policy_omitted": "no real-person subject → the optional `ai_face_policy` object is OMITTED (it only appears when real people are story subjects)."
+    },
+    {
+      "_name": "Meteorite landings",
+      "tags": ["geographic", "visual_subject"],
+      "is_visual": true,
+      "is_computational": true,
+      "rationale": "real photographable objects (meteorite specimens) + a strong spatial/map dimension; counts + size distributions are computed (computational). geographic drives the map; visual_subject keeps it photographable."
+    },
+    {
+      "_name": "Inflation / interest-rate forecast (economics-finance)",
+      "tags": ["abstract"],
+      "is_visual": false,
+      "is_computational": true,
+      "rationale": "a chart-led economics story whose headline is a COMPUTED rate/probability (an inflation print, a rate-hike probability, an aggregate) the reader could reproduce (computational), but the subject is purely quantitative with no inherent imagery (abstract) — is_visual stays FALSE even though it is heavily charted (a line/bar chart is a chart, not photography). The interactive + runnable-verify levers fire off is_computational. is_visual:false only means NO photographic cinematic mode — the abstract topic STILL ships cinematic (a data_driven chart-spine, or a restrained generative atmosphere) plus a restrained real BGM; it never ships an inert column."
+    },
+    {
+      "_name": "Election results / polling (elections)",
+      "tags": ["abstract", "geographic"],
+      "is_visual": false,
+      "is_computational": true,
+      "rationale": "the headline is a COMPUTED seat/vote share, win probability, or swing (computational) the reader could recompute; geographic enables a results choropleth but does NOT make it visual — a map is a chart, not photography, and there are no story-carrying photographic subjects, so is_visual is FALSE. The runnable-verify + interactive levers fire off is_computational. is_visual:false means no real-person/photographic media is sourced, but cinematic is still MANDATORY: the topic ships a data_driven (chart/map-spine) or generative scroll background + a restrained real BGM, never an inert column."
+    }
+  ]
+}

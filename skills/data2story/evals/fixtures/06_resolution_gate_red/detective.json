@@ -1,0 +1,5 @@
+{
+  "_fixture": "scenario 06 RED — minimal project so validate.py reaches Section 15. The resolved topic_profile (explicit is_visual+is_computational, abstract) suppresses the §0b topic_profile_unresolved error; the unrelated mandatory-stage floors (verify_dir_missing, bgm_missing, missing_engagement_floor, cinematic_missing) DO still fire, which is why scenario 06 asserts on the Section-15 KINDS being present, not on validate.py's exit code.",
+  "topic_profile": { "is_visual": false, "is_computational": false, "tags": ["abstract"] },
+  "items": {}
+}

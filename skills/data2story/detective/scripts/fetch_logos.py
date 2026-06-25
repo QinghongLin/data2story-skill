@@ -17,7 +17,9 @@ Writes:
 import argparse, json, os, re, sys, time, urllib.parse, urllib.request, urllib.error
 
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
-UA = "Data2Story-WikimediaFetch/1.0 (academic research; contact: qinghong.lin@eng.ox.ac.uk)"
+# Polite User-Agent contact, configurable so no personal address ships in the code.
+CONTACT = os.environ.get("DATA2STORY_CONTACT", "data2story@users.noreply.github.com")
+UA = f"Data2Story-WikimediaFetch/1.0 (academic research; contact: {CONTACT})"
 BAD_EXT = (".pdf", ".tif", ".tiff", ".webp", ".gif", ".xcf", ".ogv", ".webm")
 
 
@@ -173,7 +175,7 @@ def main():
         time.sleep(0.4)
 
     mpath = os.path.join(args.outdir, "logos_manifest.json")
-    with open(mpath, "w") as f:
+    with open(mpath, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
     ok = sum(1 for r in manifest if r.get("status") == "ok")
     print(f"\nDone: {ok}/{len(manifest)} logos. Manifest: {mpath}", file=sys.stderr)

@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  CANONICAL INSPECTOR-PANEL REFERENCE  (data2story skill)  — TOPIC-AGNOSTIC
+  ============================================================================
+  INTEGRATION CONTRACT (verbatim intent):
+
+  The Programmer copies the `.v-*` <style>, the `#verifyToggle` button, the
+  drawer/backdrop/toast markup, and the `window.__verify` <script> VERBATIM
+  into index.html. The Inspector replaces the two JSON islands (`verifyMap`,
+  `runCells`) with the per-blog data, kept BYTE-IDENTICAL to
+  verify/verify_map.json + verify/run_cells.json; and sets NB_PATH to
+  verify/<project>.ipynb (the Download-notebook target — run locally; there is
+  NO Colab branch). Every verifiable element carries
+  data-{ana,det,des,sct,cin} ids that exist in verifyMap; decorative wrappers
+  (section/main/.cin-stage) are skipped; the innermost tagged element wins.
+
+  CONVENTION: All `<\/style>` (and `<\/script>`) tokens inside this file's CSS
+  comments and JS strings are written `<\/style>` / `<\/script>` on purpose so a
+  verbatim copy can never prematurely close index.html's <style> (the
+  premature_style_close trap). Keep them escaped when editing.
+
+  ----------------------------------------------------------------------------
+  This file is a minimal STANDALONE demo (neutral topic: "City transit
+  ridership") that exercises every renderer. It is self-contained: the only
+  network use is the lazy Pyodide CDN load on the first "Run" click. All media
+  previews are tiny inline SVG data-URIs so the file works on file:// with no
+  external assets.
+
+  WHAT THE PROGRAMMER COPIES (the three load-bearing, topic-agnostic blocks):
+    1. the <style> block flagged "VERIFY INTERACTION LAYER — copy verbatim"
+    2. the #verifyToggle button + the toast/backdrop/drawer markup
+       (flagged "VERIFY MARKUP — copy verbatim")
+    3. the final <script> flagged "VERIFY LAYER IIFE — copy verbatim"
+
+  WHAT THE INSPECTOR REPLACES (per blog):
+    - <script type="application/json" id="verifyMap">  -> verify/verify_map.json
+    - <script type="application/json" id="runCells">   -> verify/run_cells.json
+    - NB_PATH     ("verify/<project>.ipynb" — the Download-notebook target; run locally)
+
+  CONTRACT NOTES (how the layer decides what is clickable):
+    - ATTRS scanned, in priority order:
+        data-ana  (Analyst    — computations / charts)
+        data-det  (Detective  — facts, multi-source)
+        data-des  (Designer   — media: real photo / AI-generated / gallery)
+        data-sct  (Scout      — verified web media / music / live status)
+        data-cin  (Cinematographer — scroll-driven background imagery)
+      An id only "counts" if it exists in verifyMap.
+    - isDecorative() skips structural/decorative wrappers: <section>, <main>,
+      and anything inside `.cin-stage` (the cinematic background). The badge
+      is never placed on a wrapper.
+    - The innermost tagged element wins: a click on a child .v-hit defers to it
+      rather than the ancestor.
+    - kinds: "computation" | "media" | "generated" | "fact" | "credits".
+      Multi-id cards order by KIND_ORDER: computation -> media -> generated -> fact.
+  ============================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inspector panel reference — City transit ridership (demo)</title>
+<style>
+  /* ---------------------------------------------------------------
+     GENERIC PAGE THEME (demo only — NOT part of the verify contract)
+     The real blog supplies its own theme + CSS vars. The verify layer
+     only depends on the variables read below (--accent, --ink, --line,
+     --ui, plus a few optional accents that fall back gracefully).
+     --------------------------------------------------------------- */
+  :root{
+    color-scheme: dark;   /* page is dark — keep the UA root canvas dark, never the light default */
+    --bg:#12100e; --surface:#1b1814; --ink:#efe6d6; --muted:#a89a83;
+    --line:#332d23; --accent:#c9a227; --accent-dim:#9a7d1e; --down:#b9603f;
+    --accent-2:#7a9e8e;
+    --serif:Georgia,'Times New Roman',serif;
+    --font-display:Didot,'Bodoni MT','Noto Serif Display',Sylfaen,serif;
+    --ui:system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  /* Paint the ROOT canvas dark, not just <body>. An unpainted <html> falls back to the
+     UA color (white under a light OS theme); a fixed backdrop-filter element then samples
+     that white root and Chromium can flush the whole page to white. (cf PIT-53) */
+  html{background:var(--bg)}
+  body{background:var(--bg);color:var(--ink);font-family:var(--serif);
+    margin:0;line-height:1.65;font-size:1.02rem}
+  main{max-width:46rem;margin:0 auto;padding:5rem 1.2rem 8rem}
+  h1{font-family:var(--font-display);font-weight:600;font-size:2.6rem;
+    line-height:1.1;letter-spacing:-0.01em;margin:0 0 .4rem}
+  h2{font-family:var(--font-display);font-size:1.7rem;font-weight:600;
+    margin:2.4rem 0 .8rem;letter-spacing:-0.005em}
+  p{margin:0 0 1rem}
+  a{color:var(--accent)}
+  .kicker{font-family:var(--ui);text-transform:uppercase;letter-spacing:.18em;
+    font-size:.72rem;color:var(--accent);margin:0 0 1rem}
+  .stand{font-family:var(--ui);font-size:1.1rem;color:var(--muted);
+    line-height:1.55;margin:0 0 2rem}
+  figure{margin:1.6rem 0}
+  figure img{width:100%;display:block;border-radius:10px;border:1px solid var(--line)}
+  figcaption{font-family:var(--ui);font-size:.78rem;color:var(--muted);
+    margin-top:.5rem;line-height:1.45}
+  .demo-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+  .demo-gallery img{height:120px;object-fit:cover}
+  .note{font-family:var(--ui);font-size:.78rem;color:var(--muted);
+    border-left:3px solid var(--accent-dim);padding:.4rem 0 .4rem .8rem;margin:1.6rem 0}
+
+  /* ============================================================
+     VERIFY INTERACTION LAYER — copy verbatim
+     >>> PASTE THIS WHOLE CSS BLOCK *INSIDE* A <style> ELEMENT IN <head>. <<<
+     These are CSS rules, NOT markup. If they land AFTER the document's
+     own <\/style> (or are pasted outside any <style>), the browser prints
+     them as VISIBLE TEXT — conspicuously so on mobile. When you splice the
+     panel into index.html keep the enclosing <style> ... <\/style> intact,
+     so every rule from "VERIFY INTERACTION LAYER" down to "END VERIFY
+     INTERACTION LAYER" sits BETWEEN a <style> open tag and its <\/style>.
+     Everything below is dormant until <html> gets the .verify-on
+     class. No visual change to the finished page when verify is off.
+     Depends only on the theme vars above (with safe fallbacks).
+     ============================================================ */
+  /* ---- verify toggle (top-LEFT so it never overlaps other corner toggles) ---- */
+  /* The solid background:rgba(20,18,16,.82) is the BASE (always present). backdrop-filter
+     is added ONLY inside @supports so a fixed blurred element never samples an unpainted
+     root canvas (a documented Chromium white-out vector on light OS themes). (cf PIT-53) */
+  .verify-toggle{position:fixed;top:1rem;left:1rem;z-index:60;font-family:var(--ui);
+    font-size:.78rem;letter-spacing:.04em;color:var(--accent);background:rgba(20,18,16,.82);
+    border:1px solid var(--accent-dim);border-radius:999px;padding:.5rem .9rem;cursor:pointer;
+    min-height:40px;display:flex;align-items:center;gap:.5rem;box-shadow:0 2px 14px rgba(0,0,0,.4)}
+  @supports ((backdrop-filter:blur(6px)) or (-webkit-backdrop-filter:blur(6px))){
+    .verify-toggle{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  }
+  .verify-toggle:hover,.verify-toggle:focus-visible{border-color:var(--accent);color:#e0bb45}
+  .verify-toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);
+    box-shadow:none;flex:none;transition:background .15s ease,box-shadow .15s ease}
+  html.verify-on .verify-toggle{color:var(--accent);border-color:var(--accent)}
+  html.verify-on .verify-toggle .dot{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  @media(max-width:600px){ .verify-toggle{top:.6rem;left:.6rem;font-size:.72rem;padding:.45rem .7rem} }
+
+  /* ---- first-use helper toast ---- */
+  .verify-toast{position:fixed;left:50%;bottom:1.4rem;transform:translateX(-50%) translateY(.6rem);
+    z-index:70;max-width:min(560px,92vw);font-family:var(--ui);font-size:.84rem;line-height:1.45;
+    color:var(--ink);background:linear-gradient(180deg,rgba(34,30,23,.96),rgba(22,19,14,.96));
+    border:1px solid rgba(201,162,39,.4);border-radius:12px;padding:.7rem 2.2rem .7rem .95rem;
+    box-shadow:0 14px 40px -18px rgba(0,0,0,.9);opacity:0;pointer-events:none;
+    transition:opacity .25s ease,transform .25s ease}
+  .verify-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  .verify-toast .vt-dot{color:var(--accent);font-weight:700}
+  .verify-toast .vt-x{position:absolute;top:.3rem;right:.45rem;background:none;border:none;
+    color:var(--muted);font-size:1.1rem;line-height:1;cursor:pointer;padding:.2rem .35rem}
+  .verify-toast .vt-x:hover{color:var(--accent)}
+
+  /* ---- highlight affordances (only when verify is ON) ---- */
+  /* text spans / paragraphs / headings: a restrained dotted gold underline */
+  html.verify-on .v-hit{cursor:pointer}
+  html.verify-on .v-hit.v-text{
+    text-decoration:underline dotted rgba(201,162,39,.75);
+    text-underline-offset:.22em;text-decoration-thickness:1.5px;
+    transition:background-color .15s ease}
+  html.verify-on .v-hit.v-text:hover,
+  html.verify-on .v-hit.v-text:focus-visible{
+    background-color:rgba(201,162,39,.10);text-decoration-color:var(--accent);outline:none}
+  /* blocks (figures, charts, cards, tables, media): soft gold outline + corner badge */
+  html.verify-on .v-hit.v-block{position:relative;outline:1px solid rgba(201,162,39,.32);
+    outline-offset:3px;border-radius:6px;transition:outline-color .15s ease}
+  html.verify-on .v-hit.v-block:hover,
+  html.verify-on .v-hit.v-block:focus-visible{outline-color:var(--accent);outline-width:1.5px}
+  html.verify-on .v-hit.v-block::after{content:attr(data-vbadge);position:absolute;top:-.7rem;right:.4rem;
+    z-index:5;font-family:var(--ui);font-size:.62rem;font-weight:700;letter-spacing:.04em;
+    color:#241a06;background:var(--accent);border-radius:999px;padding:.12rem .5rem;
+    box-shadow:0 2px 8px rgba(0,0,0,.4);opacity:.9;pointer-events:none;white-space:nowrap}
+  html.verify-on .v-hit.v-block:hover::after,
+  html.verify-on .v-hit.v-block:focus-visible::after{opacity:1}
+  /* a thin focus ring for keyboard users on text hits */
+  html.verify-on .v-hit:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media(prefers-reduced-motion: reduce){
+    html.verify-on .v-hit,html.verify-on .v-hit.v-block,html.verify-on .v-hit.v-text{transition:none}
+  }
+
+  /* ---- the drawer (fixed right; no body reflow) ---- */
+  .v-backdrop{position:fixed;inset:0;z-index:90;background:rgba(8,6,4,.62);
+    opacity:0;pointer-events:none;transition:opacity .28s ease}
+  .v-backdrop.open{opacity:1;pointer-events:auto}
+  .v-drawer{position:fixed;top:0;right:0;z-index:91;height:100vh;height:100dvh;
+    width:min(460px,94vw);max-width:100vw;
+    background:linear-gradient(180deg,#1b1814,#141109);
+    border-left:1px solid rgba(201,162,39,.28);box-shadow:-18px 0 60px -24px rgba(0,0,0,.9);
+    transform:translateX(105%);transition:transform .3s cubic-bezier(.22,.61,.36,1);
+    display:flex;flex-direction:column;font-family:var(--ui);color:var(--ink)}
+  .v-drawer.open{transform:translateX(0)}
+  @media(prefers-reduced-motion: reduce){
+    .v-drawer{transition:opacity .2s ease;transform:none;opacity:0}
+    .v-drawer.open{opacity:1}
+  }
+  /* mobile: full-width bottom-anchored sheet */
+  @media(max-width:560px){
+    .v-drawer{width:100vw;height:88vh;height:88dvh;top:auto;bottom:0;border-left:none;
+      border-top:1px solid rgba(201,162,39,.3);border-radius:18px 18px 0 0;
+      transform:translateY(105%);box-shadow:0 -18px 60px -24px rgba(0,0,0,.9)}
+    .v-drawer.open{transform:translateY(0)}
+    @media(prefers-reduced-motion: reduce){
+      .v-drawer{transform:none;opacity:0} .v-drawer.open{opacity:1}
+    }
+  }
+  .v-dhead{flex:none;display:flex;align-items:flex-start;gap:.6rem;padding:1.1rem 1.1rem .8rem;
+    border-bottom:1px solid var(--line)}
+  .v-dhead .v-dtitle{font-family:var(--font-display);font-weight:600;font-size:1.18rem;
+    line-height:1.18;color:var(--ink);flex:1 1 auto;min-width:0}
+  .v-dhead .v-dsub{display:block;font-family:var(--ui);font-size:.7rem;color:var(--muted);
+    margin-top:.25rem;letter-spacing:.02em}
+  .v-close{flex:none;background:none;border:1px solid var(--line);color:var(--muted);
+    width:34px;height:34px;border-radius:50%;font-size:1.15rem;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s}
+  .v-close:hover,.v-close:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+  .v-dbody{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:.9rem 1.1rem 2rem;
+    -webkit-overflow-scrolling:touch}
+  /* per-source card */
+  .v-card{border:1px solid var(--line);border-radius:12px;background:rgba(13,11,8,.5);
+    padding:.9rem .95rem;margin:0 0 1rem}
+  .v-card .v-kind{display:inline-flex;align-items:center;gap:.35rem;font-size:.62rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:.1em;padding:.16rem .55rem;border-radius:999px;
+    border:1px solid rgba(201,162,39,.4);color:var(--accent);background:rgba(201,162,39,.08);margin-bottom:.5rem}
+  .v-card .v-kind.k-media{color:var(--accent-2);border-color:rgba(122,158,142,.5);background:rgba(122,158,142,.08)}
+  .v-card .v-kind.k-generated{color:#d8a0c0;border-color:rgba(216,160,192,.5);background:rgba(216,160,192,.08)}
+  .v-card .v-ctitle{font-family:var(--serif);font-size:1.02rem;font-weight:700;line-height:1.25;
+    color:var(--ink);margin:0 0 .45rem}
+  .v-card .v-claim{font-size:.86rem;line-height:1.5;color:var(--ink);margin:0 0 .6rem}
+  .v-card p{margin:0 0 .55rem}
+  .v-lbl{display:block;font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--muted);margin:.7rem 0 .3rem}
+  .v-card table.v-data{width:100%;border-collapse:collapse;font-size:.74rem;
+    font-variant-numeric:tabular-nums;margin:.2rem 0 .4rem;display:block;overflow-x:auto}
+  .v-card table.v-data th,.v-card table.v-data td{border:1px solid var(--line);
+    padding:.22rem .4rem;text-align:right;white-space:nowrap}
+  .v-card table.v-data th{color:var(--accent);text-align:right;font-weight:700;
+    text-transform:none;letter-spacing:0}
+  .v-card table.v-data td:first-child,.v-card table.v-data th:first-child{text-align:left}
+  .v-trunc{font-size:.68rem;color:var(--muted);font-style:italic;margin:.1rem 0 .3rem}
+  .v-code{background:#0d0b08;border:1px solid var(--line);border-radius:8px;padding:.6rem .7rem;
+    margin:.2rem 0 .5rem;overflow-x:auto}
+  .v-code pre{margin:0;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    font-size:.72rem;line-height:1.45;color:#cfe3d4;white-space:pre;tab-size:2}
+  .v-code .v-codecap{display:block;font-family:var(--ui);font-size:.62rem;color:var(--muted);
+    margin-bottom:.4rem;letter-spacing:.03em}
+  .v-out{background:#0d0b08;border:1px solid var(--line);border-left:3px solid var(--accent-dim);
+    border-radius:6px;padding:.5rem .65rem;margin:.2rem 0 .5rem;
+    font-family:ui-monospace,Consolas,monospace;font-size:.72rem;line-height:1.45;color:var(--muted);
+    white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+  .v-btn{display:inline-flex;align-items:center;gap:.4rem;background:var(--accent);color:#241a06;
+    border:none;border-radius:8px;padding:.5rem .9rem;font-family:var(--ui);font-weight:700;
+    font-size:.8rem;cursor:pointer;min-height:40px;transition:background .15s ease}
+  .v-btn:hover,.v-btn:focus-visible{background:#e0bb45;outline:none}
+  .v-btn[disabled]{opacity:.55;cursor:default}
+  .v-btn.v-secondary{background:#171411;color:var(--accent);border:1px solid rgba(201,162,39,.4)}
+  .v-btn.v-secondary:hover,.v-btn.v-secondary:focus-visible{border-color:var(--accent);background:#1d1813}
+  .v-run-result{margin:.55rem 0 .2rem}
+  .v-badge{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.04em;
+    padding:.16rem .55rem;border-radius:999px;margin-bottom:.4rem}
+  .v-badge.pass{color:#0f1a10;background:#8fcf9b}
+  .v-badge.approx{color:#241a06;background:var(--accent)}
+  .v-badge.fail{color:#fff;background:var(--down)}
+  .v-links{display:flex;flex-wrap:wrap;gap:.4rem .5rem;margin:.5rem 0 0}
+  .v-links a,.v-links .v-linkbtn{font-size:.74rem;color:var(--accent);text-decoration:none;
+    border:1px solid rgba(201,162,39,.32);border-radius:6px;padding:.3rem .55rem;
+    background:rgba(201,162,39,.05);transition:border-color .15s ease;display:inline-flex;align-items:center;gap:.3rem}
+  .v-links a:hover,.v-links .v-linkbtn:hover,
+  .v-links a:focus-visible,.v-links .v-linkbtn:focus-visible{border-color:var(--accent);outline:none}
+  .v-links .v-linkbtn.v-disabled{color:var(--muted);border-color:var(--line);cursor:default;background:none}
+  .v-media{width:100%;border-radius:8px;border:1px solid var(--line);display:block;margin:.2rem 0 .5rem;
+    background:#000;max-height:280px;object-fit:cover}
+  .v-mediastrip{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 .5rem}
+  .v-mediastrip img{width:64px;height:42px;object-fit:cover;border:1px solid var(--line);border-radius:4px;background:#fff}
+  .v-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin:.3rem 0 .5rem}
+  .v-galitem{margin:0;padding:.45rem;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02);min-width:0}
+  .v-galitem img{width:100%;height:96px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#000;display:block;margin:0 0 .35rem}
+  .v-galname{font-size:.78rem;font-weight:600;color:var(--ink);line-height:1.3;margin:0 0 .15rem}
+  .v-meta{font-size:.74rem;color:var(--muted);line-height:1.45;margin:.15rem 0 .35rem}
+  .v-meta b{color:var(--ink);font-weight:600}
+  .v-real{font-size:.74rem;color:var(--accent-2);line-height:1.45;margin:.2rem 0 .35rem}
+  .v-real::before{content:"\2713 ";font-weight:700}
+  .v-caveat{font-size:.72rem;color:var(--muted);font-style:italic;line-height:1.45;
+    border-left:2px solid var(--accent-dim);padding-left:.55rem;margin:.3rem 0 .35rem}
+  .v-quote{font-size:.8rem;line-height:1.5;color:var(--ink);font-style:italic;
+    border-left:2px solid var(--accent);padding:.3rem 0 .3rem .7rem;margin:.25rem 0 .45rem}
+  .v-genbadge{display:inline-block;font-size:.66rem;font-weight:700;color:#d8a0c0;
+    border:1px solid rgba(216,160,192,.5);background:rgba(216,160,192,.08);
+    border-radius:999px;padding:.16rem .55rem;margin-bottom:.4rem}
+  .v-srclist{list-style:none;margin:.2rem 0 0;padding:0}
+  .v-srclist li{border-top:1px solid var(--line);padding:.45rem 0}
+  .v-srclist li:first-child{border-top:none}
+  .v-srclist .v-srcfacts{font-size:.72rem;color:var(--muted);line-height:1.4;margin:.2rem 0 0}
+  .v-spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);
+    border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;
+    vertical-align:middle;margin-left:.1rem}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* ============================================================
+     END VERIFY INTERACTION LAYER
+     (everything from "VERIFY INTERACTION LAYER" to here must stay
+      between a <style> open tag and its matching <\/style>.)
+     ============================================================ */
+</style>
+</head>
+<body>
+
+<!-- ============ VERIFY TOGGLE (top-LEFT; default OFF) — copy verbatim ============ -->
+<button class="verify-toggle" id="verifyToggle" type="button" aria-pressed="false"
+  title="Highlight every claim, number, chart and image you can click to see its source — and re-run the math">
+  <span class="dot" aria-hidden="true"></span><span id="verifyToggleLbl">Verify: Off</span>
+</button>
+
+<!-- ===================== DEMO ARTICLE (neutral topic — replace per blog) ===================== -->
+<main>
+  <p class="kicker">Demo — Inspector panel reference</p>
+  <h1>City transit ridership is climbing back — unevenly</h1>
+  <p class="stand">A worked, topic-agnostic demo of the Verify layer: every renderer
+    exercised once. Flip <b>Verify</b> (top-left) on, then click any highlighted
+    paragraph, figure or gallery to open its source card.</p>
+
+  <h2>What the numbers say</h2>
+
+  <!-- COMPUTATION — runnable DERIVED (data-ana) -->
+  <p data-ana="ana_demo_calc">Across the five rail lines, weekday boardings rose
+    8.5% system-wide between 2023 and 2024, but the gains are lopsided: the Gold
+    line jumped 22.4% while the Green line actually slipped 4.2%. Click to see the
+    per-line table, the code, and re-run the arithmetic in your browser.</p>
+
+  <!-- COMPUTATION — runnable MONTE-CARLO, reduced N (data-ana) -->
+  <p data-ana="ana_demo_mc">Treating daily boardings as a noisy draw around the
+    mean, a Monte-Carlo estimate puts the chance that any given weekday tips over
+    the 245k capacity-alert line at roughly 7.4%, or about 19 alert days a year.
+    Re-running it in the browser uses a reduced sample, so it lands within
+    Monte-Carlo noise of that figure.</p>
+
+  <!-- COMPUTATION — needs_network -> read-only (data-ana) -->
+  <p data-ana="ana_demo_net">The live operator feed reports the latest hourly
+    boardings per line. That cell pulls data over the network, so it cannot run in
+    the browser sandbox — the source card shows the read-only code and points to
+    the frozen snapshot and the notebook cell instead.</p>
+
+  <h2>What it looks like on the ground</h2>
+
+  <!-- MEDIA — real photo, single asset (data-des) -->
+  <figure data-des="des_demo_photo">
+    <img src="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='480'%20height='270'%3E%3Crect%20width='480'%20height='270'%20fill='%23243447'/%3E%3Crect%20y='150'%20width='480'%20height='120'%20fill='%231b2734'/%3E%3Crect%20x='40'%20y='90'%20width='400'%20height='70'%20rx='8'%20fill='%23394b5e'/%3E%3Crect%20x='60'%20y='104'%20width='70'%20height='42'%20fill='%23a8c4dd'/%3E%3Crect%20x='150'%20y='104'%20width='70'%20height='42'%20fill='%23a8c4dd'/%3E%3Crect%20x='240'%20y='104'%20width='70'%20height='42'%20fill='%23a8c4dd'/%3E%3Crect%20x='330'%20y='104'%20width='70'%20height='42'%20fill='%23a8c4dd'/%3E%3Ctext%20x='240'%20y='220'%20fill='%23708198'%20font-family='sans-serif'%20font-size='18'%20text-anchor='middle'%3E[demo%20placeholder%20photo]%3C/text%3E%3C/svg%3E"
+      alt="Light-rail train at a station platform (demo placeholder)">
+    <figcaption>A light-rail train at a downtown platform. (Demo placeholder image — click to see the source, licence and identity check.)</figcaption>
+  </figure>
+
+  <!-- GENERATED — AI image (data-des) -->
+  <figure data-des="des_demo_ai">
+    <img src="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='480'%20height='270'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%237a4ea0'/%3E%3Cstop%20offset='1'%20stop-color='%23c9a227'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='480'%20height='270'%20fill='url(%23g)'/%3E%3Ccircle%20cx='240'%20cy='120'%20r='60'%20fill='%23ffffff'%20opacity='0.25'/%3E%3Ctext%20x='240'%20y='230'%20fill='%23ffffff'%20font-family='sans-serif'%20font-size='18'%20text-anchor='middle'%3E%E2%9C%A6%20[AI-generated%20placeholder]%3C/text%3E%3C/svg%3E"
+      alt="Stylised abstract transit skyline (AI-generated demo placeholder)">
+    <figcaption>An atmospheric header illustration. (AI-generated demo placeholder — click to see the tool, model, verbatim prompt and disclosure.)</figcaption>
+  </figure>
+
+  <!-- MEDIA — gallery of several assets (data-des) -->
+  <div data-des="des_demo_gallery">
+    <p>The three busiest stations, each shot individually:</p>
+    <div class="demo-gallery" aria-hidden="true">
+      <img src="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='200'%20height='120'%3E%3Crect%20width='200'%20height='120'%20fill='%232f3b2c'/%3E%3Ctext%20x='100'%20y='66'%20fill='%23cfe3d4'%20font-family='sans-serif'%20font-size='14'%20text-anchor='middle'%3EUnion%3C/text%3E%3C/svg%3E" alt="Union station (demo)">
+      <img src="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='200'%20height='120'%3E%3Crect%20width='200'%20height='120'%20fill='%233b2c2c'/%3E%3Ctext%20x='100'%20y='66'%20fill='%23ddc0c0'%20font-family='sans-serif'%20font-size='14'%20text-anchor='middle'%3EHarbour%3C/text%3E%3C/svg%3E" alt="Harbour station (demo)">
+      <img src="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='200'%20height='120'%3E%3Crect%20width='200'%20height='120'%20fill='%232c303b'/%3E%3Ctext%20x='100'%20y='66'%20fill='%23c0c6dd'%20font-family='sans-serif'%20font-size='14'%20text-anchor='middle'%3ECentral%3C/text%3E%3C/svg%3E" alt="Central station (demo)">
+    </div>
+    <p class="note">Click the gallery (with Verify on) to open a card where each station photo carries its own thumbnail, source link, licence and identity line.</p>
+  </div>
+
+  <h2>Why it matters</h2>
+
+  <!-- FACT — multi-source (data-det) -->
+  <p data-det="det_demo_fact">Public transit ridership in large metro systems
+    fell sharply during 2020 and has recovered unevenly since, with rail generally
+    lagging bus. Click to see the two sources backing this background claim.</p>
+
+  <p class="note" style="border:none">Tip: the same element can carry several ids
+    (e.g. <code>data-ana</code> + <code>data-det</code>); the drawer then stacks one
+    card per id, ordered computation &rarr; media &rarr; generated &rarr; fact.</p>
+</main>
+
+<!-- ===================== VERIFY MARKUP — copy verbatim ===================== -->
+<!-- First-use helper toast (shown once when Verify is switched on) -->
+<div class="verify-toast" id="verifyToast" role="status" aria-live="polite" hidden>
+  <button class="vt-x" id="verifyToastClose" type="button" aria-label="Dismiss">&times;</button>
+  <span class="vt-dot">&#9679;</span> Click any highlighted claim, number, chart or image to see its source &mdash; and re-run the math yourself.
+</div>
+
+<!-- Dim backdrop + side drawer (provenance source cards) -->
+<div class="v-backdrop" id="verifyBackdrop" hidden></div>
+<aside class="v-drawer" id="verifyDrawer" role="dialog" aria-modal="true"
+       aria-labelledby="verifyDrawerTitle" hidden tabindex="-1">
+  <div class="v-dhead">
+    <div style="flex:1 1 auto;min-width:0">
+      <span class="v-dtitle" id="verifyDrawerTitle">Source</span>
+      <span class="v-dsub" id="verifyDrawerSub"></span>
+    </div>
+    <button class="v-close" id="verifyDrawerClose" type="button" aria-label="Close source panel">&times;</button>
+  </div>
+  <div class="v-dbody" id="verifyDrawerBody"></div>
+</aside>
+
+<!-- ===================== JSON ISLAND: verifyMap — INSPECTOR REPLACES =====================
+     Keep BYTE-IDENTICAL to verify/verify_map.json. One entry per atomic id used
+     in a data-{ana,det,des,sct,cin} attribute on the page.
+     Field shapes by kind:
+       computation: title, claim, code_file, code_lines, code, data_preview
+                    {description, columns, rows, _rows_truncated},
+                    expected_output, run{type:"derived"|"montecarlo", reduced_n?,
+                    needs_network}                          [pairs with runCells[id]]
+       media:       title, media_type("image"|"video"|"audio"|"audio_embed"),
+                    preview, source_url, license, author, identity, publish_note?;
+                    a gallery adds photos[]|flags[]|assets[] (each: filename/preview,
+                    name/team/label/subject, source_url, license, attribution?, identity)
+       generated:   title, media_type, preview, tool, model, prompt, purpose,
+                    disclosure, real_default?{preview,source_url,source_title,license}
+       fact:        title, claim, category, sources[]{url,title,facts[]}
+       credits:     same shape as fact (kind:"credits"); rendered with a Credits badge
+============================================================================ -->
+<script type="application/json" id="verifyMap">{
+  "ana_demo_calc": {
+    "kind": "computation",
+    "title": "Weekday boardings — Gold up 22%, Green down 4%",
+    "claim": "Across the five rail lines, average weekday boardings rose 8.5% system-wide between 2023 and 2024, from 399.3k to 433.3k. The gains are uneven: the Gold line grew fastest at +22.4% and Silver +16.7%, while the Green line fell 4.2%. Per-line growth is just the year-over-year change in average weekday boardings; the system figure is the change in the column totals.",
+    "cell_id": "cell_ridership",
+    "code_file": "code/ridership.py",
+    "code_lines": [12, 28],
+    "code": "import pandas as pd\ndf = pd.DataFrame(\n    [[\"Red\", 182.4, 196.1], [\"Blue\", 91.7, 102.3], [\"Green\", 64.2, 61.5],\n     [\"Gold\", 38.9, 47.6], [\"Silver\", 22.1, 25.8]],\n    columns=[\"line\", \"y2023\", \"y2024\"])\ndf[\"growth_pct\"] = (df[\"y2024\"] - df[\"y2023\"]) / df[\"y2023\"] * 100",
+    "data_preview": {
+      "description": "Average weekday boardings (thousands) by line, 2023 vs 2024, with year-over-year growth (ridership.csv).",
+      "columns": ["line", "y2023_k", "y2024_k", "growth_pct"],
+      "rows": [
+        ["Gold", 38.9, 47.6, 22.4],
+        ["Silver", 22.1, 25.8, 16.7],
+        ["Blue", 91.7, 102.3, 11.6],
+        ["Red", 182.4, 196.1, 7.5],
+        ["Green", 64.2, 61.5, -4.2]
+      ],
+      "_rows_truncated": "showing all 5 lines"
+    },
+    "expected_output": "Weekday boardings by line (thousands), 2023 -> 2024:\n  Gold      38.9 ->   47.6  (+22.4%)\n  Silver    22.1 ->   25.8  (+16.7%)\n  Blue      91.7 ->  102.3  (+11.6%)\n  Red      182.4 ->  196.1  ( +7.5%)\n  Green     64.2 ->   61.5  ( -4.2%)\nSystem total 399.3k -> 433.3k (+8.5%)\nfastest-growing line: Gold (+22.4%)",
+    "run": { "type": "derived", "needs_network": false }
+  },
+  "ana_demo_mc": {
+    "kind": "computation",
+    "title": "Capacity-alert risk — a Monte-Carlo estimate",
+    "claim": "Treating daily boardings as a noisy draw around a 214k mean (sd 22k), a Monte-Carlo estimate puts the probability that any given weekday exceeds the 245k capacity-alert threshold at about 7.4%, roughly 19 alert days across a 250-day service year. Because it is a simulation, the in-browser run uses a reduced sample and lands within Monte-Carlo noise of the published figure.",
+    "cell_id": "cell_capacity",
+    "code_file": "code/capacity.py",
+    "code_lines": [5, 18],
+    "code": "import numpy as np\nN, SEED, CAP = 200000, 0, 245.0\nrng = np.random.default_rng(SEED)\ndraws = np.clip(rng.normal(214.0, 22.0, N), 0, None)\np_over = (draws > CAP).mean()   # published: 7.4%",
+    "data_preview": {
+      "description": "Monte-Carlo inputs: daily-boarding distribution and the capacity-alert threshold.",
+      "columns": ["parameter", "value"],
+      "rows": [
+        ["mean_boardings_k", 214.0],
+        ["sd_boardings_k", 22.0],
+        ["capacity_alert_k", 245.0],
+        ["published_p_over_pct", 7.4]
+      ],
+      "_rows_truncated": "showing 4 of 4"
+    },
+    "expected_output": "Published N=200,000 -> P(exceed 245k) = 7.4%, about 19 alert days per service year.",
+    "run": { "type": "montecarlo", "reduced_n": 20000, "needs_network": false }
+  },
+  "ana_demo_net": {
+    "kind": "computation",
+    "title": "Live operator feed — latest hourly boardings",
+    "claim": "The transit operator publishes a live feed of the latest hourly boardings per line. Reproducing it requires a network request, so it cannot run inside the browser sandbox; the published snapshot is frozen in data/ridership_live.json and the full cell runs in the notebook.",
+    "cell_id": "cell_live_feed",
+    "code_file": "code/live_feed.py",
+    "code_lines": [1, 9],
+    "code": "import requests\nURL = \"https://api.example-transit.org/v1/ridership/latest\"\nr = requests.get(URL, timeout=30); r.raise_for_status()\nfor row in r.json()[\"lines\"]:\n    print(f\"{row['line']:7} {row['boardings_k']:6.1f}k\")",
+    "run": { "type": "derived", "needs_network": true }
+  },
+  "des_demo_photo": {
+    "kind": "media",
+    "title": "Light-rail train at a downtown platform",
+    "media_type": "image",
+    "preview": "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='320'%20height='180'%3E%3Crect%20width='320'%20height='180'%20fill='%23243447'/%3E%3Crect%20x='30'%20y='60'%20width='260'%20height='50'%20rx='6'%20fill='%23394b5e'/%3E%3Crect%20x='44'%20y='70'%20width='44'%20height='28'%20fill='%23a8c4dd'/%3E%3Crect%20x='104'%20y='70'%20width='44'%20height='28'%20fill='%23a8c4dd'/%3E%3Crect%20x='164'%20y='70'%20width='44'%20height='28'%20fill='%23a8c4dd'/%3E%3Crect%20x='224'%20y='70'%20width='44'%20height='28'%20fill='%23a8c4dd'/%3E%3Ctext%20x='160'%20y='150'%20fill='%23708198'%20font-family='sans-serif'%20font-size='13'%20text-anchor='middle'%3E[demo%20placeholder]%3C/text%3E%3C/svg%3E",
+    "source_url": "https://example.org/photos/lightrail-platform",
+    "license": "CC-BY-4.0",
+    "author": "Photo: J. Rivera / Example Commons (CC BY 4.0). Free commercial use with attribution.",
+    "identity": "A two-car light-rail train stopped at a covered downtown platform; passengers waiting along the edge. Generic scene, no recognisable individuals. Real photograph, not AI. (Placeholder asset in this reference; the Inspector supplies the real file + provenance.)"
+  },
+  "des_demo_ai": {
+    "kind": "generated",
+    "title": "Header illustration (AI-generated)",
+    "media_type": "image",
+    "preview": "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='320'%20height='180'%3E%3Cdefs%3E%3ClinearGradient%20id='g2'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%237a4ea0'/%3E%3Cstop%20offset='1'%20stop-color='%23c9a227'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='320'%20height='180'%20fill='url(%23g2)'/%3E%3Ccircle%20cx='160'%20cy='80'%20r='42'%20fill='%23ffffff'%20opacity='0.25'/%3E%3Ctext%20x='160'%20y='150'%20fill='%23ffffff'%20font-family='sans-serif'%20font-size='13'%20text-anchor='middle'%3E%E2%9C%A6%20AI-generated%3C/text%3E%3C/svg%3E",
+    "tool": "openrouter-text2image (generate_image.py)",
+    "model": "black-forest-labs/flux-1.1-pro",
+    "prompt": "A calm abstract header illustration evoking a city transit network at dawn: soft geometric rail lines and station nodes over a warm gold-to-violet gradient sky, minimal, editorial, no text, no logos, no identifiable people or real landmarks.",
+    "purpose": "ATMOSPHERE",
+    "disclosure": "AI-generated for atmosphere; not a photograph of a real place or event."
+  },
+  "des_demo_gallery": {
+    "kind": "media",
+    "title": "Three busiest stations — each individually verifiable",
+    "media_type": "image",
+    "preview": [
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='80'%20height='52'%3E%3Crect%20width='80'%20height='52'%20fill='%232f3b2c'/%3E%3C/svg%3E",
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='80'%20height='52'%3E%3Crect%20width='80'%20height='52'%20fill='%233b2c2c'/%3E%3C/svg%3E",
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='80'%20height='52'%3E%3Crect%20width='80'%20height='52'%20fill='%232c303b'/%3E%3C/svg%3E"
+    ],
+    "source_url": [
+      "https://example.org/photos/union-station",
+      "https://example.org/photos/harbour-station",
+      "https://example.org/photos/central-station"
+    ],
+    "license": "Mixed (per item below)",
+    "author": "Station photographs via Example Commons; each carries its own licence and attribution.",
+    "identity": "Three real station photographs, each checked individually; no AI-generated frames.",
+    "photos": [
+      {
+        "id": "des_st_union",
+        "name": "Union station",
+        "label": "Union station",
+        "filename": "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='160'%20height='100'%3E%3Crect%20width='160'%20height='100'%20fill='%232f3b2c'/%3E%3Ctext%20x='80'%20y='56'%20fill='%23cfe3d4'%20font-family='sans-serif'%20font-size='12'%20text-anchor='middle'%3EUnion%3C/text%3E%3C/svg%3E",
+        "source_url": "https://example.org/photos/union-station",
+        "license": "CC-BY-4.0",
+        "attribution": "Photo: A. Mensah / Example Commons (CC BY 4.0)",
+        "identity": "Concourse of Union station with departure boards; no recognisable individuals. Real photo, not AI."
+      },
+      {
+        "id": "des_st_harbour",
+        "name": "Harbour station",
+        "label": "Harbour station",
+        "filename": "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='160'%20height='100'%3E%3Crect%20width='160'%20height='100'%20fill='%233b2c2c'/%3E%3Ctext%20x='80'%20y='56'%20fill='%23ddc0c0'%20font-family='sans-serif'%20font-size='12'%20text-anchor='middle'%3EHarbour%3C/text%3E%3C/svg%3E",
+        "source_url": "https://example.org/photos/harbour-station",
+        "license": "CC0-1.0",
+        "attribution": "Photo: Example Transit Authority (CC0, public domain dedication)",
+        "identity": "Open-air Harbour station platform beside the waterfront; empty platform. Real photo, not AI."
+      },
+      {
+        "id": "des_st_central",
+        "name": "Central station",
+        "label": "Central station",
+        "filename": "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='160'%20height='100'%3E%3Crect%20width='160'%20height='100'%20fill='%232c303b'/%3E%3Ctext%20x='80'%20y='56'%20fill='%23c0c6dd'%20font-family='sans-serif'%20font-size='12'%20text-anchor='middle'%3ECentral%3C/text%3E%3C/svg%3E",
+        "source_url": "https://example.org/photos/central-station",
+        "license": "CC-BY-SA-4.0",
+        "attribution": "Photo: L. Okafor / Example Commons (CC BY-SA 4.0)",
+        "identity": "Vaulted ceiling of Central station above the main hall; distant blurred commuters. Real photo, not AI."
+      }
+    ]
+  },
+  "det_demo_fact": {
+    "kind": "fact",
+    "title": "Transit ridership fell in 2020 and is recovering unevenly",
+    "claim": "Public transit ridership in large metropolitan systems dropped sharply during the 2020 pandemic and has recovered unevenly since, with rail typically trailing bus and weekday commuting slower to return than weekend travel. This is the standard backdrop for any post-2020 ridership story.",
+    "category": "background",
+    "sources": [
+      {
+        "url": "https://example.org/reports/national-transit-database",
+        "title": "National Transit Database — annual ridership summary",
+        "facts": [
+          "System-wide ridership fell roughly 40-60% in 2020 vs 2019",
+          "Rail recovery has lagged bus recovery through 2024",
+          "Weekday peak ridership remains below pre-2020 levels in most large systems"
+        ]
+      },
+      {
+        "url": "https://example.org/reports/metro-recovery-tracker",
+        "title": "Metro Recovery Tracker — quarterly update",
+        "facts": [
+          "Recovery rates vary widely by metro area and mode",
+          "Off-peak and weekend trips recovered faster than commute trips"
+        ]
+      }
+    ]
+  }
+}</script>
+
+<!-- ===================== JSON ISLAND: runCells — INSPECTOR REPLACES =====================
+     Keep BYTE-IDENTICAL to verify/run_cells.json. One entry per computation id
+     that the page lets the reader re-run. Fields:
+       runnable        : true if it can run in-browser (Pyodide); false if not
+       reduced_n       : sample size used in-browser for a Monte-Carlo cell (else null)
+       lang            : "python"
+       code            : Pyodide-safe source (numpy / pandas / stdlib only); for a
+                         runnable cell it MUST actually print expected_stdout
+       expected_stdout : the verbatim stdout to compare against (empty for read-only)
+       note            : caveat shown under the result (e.g. reduced-N explanation)
+       needs_network   : true => not runnable in-browser; show read-only code instead
+       full_ref        : pointer to the full-data script / notebook cell
+     verdict(): a "montecarlo" run (per verifyMap[id].run.type) is graded "≈ within
+     Monte-Carlo noise"; an exact cell is graded PASS when stdout matches.
+     NOTE: the two runnable snippets below were executed with `py` and their REAL
+     stdout pasted into expected_stdout.
+============================================================================ -->
+<script type="application/json" id="runCells">{
+  "ana_demo_calc": {
+    "runnable": true,
+    "reduced_n": null,
+    "lang": "python",
+    "code": "import pandas as pd\n# Inlined from ridership.csv: average weekday boardings (thousands) by line, 2023 vs 2024.\n# growth_pct = (y2024 - y2023) / y2023 * 100\ndf = pd.DataFrame(\n    [[\"Red\", 182.4, 196.1], [\"Blue\", 91.7, 102.3], [\"Green\", 64.2, 61.5],\n     [\"Gold\", 38.9, 47.6], [\"Silver\", 22.1, 25.8]],\n    columns=[\"line\", \"y2023\", \"y2024\"])\ndf[\"growth_pct\"] = (df[\"y2024\"] - df[\"y2023\"]) / df[\"y2023\"] * 100\n\ntotal_23 = df[\"y2023\"].sum()\ntotal_24 = df[\"y2024\"].sum()\nsys_growth = (total_24 - total_23) / total_23 * 100\nprint(\"Weekday boardings by line (thousands), 2023 -> 2024:\")\nfor _, r in df.sort_values(\"growth_pct\", ascending=False).iterrows():\n    print(f\"  {r.line:7} {r.y2023:6.1f} -> {r.y2024:6.1f}  ({r.growth_pct:+5.1f}%)\")\nprint(f\"System total {total_23:.1f}k -> {total_24:.1f}k ({sys_growth:+.1f}%)\")\nprint(f\"fastest-growing line: {df.sort_values('growth_pct').iloc[-1].line} \"\n      f\"(+{df['growth_pct'].max():.1f}%)\")\n",
+    "expected_stdout": "Weekday boardings by line (thousands), 2023 -> 2024:\n  Gold      38.9 ->   47.6  (+22.4%)\n  Silver    22.1 ->   25.8  (+16.7%)\n  Blue      91.7 ->  102.3  (+11.6%)\n  Red      182.4 ->  196.1  ( +7.5%)\n  Green     64.2 ->   61.5  ( -4.2%)\nSystem total 399.3k -> 433.3k (+8.5%)\nfastest-growing line: Gold (+22.4%)\n",
+    "note": "Exact (no Monte-Carlo): recomputes per-line and system growth from the inlined ridership.csv rows.",
+    "needs_network": false,
+    "full_ref": "code/ridership.py (notebook cell cell_ridership) over the full data/ridership.csv."
+  },
+  "ana_demo_mc": {
+    "runnable": true,
+    "reduced_n": 20000,
+    "lang": "python",
+    "code": "import numpy as np\n# Reduced-N Monte-Carlo: P(a weekday exceeds the 245k capacity-alert threshold),\n# with daily boardings ~ Normal(mean=214k, sd=22k), clipped at 0. The published figure\n# used N=200,000 (7.4%); this reduced run (N=20,000) lands within Monte-Carlo noise.\nN, SEED, CAP = 20000, 0, 245.0\nrng = np.random.default_rng(SEED)\ndraws = np.clip(rng.normal(214.0, 22.0, N), 0, None)\np_over = (draws > CAP).mean()\nprint(f\"Reduced Monte-Carlo (N={N:,}, seed={SEED})\")\nprint(f\"mean weekday boardings ~ {draws.mean():.1f}k\")\nprint(f\"P(daily boardings exceed {CAP:.0f}k capacity alert) ~ {p_over*100:.1f}%\")\nprint(f\"expected alert days per 250-day service year ~ {p_over*250:.0f}\")\n",
+    "expected_stdout": "Reduced Monte-Carlo (N=20,000, seed=0)\nmean weekday boardings ~ 214.1k\nP(daily boardings exceed 245k capacity alert) ~ 7.8%\nexpected alert days per 250-day service year ~ 20\n",
+    "note": "Reduced N=20,000 in-browser -> within Monte-Carlo noise of the published N=200,000 (7.4%, ~19 alert days). Re-run for a slightly different estimate; the seed here is fixed so this reference is reproducible.",
+    "needs_network": false,
+    "full_ref": "code/capacity.py (N=200,000, seed 0; notebook cell cell_capacity) reproduces the published 7.4% figure."
+  },
+  "ana_demo_net": {
+    "runnable": false,
+    "reduced_n": null,
+    "lang": "python",
+    "code": "import requests\n# NOT runnable in-browser: fetches a live ridership feed over the network\n# (Pyodide has no sockets). Run this in the downloaded notebook locally (with network).\n# The frozen published numbers live in data/ridership_live.json.\nURL = \"https://api.example-transit.org/v1/ridership/latest\"\nr = requests.get(URL, timeout=30); r.raise_for_status()\nrows = r.json()[\"lines\"]\nfor row in rows:\n    print(f\"{row['line']:7} {row['boardings_k']:6.1f}k\")\nprint(\"Published snapshot frozen in data/ridership_live.json\")\n",
+    "expected_stdout": "",
+    "note": "Needs network — fetches the live operator feed, which the in-browser sandbox cannot do. Run the notebook cell cell_live_feed in the downloaded notebook locally. The frozen result is in data/ridership_live.json.",
+    "needs_network": true,
+    "full_ref": "code/live_feed.py fetches https://api.example-transit.org/v1/ridership/latest -> data/ridership_live.json."
+  }
+}</script>
+
+<!-- ===================== VERIFY LAYER IIFE — copy verbatim =====================
+     toggle, highlight, click->drawer, 4 card renderers (+ gallery), lazy Pyodide
+     runner. All state namespaced under window.__verify; nothing here touches the
+     page's own scripts. Generalised from the working WC build: no topic-specific
+     ids, packages inferred from each cell's imports, no per-id caveat hacks.
+============================================================================ -->
+<script>
+(function () {
+  "use strict";
+  var NS = (window.__verify = window.__verify || {});
+  var docEl = document.documentElement;
+
+  // ---- parse the inlined provenance data ----
+  var MAP = {}, RUN = {};
+  try { MAP = JSON.parse(document.getElementById("verifyMap").textContent || "{}"); }
+  catch (e) { MAP = {}; }
+  try { RUN = JSON.parse(document.getElementById("runCells").textContent || "{}"); }
+  catch (e) { RUN = {}; }
+  NS.MAP = MAP; NS.RUN = RUN;
+
+  // PUBLISH-TIME CONSTANT (Inspector sets this):
+  //  NB_PATH — relative path to the reproducible verify notebook,
+  //            "verify/<project>.ipynb". The panel's "Download notebook" link points
+  //            at it; the reader downloads it and runs it LOCALLY to reproduce the
+  //            numbers from raw data (there is NO Colab branch — local-only).
+  var NB_PATH = "verify/blog.ipynb";
+
+  // ---- kind -> human label for the hover/badge hint ----
+  var KIND_LABEL = {
+    computation: "Computation — re-runnable",
+    media: "Real photo — source",
+    generated: "AI-generated",
+    fact: "Fact — sources",
+    credits: "Credits"
+  };
+  function kindLabelFor(id, entry) {
+    return KIND_LABEL[entry.kind] || "Source";
+  }
+  // kind ordering for multi-id cards: computation -> media -> generated -> fact/credits
+  var KIND_ORDER = { computation: 0, media: 1, generated: 2, fact: 3, credits: 3 };
+
+  // ---- which elements are interactive (carry a click target) ----
+  // INTERACTIVE text tags get a dotted underline; everything else a block badge.
+  var TEXT_TAGS = { P:1, H1:1, H2:1, H3:1, FIGCAPTION:1, LI:1 };
+  var TEXT_CLASSES = ["stand", "kicker", "stat-callout"];
+  // NON-interactive structural / decorative wrappers — never a click target.
+  function isDecorative(el) {
+    if (el.matches("section, main")) return true;
+    // full-screen cinematic background layers + scroll rail (Cinematographer role)
+    if (el.closest(".cin-stage") || el.id === "cinRail" || el.id === "cinStage") return true;
+    return false;
+  }
+  function isTextHit(el) {
+    if (TEXT_TAGS[el.tagName]) return true;
+    for (var i = 0; i < TEXT_CLASSES.length; i++)
+      if (el.classList.contains(TEXT_CLASSES[i])) return true;
+    return false;
+  }
+
+  // collect the atomic ids declared on an element (comma-lists allowed, deduped, valid only)
+  // NOTE: "data-int" (Interaction-role centerpiece) added here — needs a browser re-test on a blog with an int_ centerpiece.
+  var ATTRS = ["data-ana", "data-det", "data-des", "data-sct", "data-cin", "data-int"];
+  function idsOn(el) {
+    var out = [], seen = {};
+    for (var a = 0; a < ATTRS.length; a++) {
+      var v = el.getAttribute(ATTRS[a]);
+      if (!v) continue;
+      v.split(",").forEach(function (id) {
+        id = id.trim();
+        if (id && MAP[id] && !seen[id]) { seen[id] = 1; out.push(id); }
+      });
+    }
+    return out;
+  }
+
+  // primary source-type label for an element (use the first resolvable id's kind)
+  function primaryLabel(ids) {
+    if (!ids.length) return "Source";
+    return kindLabelFor(ids[0], MAP[ids[0]]);
+  }
+
+  // ---- mark every interactive verifiable element ----
+  var hits = [];
+  function collectHits() {
+    hits = [];
+    var sel = ATTRS.map(function (a) { return "[" + a + "]"; }).join(",");
+    var nodes = document.querySelectorAll(sel);
+    nodes.forEach(function (el) {
+      if (el.__vHit) return;                       // already processed
+      if (isDecorative(el)) return;                // skip section/main/cinematic bg
+      var ids = idsOn(el);
+      if (!ids.length) return;
+      el.__vHit = true;
+      el.__vIds = ids;
+      el.classList.add("v-hit");
+      el.classList.add(isTextHit(el) ? "v-text" : "v-block");
+      el.__vLabel = primaryLabel(ids);
+      if (el.classList.contains("v-block")) {
+        el.setAttribute("data-vbadge", "Verify ⌕ " + el.__vLabel);
+      }
+      // remember the element's pre-existing a11y so verify-off restores it cleanly
+      el.__vHadTabindex = el.hasAttribute("tabindex");
+      el.__vHadRole = el.hasAttribute("role");
+      hits.push(el);
+    });
+  }
+
+  // make the hit elements keyboard-reachable + announced ONLY while verify is on
+  function setHitsInteractive(on) {
+    hits.forEach(function (el) {
+      if (on) {
+        if (!el.__vHadTabindex) el.setAttribute("tabindex", "0");
+        if (!el.__vHadRole) el.setAttribute("role", "button");
+        if (!el.getAttribute("aria-label")) {
+          el.setAttribute("aria-label", "Show source: " + (el.__vLabel || "details"));
+          el.__vSetAria = true;
+        }
+      } else {
+        if (!el.__vHadTabindex) el.removeAttribute("tabindex");
+        if (!el.__vHadRole) el.removeAttribute("role");
+        if (el.__vSetAria) { el.removeAttribute("aria-label"); el.__vSetAria = false; }
+      }
+    });
+  }
+
+  // =====================================================================
+  // DRAWER
+  // =====================================================================
+  var backdrop = document.getElementById("verifyBackdrop");
+  var drawer = document.getElementById("verifyDrawer");
+  var drawerBody = document.getElementById("verifyDrawerBody");
+  var drawerTitle = document.getElementById("verifyDrawerTitle");
+  var drawerSub = document.getElementById("verifyDrawerSub");
+  var drawerClose = document.getElementById("verifyDrawerClose");
+  var lastFocus = null;
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+
+  function openDrawer(title, subtitle, cards) {
+    lastFocus = document.activeElement;
+    drawerTitle.textContent = title || "Source";
+    drawerSub.textContent = subtitle || "";
+    drawerBody.innerHTML = "";
+    cards.forEach(function (c) { drawerBody.appendChild(c); });
+    backdrop.hidden = false; drawer.hidden = false;
+    // force reflow so the transition runs
+    void drawer.offsetWidth;
+    backdrop.classList.add("open"); drawer.classList.add("open");
+    docEl.classList.add("v-drawer-open");
+    drawer.focus();
+    document.addEventListener("keydown", onKeydown, true);
+  }
+  function closeDrawer() {
+    backdrop.classList.remove("open"); drawer.classList.remove("open");
+    docEl.classList.remove("v-drawer-open");
+    document.removeEventListener("keydown", onKeydown, true);
+    var t = setTimeout(function () { backdrop.hidden = true; drawer.hidden = true; }, 320);
+    NS._closeT = t;
+    if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+  }
+  function onKeydown(e) {
+    if (e.key === "Escape") { e.preventDefault(); closeDrawer(); return; }
+    if (e.key === "Tab") {
+      // focus trap
+      var f = drawer.querySelectorAll(
+        'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])');
+      f = Array.prototype.filter.call(f, function (n) { return n.offsetParent !== null || n === drawer; });
+      if (!f.length) { e.preventDefault(); drawer.focus(); return; }
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
+  backdrop.addEventListener("click", closeDrawer);
+  drawerClose.addEventListener("click", closeDrawer);
+
+  // build + show the drawer for one clicked element
+  function showFor(element) {
+    var ids = element.__vIds || idsOn(element);
+    if (!ids.length) return;
+    // order: computation -> media -> generated -> fact/credits
+    var ordered = ids.slice().sort(function (a, b) {
+      var ka = (KIND_ORDER[MAP[a].kind] != null ? KIND_ORDER[MAP[a].kind] : 9);
+      var kb = (KIND_ORDER[MAP[b].kind] != null ? KIND_ORDER[MAP[b].kind] : 9);
+      return ka - kb;
+    });
+    var primary = MAP[ordered[0]];
+    var title = (primary && primary.title) ? primary.title : "Source";
+    var sub = ordered.map(function (id) { return kindLabelFor(id, MAP[id]); })
+      .filter(function (v, i, arr) { return arr.indexOf(v) === i; }).join("  ·  ");
+    var cards = ordered.map(function (id) { return renderCard(id, MAP[id]); });
+    openDrawer(title, sub, cards);
+  }
+
+  // =====================================================================
+  // CARD RENDERERS (by kind)
+  // =====================================================================
+  function kindBadge(id, entry) {
+    var label = KIND_LABEL[entry.kind] || entry.kind;
+    var cls = "v-kind";
+    if (entry.kind === "media") cls += " k-media";
+    else if (entry.kind === "generated") cls += " k-generated";
+    return '<span class="' + cls + '">' + esc(label) + '</span>';
+  }
+
+  function renderDataTable(dp) {
+    if (!dp || !dp.columns || !dp.rows) return "";
+    var h = '<span class="v-lbl">Data preview</span>';
+    if (dp.description) h += '<div class="v-meta">' + esc(dp.description) + '</div>';
+    h += '<table class="v-data"><thead><tr>';
+    dp.columns.forEach(function (c) { h += "<th>" + esc(c) + "</th>"; });
+    h += "</tr></thead><tbody>";
+    dp.rows.forEach(function (r) {
+      h += "<tr>";
+      r.forEach(function (cell) { h += "<td>" + esc(cell) + "</td>"; });
+      h += "</tr>";
+    });
+    h += "</tbody></table>";
+    if (dp._rows_truncated) h += '<div class="v-trunc">' + esc(dp._rows_truncated) + '</div>';
+    return h;
+  }
+
+  function codeBlock(code, cap) {
+    var h = '<div class="v-code">';
+    if (cap) h += '<span class="v-codecap">' + esc(cap) + '</span>';
+    h += "<pre>" + esc(code) + "</pre></div>";
+    return h;
+  }
+
+  // Open the SOURCE of one cell in a fresh blank tab. A raw .ipynb served over
+  // file:// (or with the wrong MIME) downloads instead of opening, and even when
+  // it opens it shows notebook JSON, not the readable cell. So instead of linking
+  // to NB_PATH we write a tiny self-contained HTML document — the inlined
+  // run_cells[id].code in a styled <pre> — into a window.open()ed tab. Works on
+  // file:// with no assets and shows exactly the cell behind this claim.
+  function openCellSource(id, cellId) {
+    var run = RUN[id] || {};
+    var code = run.code || "";
+    var lang = run.lang || "python";
+    var heading = cellId ? ("Notebook cell — " + cellId) : "Notebook cell source";
+    var w = window.open("", "_blank");
+    if (!w) return;   // popup blocked — the Download link remains as a fallback
+    var doc =
+      '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      + "<title>" + esc(heading) + "</title>"
+      + "<style>"
+      + "body{margin:0;background:#0d0b08;color:#cfe3d4;"
+      + "font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:13px;line-height:1.5}"
+      + "header{padding:14px 18px;border-bottom:1px solid #332d23;"
+      + "font-family:system-ui,-apple-system,'Segoe UI',sans-serif}"
+      + "header h1{margin:0;font-size:14px;font-weight:600;color:#efe6d6}"
+      + "header .sub{margin:.3em 0 0;font-size:12px;color:#a89a83}"
+      + "pre{margin:0;padding:18px;white-space:pre;overflow:auto;tab-size:2}"
+      + "<\/style></head><body>"
+      + "<header><h1>" + esc(heading) + "</h1>"
+      + '<p class="sub">' + esc(lang) + " — source of the cell behind this claim. "
+      + "Run it in the notebook (Download notebook, run it locally) to reproduce.</p></header>"
+      + "<pre>" + esc(code) + "</pre>"
+      + "</body></html>";
+    w.document.open();
+    w.document.write(doc);
+    w.document.close();
+  }
+
+  function notebookLinks(id, entry, opts) {
+    opts = opts || {};
+    var cellId = entry.cell_id || (entry.computation_ref && entry.computation_ref.cell_id) || "";
+    var hasCode = !!(RUN[id] && RUN[id].code);
+    var h = '<div class="v-links">';
+    // "Open the notebook cell" -> opens a blank tab showing the inlined cell
+    // source (no download). Wired by renderComputation after insertion. Falls
+    // back to nothing-shown only if there is no inlined code for this id.
+    if (hasCode) {
+      h += '<button type="button" class="v-linkbtn v-nb-open" data-nb-id="' + esc(id) + '"'
+         + (cellId ? ' data-nb-cell="' + esc(cellId) + '"' : "")
+         + '>Open the notebook cell' + (cellId ? " (" + esc(cellId) + ")" : "") + " ↗</button>";
+    }
+    h += '<a href="' + esc(NB_PATH) + '" download>Download notebook</a>';
+    h += "</div>";
+    return h;
+  }
+
+  // --- COMPUTATION ---
+  function renderComputation(id, entry, card) {
+    var h = kindBadge(id, entry);
+    h += '<div class="v-ctitle">' + esc(entry.title || id) + "</div>";
+    if (entry.claim) h += '<p class="v-claim">' + esc(entry.claim) + "</p>";
+    h += renderDataTable(entry.data_preview);
+    if (entry.code) {
+      var cap = entry.code_file
+        ? (entry.code_file + (entry.code_lines ? " : lines " + entry.code_lines.join("–") : ""))
+        : "";
+      h += '<span class="v-lbl">Code</span>' + codeBlock(entry.code, cap);
+    }
+    if (entry.expected_output) {
+      h += '<span class="v-lbl">Expected output</span>';
+      h += '<div class="v-out">' + esc(entry.expected_output) + "</div>";
+    }
+    // a computation may ALSO carry a per-asset photo gallery (e.g. a grid of
+    // individually-credited faces) — append it below, reusing the gallery renderer.
+    var gItems = galleryItems(entry);
+    if (gItems && gItems.length) {
+      if (entry.photos_note) h += '<div class="v-meta">' + esc(entry.photos_note) + "</div>";
+      h += mediaGalleryHTML(gItems, { heading: gItems.length + " photos — each individually verifiable" });
+    }
+    card.innerHTML = h;
+
+    var run = RUN[id];
+    var runnable = run && run.runnable;
+    var needsNet = run && run.needs_network;
+
+    if (runnable && !needsNet) {
+      var btn = el("button", "v-btn");
+      btn.type = "button";
+      btn.innerHTML = "▶ Run in your browser";
+      var result = el("div", "v-run-result");
+      btn.addEventListener("click", function () { runCell(id, run, btn, result); });
+      card.appendChild(btn);
+      card.appendChild(result);
+    } else if (needsNet) {
+      var note = el("div", "v-caveat",
+        (run && run.note) ? esc(run.note)
+          : "Needs network — run it in the notebook.");
+      card.appendChild(note);
+      if (run && run.code) {
+        var ro = el("div", null,
+          '<span class="v-lbl">Code (read-only — needs network)</span>' + codeBlock(run.code, ""));
+        card.appendChild(ro);
+      }
+    }
+    var links = el("div");
+    links.innerHTML = notebookLinks(id, entry);
+    card.appendChild(links);
+    // wire the "Open the notebook cell" button -> blank tab with the cell source
+    var nbBtn = links.querySelector(".v-nb-open");
+    if (nbBtn) {
+      nbBtn.addEventListener("click", function () {
+        openCellSource(nbBtn.getAttribute("data-nb-id"), nbBtn.getAttribute("data-nb-cell"));
+      });
+    }
+  }
+
+  // --- MEDIA ---
+  function mediaPreviewHTML(entry) {
+    var p = entry.preview, mt = entry.media_type || "";
+    if (Array.isArray(p)) {
+      var s = '<div class="v-mediastrip">';
+      p.forEach(function (src) { s += '<img src="' + esc(src) + '" alt="" loading="lazy">'; });
+      return s + "</div>";
+    }
+    if (!p) return "";
+    if (mt === "video") {
+      return '<video class="v-media" src="' + esc(p) + '" controls muted playsinline preload="metadata"></video>';
+    }
+    if (mt === "audio_embed" || mt === "audio") {
+      return '<audio class="v-media" src="' + esc(p) + '" controls preload="none" style="height:44px"></audio>';
+    }
+    return '<img class="v-media" src="' + esc(p) + '" alt="" loading="lazy">';
+  }
+  function firstUrl(u) { return Array.isArray(u) ? u[0] : u; }
+  // A multi-asset entry exposes a per-item array under one of these keys; each item
+  // carries its own thumbnail + label + source_url + licence so every asset is
+  // individually verifiable (a flags strip, a grid of faces, …).
+  function galleryItems(entry) {
+    return entry.flags || entry.assets || entry.photos || null;
+  }
+  // Render an array of assets as a labelled gallery: thumbnail + name + a
+  // "View original" link to THAT item's source_url + its licence (+ identity line).
+  function mediaGalleryHTML(items, opts) {
+    opts = opts || {};
+    var h = "";
+    if (opts.heading) h += '<span class="v-lbl">' + esc(opts.heading) + "</span>";
+    h += '<div class="v-gallery">';
+    items.forEach(function (it) {
+      var label = it.team || it.name || it.label || it.subject || "";
+      var src = firstUrl(it.source_url);
+      h += '<figure class="v-galitem">';
+      if (it.filename || it.preview) {
+        h += '<img src="' + esc(it.filename || it.preview) + '" alt="' + esc(label) + '" loading="lazy">';
+      }
+      if (label) {
+        var sub = it.country && it.country !== label ? (" — " + it.country) : "";
+        h += '<figcaption class="v-galname">' + esc(label) + esc(sub) + "</figcaption>";
+      }
+      if (src) {
+        h += '<div class="v-links"><a href="' + esc(src) + '" target="_blank" rel="noopener">View original ↗</a></div>';
+      }
+      if (it.license) h += '<div class="v-meta"><b>Licence:</b> ' + esc(it.license) + "</div>";
+      if (it.attribution) h += '<div class="v-meta">' + esc(it.attribution) + "</div>";
+      if (it.identity) h += '<div class="v-real">Verified real, not AI. ' + esc(it.identity) + "</div>";
+      h += "</figure>";
+    });
+    return h + "</div>";
+  }
+  function renderMedia(id, entry, card) {
+    var h = kindBadge(id, entry);
+    h += '<div class="v-ctitle">' + esc(entry.title || id) + "</div>";
+    var items = galleryItems(entry);
+    if (items && items.length) {
+      // multi-asset: render each asset individually labelled + linked
+      if (entry.license) h += '<div class="v-meta"><b>Licence:</b> ' + esc(entry.license) + "</div>";
+      if (entry.author) h += '<div class="v-meta">' + esc(entry.author) + "</div>";
+      if (entry.identity) h += '<div class="v-real">Verified real, not AI. ' + esc(entry.identity) + "</div>";
+      h += mediaGalleryHTML(items, { heading: items.length + " sources — each individually verifiable" });
+      if (entry.publish_note) h += '<div class="v-caveat">' + esc(entry.publish_note) + "</div>";
+      card.innerHTML = h;
+      return;
+    }
+    // single-asset path
+    h += mediaPreviewHTML(entry);
+    var src = firstUrl(entry.source_url);
+    if (src) {
+      h += '<div class="v-links"><a href="' + esc(src) + '" target="_blank" rel="noopener">View original ↗</a></div>';
+    }
+    if (entry.license) h += '<div class="v-meta"><b>Licence:</b> ' + esc(entry.license) + "</div>";
+    if (entry.author) h += '<div class="v-meta">' + esc(entry.author) + "</div>";
+    if (entry.identity) h += '<div class="v-real">Verified real, not AI. ' + esc(entry.identity) + "</div>";
+    if (entry.publish_note) h += '<div class="v-caveat">' + esc(entry.publish_note) + "</div>";
+    card.innerHTML = h;
+  }
+
+  // --- GENERATED ---
+  function renderGenerated(id, entry, card) {
+    var h = kindBadge(id, entry);
+    h += '<div class="v-ctitle">' + esc(entry.title || id) + "</div>";
+    h += mediaPreviewHTML(entry);
+    h += '<div><span class="v-genbadge">✦ AI-generated</span></div>';
+    if (entry.tool) h += '<div class="v-meta"><b>Tool:</b> ' + esc(entry.tool) + "</div>";
+    if (entry.model) h += '<div class="v-meta"><b>Model:</b> ' + esc(entry.model) + "</div>";
+    if (entry.prompt) {
+      h += '<span class="v-lbl">Prompt (verbatim)</span><div class="v-quote">' + esc(entry.prompt) + "</div>";
+    }
+    if (entry.purpose) h += '<div class="v-meta"><b>Purpose:</b> ' + esc(entry.purpose) + "</div>";
+    if (entry.disclosure) h += '<div class="v-caveat">' + esc(entry.disclosure) + "</div>";
+    if (entry.real_default) {
+      var rd = entry.real_default;
+      h += '<span class="v-lbl">Default shown: real footage</span>';
+      h += '<div class="v-meta">The page <b>defaults to real copyrighted footage</b> and toggles to this AI clip.</div>';
+      if (rd.source_title || rd.source_url) {
+        h += '<div class="v-links"><a href="' + esc(rd.source_url || "#") + '" target="_blank" rel="noopener">'
+           + esc(rd.source_title || "Original footage") + " ↗</a></div>";
+      }
+      if (rd.license) h += '<div class="v-caveat"><b>' + esc(rd.license) + "</b> — swapped to the AI clip at the publish gate.</div>";
+    }
+    card.innerHTML = h;
+  }
+
+  // --- FACT (also used for kind:"credits") ---
+  function renderFact(id, entry, card) {
+    var h = kindBadge(id, entry);
+    h += '<div class="v-ctitle">' + esc(entry.title || id) + "</div>";
+    if (entry.claim) h += '<p class="v-claim">' + esc(entry.claim) + "</p>";
+    if (entry.category) h += '<div class="v-meta"><b>Category:</b> ' + esc(entry.category) + "</div>";
+    if (entry.sources && entry.sources.length) {
+      h += '<span class="v-lbl">Sources</span><ul class="v-srclist">';
+      entry.sources.forEach(function (s) {
+        h += "<li>";
+        h += '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">View source ↗</a>';
+        if (s.title) h += '<div class="v-meta"><b>' + esc(s.title) + "</b></div>";
+        if (s.facts && s.facts.length) {
+          h += '<div class="v-srcfacts">' + s.facts.map(esc).join("<br>") + "</div>";
+        }
+        h += "</li>";
+      });
+      h += "</ul>";
+    }
+    if (entry.computation_ref) {
+      var cr = entry.computation_ref;
+      var crId = (typeof cr === "string") ? cr : cr.id;
+      h += '<div class="v-meta" style="margin-top:.5rem">computed in → <b>' + esc(crId);
+      if (cr && cr.cell_id) h += " (" + esc(cr.cell_id) + ")";
+      h += "</b></div>";
+    }
+    card.innerHTML = h;
+  }
+
+  function renderCard(id, entry) {
+    var card = el("div", "v-card");
+    if (!entry) { card.innerHTML = '<div class="v-meta">Unknown source: ' + esc(id) + "</div>"; return card; }
+    if (entry.kind === "computation") renderComputation(id, entry, card);
+    else if (entry.kind === "media") renderMedia(id, entry, card);
+    else if (entry.kind === "generated") renderGenerated(id, entry, card);
+    else renderFact(id, entry, card);   // fact + credits
+    return card;
+  }
+
+  // =====================================================================
+  // PYODIDE (lazy — loaded only on the first "Run" click)
+  // =====================================================================
+  var PYODIDE_VERSION = "0.26.4";
+  var PYODIDE_BASE = "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/";
+  var PYODIDE_URL = PYODIDE_BASE + "pyodide.js";
+  NS._pyPromise = null;
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = src; s.onload = resolve; s.onerror = function () { reject(new Error("Failed to load " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function getPyodide(statusFn) {
+    if (NS._pyPromise) return NS._pyPromise;
+    NS._pyPromise = (function () {
+      if (statusFn) statusFn("Starting Python… (one-time ∼MBs)");
+      var p = (typeof loadPyodide === "function")
+        ? Promise.resolve()
+        : loadScript(PYODIDE_URL);
+      return p.then(function () { return loadPyodide({ indexURL: PYODIDE_BASE }); });
+    })();
+    return NS._pyPromise;
+  }
+  // packages needed per snippet — inferred from the cell's imports (topic-agnostic).
+  function pkgsFor(id) {
+    var run = RUN[id] || {};
+    var code = run.code || "";
+    var pkgs = [];
+    if (/(^|\n)\s*import\s+numpy|from\s+numpy\s+import/.test(code)) pkgs.push("numpy");
+    if (/(^|\n)\s*import\s+pandas|from\s+pandas\s+import/.test(code)) pkgs.push("pandas");
+    return pkgs;
+  }
+
+  // compare actual vs expected; montecarlo -> approximate (reduced N differs)
+  function verdict(id, run, actual) {
+    var exp = (run.expected_stdout || "").trim();
+    var act = (actual || "").trim();
+    var mcType = (MAP[id] && MAP[id].run && MAP[id].run.type === "montecarlo");
+    if (mcType) {
+      return { cls: "approx", text: "≈ reproduced within Monte-Carlo noise" };
+    }
+    if (act === exp) return { cls: "pass", text: "PASS — matches published output" };
+    // tolerant: ignore whitespace runs
+    if (act.replace(/\s+/g, " ") === exp.replace(/\s+/g, " "))
+      return { cls: "pass", text: "PASS — matches published output" };
+    return { cls: "approx", text: "≈ ran — compare to expected above" };
+  }
+
+  function runCell(id, run, btn, result) {
+    btn.disabled = true;
+    var origLabel = btn.innerHTML;
+    btn.innerHTML = 'Starting Python… <span class="v-spin"></span>';
+    result.innerHTML = "";
+    var status = function (msg) { btn.innerHTML = esc(msg) + ' <span class="v-spin"></span>'; };
+    getPyodide(status).then(function (py) {
+      btn.innerHTML = 'Loading packages… <span class="v-spin"></span>';
+      var pkgs = pkgsFor(id);
+      return (pkgs.length ? py.loadPackage(pkgs) : Promise.resolve()).then(function () {
+        btn.innerHTML = 'Running… <span class="v-spin"></span>';
+        var captured = "";
+        if (py.setStdout) py.setStdout({ batched: function (s) { captured += s + "\n"; } });
+        return Promise.resolve(py.runPythonAsync(run.code)).then(function () {
+          return captured;
+        }).catch(function (err) {
+          throw err;
+        });
+      });
+    }).then(function (out) {
+      var v = verdict(id, run, out);
+      var html = '<span class="v-badge ' + v.cls + '">' + esc(v.text) + "</span>";
+      html += '<span class="v-lbl">Your browser’s output</span>';
+      html += '<div class="v-out">' + esc(out || "(no output)") + "</div>";
+      // reduced-N note surfaced for a Monte-Carlo headline
+      if (run.reduced_n) {
+        html += '<div class="v-meta">Ran a reduced <b>N=' + esc(run.reduced_n.toLocaleString())
+              + '</b> in-browser.</div>';
+      }
+      if (run.note) html += '<div class="v-caveat">' + esc(run.note) + "</div>";
+      result.innerHTML = html;
+      btn.innerHTML = "↻ Run again";
+      btn.disabled = false;
+    }).catch(function (err) {
+      result.innerHTML = '<span class="v-badge fail">Error</span><div class="v-out">'
+        + esc(String(err && err.message ? err.message : err)) + "</div>";
+      btn.innerHTML = origLabel;
+      btn.disabled = false;
+    });
+  }
+
+  // =====================================================================
+  // TOGGLE + WIRING
+  // =====================================================================
+  var toggle = document.getElementById("verifyToggle");
+  var toggleLbl = document.getElementById("verifyToggleLbl");
+  var toast = document.getElementById("verifyToast");
+  var toastClose = document.getElementById("verifyToastClose");
+  var verifyOn = false, toastShown = false, wired = false;
+
+  function showToast() {
+    if (toastShown) return;
+    toastShown = true;
+    toast.hidden = false;
+    void toast.offsetWidth;
+    toast.classList.add("show");
+    NS._toastT = setTimeout(hideToast, 7000);
+  }
+  function hideToast() {
+    toast.classList.remove("show");
+    clearTimeout(NS._toastT);
+    setTimeout(function () { if (!toast.classList.contains("show")) toast.hidden = true; }, 300);
+  }
+  if (toastClose) toastClose.addEventListener("click", hideToast);
+
+  // genuine interactive descendants whose own behavior must NOT be hijacked by the
+  // drawer (form controls inside an explorable/predictor, interactive cards, links).
+  // The page's own interactive widget classes can be appended here if needed.
+  var INNER_INTERACTIVE = "a[href],button,select,input,textarea,label,summary,details,[role='tab'],[role='button']:not(.v-hit)";
+  function onHitActivate(e) {
+    if (!verifyOn) return;                 // dormant unless verify is on
+    var t = e.currentTarget;
+    if (e.type === "click") {
+      // let clicks that land on a real inner control / link do their own thing
+      var inner = e.target.closest(INNER_INTERACTIVE);
+      if (inner && inner !== t && t.contains(inner)) return;
+      // innermost .v-hit wins: if a more specific hit is the real target, defer to it
+      var nearest = e.target.closest(".v-hit");
+      if (nearest && nearest !== t && t.contains(nearest)) return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    showFor(t);
+  }
+  function wireHits() {
+    if (wired) return; wired = true;
+    collectHits();
+    hits.forEach(function (h) {
+      h.addEventListener("click", onHitActivate);
+      h.addEventListener("keydown", function (e) {
+        if (!verifyOn) return;
+        // only when focus is on the hit element itself, not a nested control
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showFor(e.currentTarget); }
+      });
+    });
+  }
+
+  function setVerify(on) {
+    verifyOn = on;
+    docEl.classList.toggle("verify-on", on);
+    toggle.setAttribute("aria-pressed", on ? "true" : "false");
+    toggleLbl.textContent = on ? "Verify: On" : "Verify: Off";
+    if (on) { wireHits(); }
+    setHitsInteractive(on);
+    if (on) { showToast(); }
+    else { hideToast(); if (drawer && !drawer.hidden) closeDrawer(); }
+  }
+  toggle.addEventListener("click", function () { setVerify(!verifyOn); });
+
+  NS.open = showFor;
+  NS.setVerify = setVerify;
+})();
+</script>
+</body>
+</html>

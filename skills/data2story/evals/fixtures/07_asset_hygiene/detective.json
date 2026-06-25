@@ -1,0 +1,5 @@
+{
+  "_fixture": "scenario 07 — minimal project so validate.py reaches Section 16 (asset hygiene). Resolved abstract topic_profile suppresses §0b. Section 16 only depends on assets/ contents, index.html (basename test), the scout/designer/hero live-pointer fields (absent here), and the provenance/_relocated.json sentinel — so this scaffold is all it needs.",
+  "topic_profile": { "is_visual": false, "is_computational": false, "tags": ["abstract"] },
+  "items": {}
+}

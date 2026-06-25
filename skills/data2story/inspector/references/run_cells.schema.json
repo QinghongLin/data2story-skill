@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://data-journalist-agent.github.io/schemas/run_cells.schema.json",
+  "title": "Inspector run_cells",
+  "description": "The parallel runnable-snippet map. Keyed by the SAME atomic element ids as verify_map.json. Each entry is a self-contained Python snippet the Inspector can execute in-browser (Pyodide) and grade against its expected_stdout. See _doc for the discipline every snippet must obey.",
+  "type": "object",
+  "properties": {
+    "_doc": {
+      "description": "The discipline that makes a snippet runnable. Optional but recommended as the first key.",
+      "type": "object",
+      "properties": {
+        "purpose": {
+          "type": "string",
+          "const": "run_cells.json holds the in-browser-runnable version of each computation element in verify_map.json (same ids). The Inspector's 'Run' button executes runnable entries via a lazily-loaded Pyodide and compares stdout to expected_stdout."
+        },
+        "self_contained": {
+          "type": "string",
+          "const": "SELF-CONTAINED: every input the snippet needs is inlined as a Python literal in `code`. No file reads, no network, no dependence on other cells or page state."
+        },
+        "pyodide_imports_only": {
+          "type": "string",
+          "const": "PYODIDE-SAFE IMPORTS ONLY: numpy, pandas, and the Python standard library (math, json, itertools, collections, ...). No requests, no urllib network use, no third-party packages outside numpy/pandas."
+        },
+        "pre_tested": {
+          "type": "string",
+          "const": "PRE-TESTED: the snippet has been run and `code` reproduces `expected_stdout` exactly (byte-for-byte after normalising trailing newline). A snippet that does not reproduce its expected_stdout must not ship."
+        },
+        "reduced_n_rule": {
+          "type": "string",
+          "const": "HEAVY COMPUTE -> reduced_n: if the published figure needs a large sample (Monte-Carlo etc.), the in-browser snippet runs a SMALLER reduced_n and is graded '≈ within noise', NEVER a hard PASS. The exact, full-N version lives in the notebook (see full_ref)."
+        },
+        "network_rule": {
+          "type": "string",
+          "const": "needs_network:true  ==>  runnable:false. A network-backed element is rendered READ-ONLY (code shown for inspection) and points the reader to the notebook cell named in full_ref; it is never executed in the browser."
+        },
+        "id_parity": {
+          "type": "string",
+          "const": "Keys mirror verify_map.json. Every runnable id here SHOULD have a 'computation' entry there; media/generated/fact ids do not appear in run_cells."
+        },
+        "byte_identity": {
+          "type": "string",
+          "const": "run_cells.json must be byte-identical to the inline `runCells` <script> island embedded in index.html. This file is the on-disk source of truth."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "patternProperties": {
+    "^(ana|det|des|sct|cin|int)_[A-Za-z0-9_]+$": {
+      "type": "object",
+      "required": ["runnable", "reduced_n", "lang", "code", "expected_stdout", "needs_network", "full_ref"],
+      "properties": {
+        "runnable": {
+          "type": "boolean",
+          "description": "true => the Inspector may execute `code` in-browser. MUST be false whenever needs_network is true."
+        },
+        "reduced_n": {
+          "description": "In-browser sample size for a stochastic snippet (smaller than the published N). null for exact/derived snippets. When set, grading is approximate ('≈ within noise'), not PASS.",
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "lang": {
+          "const": "python",
+          "description": "Only python is executable in the Pyodide sandbox."
+        },
+        "code": {
+          "type": "string",
+          "description": "The self-contained snippet. All inputs inlined; imports limited to numpy/pandas/stdlib; pre-tested to reproduce expected_stdout."
+        },
+        "expected_stdout": {
+          "type": "string",
+          "description": "The literal stdout the snippet prints (the grading target). May be empty string only for needs_network:true / runnable:false read-only entries."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional: explains the reduction (what was approximated) or why the snippet is exact, so a reader knows how to read the comparison."
+        },
+        "needs_network": {
+          "type": "boolean",
+          "description": "true => the underlying computation needs the network; forces runnable:false."
+        },
+        "full_ref": {
+          "type": "string",
+          "description": "Pointer to the full, exact reproduction: the source script (with its full N/seed) and the notebook cell tag that runs the full version."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "description": "needs_network:true forces runnable:false (network-backed snippets render read-only).",
+          "if": { "properties": { "needs_network": { "const": true } } },
+          "then": { "properties": { "runnable": { "const": false } } }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

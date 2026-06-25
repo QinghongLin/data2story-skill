@@ -1,0 +1,99 @@
+{
+  "_note": "Scroll-driven CINEMATIC BACKGROUND recipes — the full-bleed, transforming-background MANDATORY stage (every blog ships one; there is no 'off'). The signature is NYT 'Snow Fall' / immersive Pudding pieces: a living background the reader scrolls through. ONE self-contained index.html, no build step, runs on file://. Allowed CDNs = Vega-Embed, Leaflet, D3. The Cinematographer specs these; the Programmer builds them. THREE modes share the SAME pinned-crossfade / IntersectionObserver engine below: (1) PHOTOGRAPHIC (primary/default) — backgrounds are Scout (sct_) / Designer (des_) verified REAL photos; (2) generative_atmosphere (fallback) — a gradient backdrop + registered des_ AI atmosphere/metaphor stills (captioned 'AI-generated atmosphere — illustration'), used ONLY when relevant real imagery can't be sourced; (3) data_driven_spine (fallback) — the story's signature annotated chart pinned as the scroll spine, annotations revealing on scroll over a gradient. A kind:color|gradient scene carries NO media_ref. Any kind:image|video background — in ANY mode — is still a verified sct_/des_ asset (AI stills are registered des_); never a raw/unverified image.",
+
+  "engine": {
+    "scroll_progress": "Drive everything off a single scroll-progress signal. Per scene element compute p = clamp((vh*0.5 - rect.top) / rect.height, 0, 1) inside a scroll + requestAnimationFrame loop (rAF-throttle; never layout-thrash on raw scroll). Use IntersectionObserver to mark which scenes are near the viewport so you only animate/decode those.",
+    "background_layer": "A single fixed/sticky full-bleed layer behind the text: `position:sticky; top:0; height:100vh` (or position:fixed with the text in a higher z-index column). The text column scrolls normally OVER it. Crossfade the layer's image between the current and next scene by tweening opacity of two stacked <img>/<div> background nodes as scroll-progress crosses the scene boundary.",
+    "text_over_background": "Text sits in a max-width column above the background with a per-scene scrim. Keep the existing editorial typography; the background is behind, not instead of, the prose."
+  },
+
+  "recipes": {
+    "pinned_crossfade": {
+      "job": "THE signature: a pinned full-bleed background that crossfades from one verified image to the next as the reader scrolls — the story's images become the set the narrative moves through.",
+      "technique": "One absolutely-positioned layer per scene, stacked; the active scene has opacity 1, the rest 0, crossfaded by a CSS `transition:opacity ~1.1-1.2s ease` (NOT a JS opacity tween, NOT a keyframe restart). Switch the active scene with an IntersectionObserver on the text beats (rootMargin '-45% 0px -45% 0px', threshold 0 — the beat whose middle crosses the viewport middle becomes active) that just toggles an `.active` class.",
+      "smoothness_CRITICAL": "Prototype lesson — the crossfade stutters unless you: (1) NEVER force a synchronous reflow to restart an animation (e.g. `void el.offsetWidth`) — that is the #1 jank source; drive all motion with CSS transitions on the `.active` class instead. (2) put `decoding=\"async\"` on every background <img> AND call `img.decode()` on load to pre-decode them, so a crossfade never waits on first-decode. (3) animate only opacity/transform (compositor); add `will-change:opacity`.",
+      "continuous_photo_no_black_gap_CRITICAL": "A REAL PHOTO IS ALWAYS ON SCREEN, seamlessly crossfading into the next — there is NO black/empty stretch between photos. A quieter 'rest' beat does NOT drop to a bare near-black gradient (that IS the black-scroll-gap bug, cf PIT-54); instead it HOLDS A REAL PHOTO — re-use the previous (or upcoming) verified sct_/des_ image, rendered `framed` (the blurred-darkened cover treatment, see fit_modes.framed) and/or under a heavier scrim, so the same photographic surface simply quiets down. HARD in photographic mode: (a) NEVER two consecutive rest scenes (alternate a held/dimmed photo with fresh-photo beats — back-to-back rests read as a dead stretch); (b) NEVER a kind:gradient|kind:color scene while meta.mode is photographic. Gradient 'rest' layers are LEGITIMATE only in generative/data_driven mode (no real photos exist there); see generative_atmosphere. Keep the silky crossfade via smoothness_CRITICAL above (CSS-transition opacity + img.decode()).",
+      "when": "The default for cinematic mode with a sequence of strong images. In photographic mode every scene — including rests — is a REAL photo (a rest = the adjacent photo, dimmed/framed), never a gradient."
+    },
+    "fit_modes": {
+      "job": "Show the WHOLE subject when it matters, without losing the full-bleed look. Prototype lesson: plain `object-fit:cover` crops a trophy / a portrait so the reader can't see the whole thing.",
+      "cover": "Wide / atmospheric / establishing shots (a stadium, a pitch, a crowd): a single `<img object-fit:cover>` — fills the frame edge-to-edge; cropping is fine and dramatic.",
+      "framed": "Object / portrait / hero shots where the whole subject must read (a trophy, a single player): a TWO-layer scene — a blurred, darkened COVER copy of the same image as a full-bleed backdrop (`object-fit:cover; filter:blur(~32px) brightness(~.45); transform:scale(1.2)`) + the real image on top with `object-fit:contain` (whole subject visible) and a soft drop-shadow. Result: full-bleed (no black bars) AND the entire subject shows.",
+      "rule": "The Cinematographer tags each scene `fit: cover | framed`; default cover, use framed for any single named object/person whose entirety matters."
+    },
+    "ken_burns": {
+      "job": "Give a still photo life: a gentle scale so a static image feels filmed.",
+      "technique": "A GENTLE transform via a CSS `transition:transform ~2s ease` toggled with the `.active` class — idle `scale(1.0)`, active `scale(1.03-1.05)` (use ~1.03 for `framed` shots so the subject doesn't grow out of frame). Prototype lesson: keep it subtle — an aggressive zoom (e.g. 1.06->1.16) reads as 'the image is too big / cropped' and adds jank. Never restart-on-activate via a forced reflow."
+    },
+    "parallax_depth": {
+      "job": "Depth: the background drifts slower than the foreground text, so scrolling feels three-dimensional.",
+      "technique": "background translateY = scrollProgress * sceneHeight * factor (factor ~0.4-0.7, <1 so it lags the text). transform only (GPU); never animate top/margin."
+    },
+    "pinned_text_over_still": {
+      "job": "Hold one hero image still while a sequence of text beats scrolls over it (a chapter held on one frame).",
+      "technique": "position:sticky background for the chapter; the text steps scroll past; swap the scrim/headline per step via IntersectionObserver."
+    },
+
+    "hero_as_cin_00_continuous_backdrop": {
+      "job": "Make the HERO (a full-bleed <video> or still) and the cinematic scroll background read as ONE continuous surface — no 'cover ends, content begins' seam. The hero becomes the FIRST cinematic scene (cin_00) instead of a separate block above the stage, so the existing crossfade engine carries the eye straight from the hero into the first section's background.",
+      "the_handoff": "Add a cin_00 scene whose background IS the hero media and which backs the teaser beat: `data-cin=\"cin_00\" data-backs=\"teaser\"`, `.active` by default (so it shows from the very top, before any scroll). It lives INSIDE the pinned .cin-stage as the first .cin-bg layer, lifted above the stage's global darkening (a higher z-index) so the hero keeps its own brightness. The hero's interactive furniture (headline, pick-a-side halves, particle canvas, chips, scrim) stays in a SEPARATE, TRANSPARENT overlay in <main> that scrolls OVER the fixed cin_00 backdrop — exactly the way edt_01's text scrolls over cin_01.",
+      "the_crossfade": "REUSE the existing IntersectionObserver crossfade engine (recipes.pinned_crossfade): it already maps each beat's data-backs id -> its .cin-bg layer and toggles .active when the beat crosses the viewport middle. So when edt_01 centres, the SAME engine crossfades cin_00 -> cin_01 with no extra code — the hero backdrop dissolves into the first section's background as one move. cin_00 backs `teaser`; cin_01 backs `edt_01`.",
+      "the_overlay_dissolve_OPACITY_ONLY": "The transparent hero overlay (the furniture) glides up and OPACITY-DISSOLVES (opacity 1 -> 0, driven from a small rAF scroll handler or a CSS scroll-out) as it scrolls past, so the headline/halves fade rather than hard-clipping at the top edge while the fixed backdrop crossfade carries the eye. SUBTLETY (the load-bearing one): dissolve with OPACITY ONLY — do NOT scale the overlay. Scaling a TRANSPARENT full-bleed overlay over a fixed backdrop reads as a shrinking PANE (you can see the empty overlay edges contract), which re-introduces the very seam you removed. Opacity-only keeps the backdrop reading as one continuous surface. Under prefers-reduced-motion the overlay stays static + fully opaque (the JS fade early-returns; CSS pins opacity:1) and never touches the video.",
+      "provenance_keying": "Keep the hero's Verify provenance keyed to the .teaser OVERLAY (its data-des, e.g. des_hero_video), NOT to the cin_00 layer — cin_00 is the pinned backdrop, the overlay is the hit-target the reader clicks. So tag cin_00 data-cin + (its media's data-des/data-sct) for traceability of the background, but the hero's clickable provenance lives on the overlay.",
+      "degraded_backdrop_fallback": "The cinematic stage is mandatory (never OFF), but it can be degraded under reduced-motion / JS-off / no-video — so the hero overlay also carries a STATIC backdrop of its own: paint the hero POSTER still directly on the overlay (e.g. background:url(hero_poster) cover) so the hero always shows even when the moving cin_00 video can't run. The overlay carries the static fallback; the fixed cin_00 layer carries the moving version.",
+      "when": "Use whenever the blog has BOTH a full-bleed hero (especially a cinemagraph/video hero) AND a scroll background (always — the stage is mandatory) — it upgrades the hero-to-content transition from a hard cut to a seamless continuous backdrop. If the hero is a small framed image (not full-bleed), keep the hero as its own block and skip this.",
+      "schema_note": "cin_00 is a normal scene in cinematographer.json `scenes` (kind:image|video, media_ref -> the hero's registered des_/sct_ asset, backs:'teaser', order:0). Note in its `notes` that it is the hero-handoff layer and that the hero's Verify hit stays on the .teaser overlay."
+    },
+    "video_background": {
+      "job": "Motion footage as the set (a kicking scene, a crowd) — when the Scout verified a license-clean video/clip.",
+      "technique": "<video autoplay loop muted playsinline poster=...> full-bleed cover behind a scrim. ALWAYS a poster image fallback; on mobile/reduced-motion show the poster still, not the video. Only for Scout-verified, license-clean footage."
+    },
+    "reveal_on_enter": {
+      "job": "Let a background (or its caption/figure) arrive deliberately as the scene enters, not all-at-once on load.",
+      "technique": "IntersectionObserver toggles an `.in` class -> CSS opacity/transform transition. Pairs with the playbook's scrollytelling for any sticky-graphic scenes."
+    },
+
+    "generative_atmosphere": {
+      "job": "The FALLBACK background for an abstract topic where no real photograph honestly belongs — used ONLY when the Scout confirms relevant verified real imagery genuinely cannot be sourced. The scroll background is a gradient backdrop plus tonal, registered des_ AI ATMOSPHERE/METAPHOR stills — never a depiction of a specific real subject. The page still reads as a scrolled film; it never falls back to a bare column.",
+      "technique": "Reuse the EXACT pinned_crossfade engine: each scene is a `.cin-bg` layer the IntersectionObserver toggles `.active` as its beat crosses the viewport middle. A scene is either (a) `kind:gradient` — paint the layer with a CSS gradient from designer.json's theme (e.g. `background:linear-gradient(160deg, var(--bg), var(--surface))`), NO media_ref, NO <img>; or (b) `kind:image` whose media_ref is a REGISTERED des_ AI atmosphere still (object-fit:cover, gentle ken-burns), stacked over the gradient. Crossfade gradient->still->gradient with the same `transition:opacity ~1.15s ease` on `.active`. Vary: interleave gradient 'rest' scenes between stills so it breathes (restraint still applies). GENERATIVE-MODE ONLY: this gradient-rest interleave is legitimate HERE because there are no real photos to hold — it is the abstract medium. It does NOT license a gradient rest in PHOTOGRAPHIC mode, where a rest must hold a dimmed/framed REAL photo and a kind:gradient rest is the forbidden black-scroll-gap (cf PIT-54, pinned_crossfade.continuous_photo_no_black_gap_CRITICAL).",
+      "ai_caption_REQUIRED": "Every AI still shows a small visible credit 'AI-generated atmosphere — illustration' (the generated-asset disclosure), keyed to its des_ provenance; it is metaphor/mood, asserting nothing factual. The decorative / tonally-wrong cap still applies — mandatory means always-present AND tasteful, not force-junk. If even a tasteful AI atmosphere doesn't fit, prefer data_driven_spine.",
+      "scrim_and_motion": "Same readability scrims as photographic (text legibility always wins). Motion stays gentle (ken-burns on stills; gradient layers are static or a very slow hue/position drift). transform/opacity only.",
+      "reduced_motion_and_js_off": "Under prefers-reduced-motion / JS off: drop crossfade + ken-burns; render each scene's gradient (and any still) as a STATIC per-section scrimmed backdrop. The page reads fully — gradients need no JS, so a no-JS page still has a coloured cinematic backdrop, not a white column.",
+      "when": "mode == 'generative'. The Scout could not source relevant real imagery and a metaphorical/atmospheric still + gradient is the most honest background the material supports."
+    },
+
+    "data_driven_spine": {
+      "job": "The FALLBACK background for a DATA-heavy topic with no fitting imagery — the story's SIGNATURE annotated chart becomes the set the narrative moves through. The chart is pinned full-bleed (behind a scrim) and its annotations/series REVEAL on scroll, so the data itself is the cinematic spine. Still mandatory, still a full-bleed scroll background — just made of the chart instead of photos.",
+      "technique": "Reuse the SAME pinned layer + IntersectionObserver engine. ONE pinned `.cin-bg` layer holds the signature chart (Vega-Embed or inline SVG/D3) over a `kind:gradient` backdrop (theme gradient, NO media_ref). As each text beat crosses the viewport middle, the IO toggles `.active` on that beat which reveals the matching chart annotation/series/highlight (a CSS opacity/transform `.in` toggle on annotation layers, OR a small state step that filters/highlights the chart — the playbook's scrollytelling sticky-graphic pattern, applied to the BACKGROUND layer). The chart stays pinned; only its annotations animate in on scroll. NO photographic media_ref needed (the chart is the set).",
+      "chart_legibility": "The chart sits behind the prose, so dim/desaturate it (lower contrast, muted palette) and put a scrim between it and the text — the foreground copy still wins. Keep the chart's own data legible enough to read as a backdrop; the FULL detailed/interactive version of the same chart can still appear as a normal in-column figure where the beat calls for it.",
+      "reduced_motion_and_js_off": "Under prefers-reduced-motion / JS off: pin (or simply place) the chart with ALL its annotations/series shown AT ONCE (no scroll-gated reveal) over the gradient, fully readable. The data spine degrades to a single complete annotated chart, never a blank backdrop.",
+      "data_source": "The chart's data is INLINED from analyst.json data_tables (never refetched); it is the analyst's signature finding. Tag the chart-spine layer data-ana (the finding's ana_xx) so Verify traces the spine to its computation, in addition to data-cin.",
+      "when": "mode == 'data_driven'. A computational/statistical topic where no real photo honestly belongs but the dataset has one signature chart strong enough to carry the scroll."
+    }
+  },
+
+  "readability_scrims": {
+    "rule": "Text legibility ALWAYS wins over the image. Every text-bearing scene needs a scrim between the background and the text.",
+    "patterns": [
+      "Bottom-anchored copy: linear-gradient(180deg, rgba(bg,.2) 0%, rgba(bg,.85) 100%).",
+      "Centered copy: radial or full rgba(bg,.5-.65) wash.",
+      "Side column: linear-gradient(90deg, rgba(bg,.9), rgba(bg,.2)).",
+      "Tune opacity to the image: busy/bright images need a stronger scrim. Verify WCAG-ish contrast on the headline."
+    ]
+  },
+
+  "guardrails": {
+    "reduced_motion": "Under `@media (prefers-reduced-motion: reduce)`: disable parallax, ken-burns, crossfade and video autoplay; render each scene's background as a static, scrimmed still per section. The whole story must read and make its point with motion fully off.",
+    "performance": [
+      "Lazy-load every scene background (loading='lazy' or IO-gated src swap); only the current + next image should be decoded.",
+      "Mobile: serve a smaller srcset; for video backgrounds default to the poster still.",
+      "Use transform/opacity only (compositor); never animate layout properties on scroll. rAF-throttle the scroll handler.",
+      "Cap total weight — a viral demo dies on a 30 MB autoplay page. Prefer a few strong images over many."
+    ],
+    "accessibility": "Keyboard scrolling works (it's native scroll); decorative background imagery gets empty alt or aria-hidden, but the verified caption/credit stays in the DOM; the page is fully usable with JS off (backgrounds fall back to a static still / gradient / full annotated chart — never a blank white column, because the stage is mandatory).",
+    "verifiability": "Allowed backgrounds: (1) a `kind:image|video` background MUST be a verified Scout sct_ / Designer des_ asset (verified + licensed) — tag it data-cin + data-sct/data-des; a registered des_ AI atmosphere still is allowed in `generative` mode and shows the visible credit 'AI-generated atmosphere — illustration' keyed to its generated-asset disclosure; (2) a `kind:color|gradient` scene carries NO media_ref (it asserts nothing factual) — tag it data-cin only; (3) a `data_driven` chart-spine layer is tagged data-cin + data-ana (its analyst finding). No raw/unverified background PHOTO — ever (a photo must resolve to an sct_/des_); gradients and chart spines need no media_ref."
+  },
+
+  "reference_implementation": "references/example_cinematic_scroll.html — a WORKING, self-contained reference build of this entire mode (pinned-crossfade engine + framed/cover fit modes + blurred fill + gentle ken-burns + readability scrim + scroll-progress rail + reduced-motion + decode-preload). READ IT and copy the exact CSS/JS technique. It is theme-agnostic in spirit: it shows the flagship's dark+mint palette + Georgia serif, but you MUST apply the actual blog's Designer theme/accent (from designer.json page_rhythm) and its own copy + verified images — do not hardcode mint.",
+  "reference_clones": "internal reference (not included): how-to-implement-scrollytelling/demo (the sticky + IntersectionObserver scroll engine to extend to the background layer); the readability-scrim + full-bleed teaser already used in our blogs. Spiritual reference: NYT 'Snow Fall' (pinned full-bleed media chapters) done with verified, license-clean imagery."
+}

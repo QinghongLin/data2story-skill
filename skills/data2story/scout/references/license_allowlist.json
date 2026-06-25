@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "purpose": "SPDX license IDs whose assets MAY be re-hosted / republished in the blog. The validate.py media gate hard-fails any sourced asset whose license.spdx is not in `allow`, or whose permits_republication != true.",
+    "version": "1.0"
+  },
+  "allow": [
+    "CC0-1.0",
+    "CC-BY-4.0",
+    "CC-BY-3.0",
+    "CC-BY-2.0",
+    "CC-BY-SA-4.0",
+    "CC-BY-SA-3.0",
+    "CC-BY-SA-2.0",
+    "PD",
+    "PDM-1.0",
+    "Public Domain",
+    "Unsplash-License",
+    "Pexels-License",
+    "Pixabay-License"
+  ],
+  "attribution_required": [
+    "CC-BY-4.0", "CC-BY-3.0", "CC-BY-2.0",
+    "CC-BY-SA-4.0", "CC-BY-SA-3.0", "CC-BY-SA-2.0"
+  ],
+  "deny_examples": [
+    "CC-BY-NC-4.0", "CC-BY-NC-SA-4.0", "CC-BY-ND-4.0",
+    "All Rights Reserved", "Fair use", "Unknown", ""
+  ],
+  "notes": [
+    "Unsplash-License / Pexels-License / Pixabay-License are free-for-commercial-use, no-attribution-required stock licenses whose terms permit downloading, modifying, and embedding the photo on a public web page — so they are genuinely re-hostable here, unlike NC/ND Creative Commons variants. They are NOT SPDX identifiers (no canonical SPDX id exists); we use these stable names as the allowlist key, and fetch_stock.py / fetch_openverse.py mirror the same three so they self-flag permits_republication consistently. Attribution is appreciated but not required (set requires_attribution=false); still record the photographer + source in attribution_text as a courtesy + provenance. They forbid (a) selling the unaltered photo as stock and (b) using identifiable people/brands in a way that implies endorsement — neither applies to an illustrative blog backdrop, but keep real-person identity verification on (identity.verified=true) regardless.",
+    "NC (non-commercial) and ND (no-derivatives) are NOT allowed — a published demo is effectively commercial and re-laid-out (derivative).",
+    "Copyrighted commercial music / video must NOT be re-hosted; use a kind=embed instance instead (the official platform player carries its own license).",
+    "Royalty-free-with-terms tracks (e.g. a production-music library, Pixabay Music): set spdx to the library's identifier and permits_republication=true ONLY if the licence text clearly allows web embedding (with attribution where required).",
+    "'Fair use' is NOT a re-host license here — it is too risky for a public viral demo. Downgrade to an embed or drop."
+  ]
+}

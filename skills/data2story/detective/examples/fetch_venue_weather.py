@@ -119,7 +119,7 @@ def main():
             "avg_high_c", "avg_low_c", "avg_mean_c", "avg_apparent_high_c",
             "avg_humidity_pct", "avg_precip_mm_per_day", "max_high_c",
             "rainy_day_share", "n_days_sampled"]
-    with open(path, "w", newline="") as f:
+    with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
         w.writerows(out)
@@ -127,7 +127,7 @@ def main():
             "license": "CC BY 4.0 (Open-Meteo)", "years_sampled": years,
             "window": "June 11 - July 19", "note": "Typical tournament-window climate; "
             "apparent temperature approximates heat index (temp+humidity)."}
-    with open(os.path.join(args.outdir, "venue_weather_source.json"), "w") as f:
+    with open(os.path.join(args.outdir, "venue_weather_source.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
     print(f"\nDone: {len(out)} venues -> {path}", file=sys.stderr)
 

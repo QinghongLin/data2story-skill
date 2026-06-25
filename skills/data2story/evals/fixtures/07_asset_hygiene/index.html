@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<title>asset-hygiene fixture</title>
+</head>
+<body>
+<!-- This page deliberately references NO asset under assets/. The heavy dummy that
+     run_evals.py drops into assets/ is therefore an unreferenced orphan that Section 16
+     weighs (>=256 KB) -> asset_unreferenced_pending (WARN, no relocate sentinel) or
+     asset_unreferenced_heavy (ERROR, once provenance/_relocated.json exists).
+     NOTE: the orphan's basename must NOT appear anywhere in this file, or Section 16's
+     `_fn in _html16` basename test would treat it as referenced and skip it. -->
+<h1>Asset-hygiene Section-16 fixture</h1>
+</body>
+</html>

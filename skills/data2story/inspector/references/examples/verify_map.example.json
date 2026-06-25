@@ -1,0 +1,123 @@
+{
+  "_doc": {
+    "what_this_is": "A WORKED, schema-valid example of verify/verify_map.json for a neutral toy topic ('city transit ridership', matching reproducible_notebook.md). COPY THE STRUCTURE, REPLACE THE CONTENT: it carries one entry of each of the four real kinds (computation [exact + montecarlo], media, generated, fact). On YOUR blog, author one entry per data-* id that actually appears in index.html (data-ana / data-det / data-des / data-sct / data-cin / data-int). Delete every entry whose kind your page does not use; never ship this transit content verbatim.",
+    "purpose": "verify_map.json is the per-element provenance map the Inspector panel reads. Each non-underscore key is an ATOMIC element id that also appears as a data-* attribute in index.html. Clicking that element opens the Inspector drawer, which renders this entry.",
+    "kind_selects_renderer": "The `kind` field selects which drawer renderer is used: 'computation' -> code + data_preview + expected_output + run panel (optionally a client-side reduced-N rerun); 'media' -> asset preview + source_url + license + identity provenance; 'generated' -> AI-asset preview + tool/model/prompt/disclosure + the real_default fallback; 'fact' -> claim + categorised sources[] with per-source facts[]; 'credits' -> the same fact renderer with a 'Credits' badge (a license/source aggregator).",
+    "numbers_are_real": "Every expected_output below was produced by running the matching run_cells.example.json snippet with python and pasting the actual stdout. Never invent these — a wrong example teaches the wrong habit.",
+    "byte_identity": "verify_map.json must be byte-identical to the inline `verifyMap` <script> island embedded in index.html. The Inspector reads the inline copy at runtime; this file is the on-disk source of truth and the auditable artifact."
+  },
+
+  "ana_crowd_risk": {
+    "kind": "computation",
+    "title": "Red line crowding risk — about one weekday in six runs over capacity",
+    "claim": "On a typical weekday the Red line carries 182,400 boardings, but day-to-day demand swings enough that it exceeds its 195,000 comfortable-capacity threshold on roughly 18% of weekdays — about one day in six. That is the share of 200,000 simulated weekdays in which boardings cross the line, not a forecast for any single day.",
+    "cell_id": "cell_crowding",
+    "code_file": "code/build_crowding.py",
+    "code_lines": [12, 19],
+    "code": "# build_crowding.py — chance the Red line exceeds its 195k crowding threshold.\n# Daily boardings ~ Normal(mean=182.4k, sd=14.0k), fit on ridership.csv.\nimport numpy as np\nMEAN_K, SD_K, THRESHOLD_K = 182.4, 14.0, 195.0\nN, SEED = 200000, 4326\nrng = np.random.default_rng(SEED)\ndaily = rng.normal(MEAN_K, SD_K, N)\np_over = (daily > THRESHOLD_K).mean()\nprint(f\"Red line crowding risk (published Monte-Carlo, N={N:,}, seed={SEED})\")\nprint(f\"  P(weekday boardings > {THRESHOLD_K:.0f}k) = {p_over*100:.1f}%\")",
+    "data_preview": {
+      "description": "The mean/spread of weekday Red-line boardings fit from ridership.csv (the distribution the simulation samples).",
+      "columns": ["statistic", "value_k"],
+      "rows": [
+        ["mean weekday boardings", 182.4],
+        ["standard deviation", 14.0],
+        ["crowding threshold", 195.0]
+      ]
+    },
+    "expected_output": "Red line crowding risk (published Monte-Carlo, N=200,000, seed=4326)\n  P(weekday boardings > 195k) = 18.3%",
+    "run": {
+      "type": "montecarlo",
+      "reduced_n": 10000,
+      "needs_network": false,
+      "note": "In-browser the Inspector runs a reduced N=10,000 sample, graded '≈ within noise' against the published 18.4% (full N=200,000), never a hard PASS.",
+      "client_model": {
+        "fn": "window.TRANSIT_MODEL.crowdRisk",
+        "returns": "{line: p_over_threshold}",
+        "at_rest": "window.TRANSIT_MODEL.DATA.crowdPublished holds the exact full-N figure (Red 0.184)."
+      }
+    }
+  },
+
+  "ana_line_share": {
+    "kind": "computation",
+    "title": "The Red line alone is over a third of the network",
+    "claim": "Average weekday boardings are heavily concentrated on the busiest line: the Red line carries 182,400 weekday boardings, 35.8% of the 509,000-boarding network, more than the Gold and Silver lines combined. The five lines split the network 35.8 / 25.7 / 19.0 / 11.4 / 8.0, a steep ladder rather than an even spread.",
+    "cell_id": "cell_findings",
+    "code_file": "code/story_findings.py",
+    "code_lines": [8, 22],
+    "code": "import pandas as pd\n# Inlined from ridership.csv: average weekday boardings per line (thousands).\ndf = pd.DataFrame(\n    [[\"Red\", 182.4], [\"Blue\", 131.0], [\"Green\", 96.6],\n     [\"Gold\", 58.2], [\"Silver\", 40.8]],\n    columns=[\"line\", \"weekday_boardings_k\"])\ntotal = df[\"weekday_boardings_k\"].sum()\ndf[\"share_pct\"] = (df[\"weekday_boardings_k\"] / total * 100).round(1)\ndf = df.sort_values(\"weekday_boardings_k\", ascending=False)\nfor _, r in df.iterrows():\n    print(f\"  {r.line:7} {r.weekday_boardings_k:6.1f}k  {r.share_pct:5.1f}%\")",
+    "data_preview": {
+      "description": "Average weekday boardings (thousands) and each line's share of the network (ridership.csv).",
+      "columns": ["line", "weekday_boardings_k", "share_pct"],
+      "rows": [
+        ["Red", 182.4, 35.8],
+        ["Blue", 131.0, 25.7],
+        ["Green", 96.6, 19.0],
+        ["Gold", 58.2, 11.4],
+        ["Silver", 40.8, 8.0]
+      ]
+    },
+    "expected_output": "Average weekday boardings by line (thousands) and share of the network:\n  Red      182.4k   35.8%\n  Blue     131.0k   25.7%\n  Green     96.6k   19.0%\n  Gold      58.2k   11.4%\n  Silver    40.8k    8.0%\nnetwork total = 509.0k weekday boardings\nbusiest line = Red at 35.8% of the network",
+    "run": {
+      "type": "derived",
+      "needs_network": false,
+      "note": "Exact recompute from the inlined per-line boardings — graded as a hard PASS (no reduced_n; stdout must match byte-for-byte)."
+    }
+  },
+
+  "sct_station_photo": {
+    "kind": "media",
+    "title": "Downtown Crossing platform at rush hour",
+    "media_type": "image",
+    "preview": "assets/station_platform.jpg",
+    "source_url": "https://commons.wikimedia.org/wiki/File:MBTA_Red_Line_train_at_Downtown_Crossing.jpg",
+    "license": "CC-BY-2.0",
+    "author": "Photo by Pi.1415926535 via Wikimedia Commons, licensed CC BY 2.0 (free commercial use WITH attribution).",
+    "identity": "A crowded subway platform with a red-liveried train at the platform edge and waiting passengers under tiled vaulting. Generic transit scene; no identifiable individual is the subject. Real photograph fetched from Wikimedia Commons (not AI). Wikimedia API returned the CC-BY-2.0 license tag and the author credit above.",
+    "publish_note": "license.permits_republication = true WITH attribution. The attribution line in `author` must remain visible on the page; do not strip it."
+  },
+
+  "des_hero_generated": {
+    "kind": "generated",
+    "title": "Hero — abstract transit-network motif (AI-generated)",
+    "media_type": "image",
+    "preview": "assets/hero_transit_abstract.jpg",
+    "tool": "OpenRouter text2image (generate_image.py)",
+    "model": "google/gemini-3.1-flash-image-preview (Nano Banana 2)",
+    "prompt": "A clean, abstract overhead motif of an interlacing transit-network map at night: glowing coloured lines (red, blue, green, gold, silver) flowing across a dark slate background, soft bokeh station nodes where lines cross, subtle depth-of-field, premium editorial data-visualisation aesthetic, calm and uncluttered, generous dark negative space in the top quarter for an overlaid headline. NO text, NO letters, NO numbers, NO logos, NO real maps of real cities, NO recognisable real people.",
+    "purpose": "IMMERSE",
+    "disclosure": "AI-generated abstract motif; not a photograph and not a map of any real city.",
+    "role": "designer",
+    "real_default": {
+      "preview": "assets/station_platform.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:MBTA_Red_Line_train_at_Downtown_Crossing.jpg",
+      "source_title": "MBTA Red Line train at Downtown Crossing — Wikimedia Commons (Pi.1415926535, CC BY 2.0)",
+      "license": "CC-BY-2.0"
+    }
+  },
+
+  "det_history": {
+    "kind": "fact",
+    "title": "A century-old network still carrying half a million a day",
+    "claim": "The Red line opened in 1912 and is the oldest of the five routes in the network, which together carry on the order of half a million weekday boardings. Ridership fell sharply during the 2020 pandemic and has recovered toward — but not fully back to — its pre-pandemic weekday level, which is the backdrop against which the per-line crowding figures should be read.",
+    "category": "background",
+    "sources": [
+      {
+        "url": "https://www.example-transit-authority.gov/about/history",
+        "title": "City Transit Authority — Network history (illustrative source)",
+        "facts": [
+          "The Red line opened in 1912 and is the oldest of the five routes",
+          "The five-line network carries roughly 500,000 weekday boardings"
+        ]
+      },
+      {
+        "url": "https://www.example-transit-authority.gov/data/ridership-recovery",
+        "title": "City Transit Authority — Ridership recovery dashboard (illustrative source)",
+        "facts": [
+          "Weekday ridership dropped during the 2020 pandemic",
+          "Ridership has recovered toward but not fully back to the pre-pandemic weekday level"
+        ]
+      }
+    ]
+  }
+}
