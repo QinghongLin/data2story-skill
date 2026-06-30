@@ -12,9 +12,6 @@ A data-journalist agent skill that turns any dataset into a verifiable, evidence
 ## What it does
 
 
-https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
-
-
 - **Dataset → finished article.** Point it at a CSV, a folder of data, or a paper, and a fixed pipeline of seven roles — a virtual newsroom — produces a publishable HTML story end to end.
 - **Or start from an idea.** Hand it a bare topic instead of a dataset and it runs an `ideation` front-stage: it converges your hunch into a concrete, data-backed topic through a `sparring-partner` dialogue, then acquires a real, validated dataset via `find-data` (with a checkpoint after each) before the newsroom runs. Real data only — if no real dataset supports the idea, it stops honestly rather than inventing one.
 - **Evidence-grounded — and runnable.** Every sentence and visual links back to its source. The pipeline builds an evidence inspector *into* the article itself — open `index.html` and click any claim to see the data, code, or citation behind it in the in-page panel. A computed claim also gets a **Run** button that recomputes the figure in-browser (lazy Pyodide), and every run ships a **reproducible notebook** that re-derives the headline numbers from the raw data — the paper's coding verifier, one click from the reader.
