@@ -59,15 +59,19 @@ Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL
 ```
 data2story-skill/
 ├── skills/
-│   ├── data2story/        the agent: SKILL.md (orchestrator) + one folder per role
-│   │                      each role = SKILL.md + references/ (JSON) + scripts/ (the tools it runs)
-│   │                        · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
-│   │                        · inspector/scripts/ — verify.py + generate_viewer.py
-│   │                        · detective/scripts/ — Wikimedia/Commons fetch helpers
-│   └── frontend-design/   shared UI/visual design system the Designer & Programmer borrow from
-├── data/     example datasets
-└── assets/   shared images
+│   ├── data2story/           the paper's canonical 7-role pipeline    ·  /data2story
+│   ├── data2story-pro/       the extended 14-agent build              ·  /data2story-pro
+│   │                         └ self-contained: its own README, package.json, example data/
+│   ├── frontend-design/      visual design system used by data2story
+│   ├── frontend-design-pro/  extended design system used by data2story-pro
+│   ├── dataviz-craft/        chart-craft recipes               ·  data2story-pro helper
+│   ├── find-data/            dataset discovery & validation    ·  data2story-pro helper
+│   └── sparring-partner/     idea-to-topic ideation            ·  data2story-pro helper
+├── .claude-plugin/           marketplace.json  ·  installs either skill
+└── assets/                   shared images
 ```
+
+Inside each orchestrator, a role is a `SKILL.md` + a `references/` folder (JSON schemas & lookup tables) + any `scripts/` it runs — e.g. `designer/scripts/` (OpenRouter media tools), `inspector/scripts/` (the `verify.py` / `generate_viewer.py` verifier), `detective/scripts/` (media fetch helpers).
 
 ## The virtual newsroom
 
