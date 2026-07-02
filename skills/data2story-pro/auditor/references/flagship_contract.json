@@ -1,0 +1,297 @@
+{
+  "_doc": {
+    "what": "Capability-conditional IF-THEN flagship contract. Each entry encodes one 'flagship-grade element that must NOT be silently dropped' — but ONLY when the data actually supports it. The Auditor walks this file in Step 1c: for each entry whose `trigger` predicate is met, it runs the entry's `find`/`pattern`; a missing required artifact is a hard send-back (or, for soft entries, an advisory). Topic-agnostic by construction: an abstract / statistical / privacy-sensitive dataset trips NONE of these, because every trigger reads a capability signal (a role JSON field or the shared topic_profile) and is false when the capability is absent.",
+    "who_reads": "Auditor runs each triggered entry's `find`/`pattern` in Step 1c (right after the known-pitfall `detect` walk over pitfalls.json). Hard misses become `auditor.json.send_backs` with the entry's `report_type`; soft misses become advisories. The Critic may corroborate (it scores the finished page); the deterministic verify-layer half is enforced by validate.py Section 7 + generate_viewer.py, not here. The Critic's raised pass bar (R9 / pass_requires_signature_move in critic/references/rubric.json) requires >= 1 dimension at >= 5 (a signature flagship move): the flagship MOVES that earn those credits are the same capabilities this contract checks were NOT silently DROPPED — so the two are COMPLEMENTARY (this file guards against losing an earned capability; R9 rewards a present one), not duplicative.",
+    "relationship": "Complements pitfalls.json (which catches a KNOWN bug being reintroduced) and checks.json (layout pitfalls). This file catches a CAPABILITY the dataset earned but the page DROPPED — a centerpiece spec'd but not wired, a chart that didn't render responsively, a multi-asset array collapsed to one item, a cinematic mode declared but not built. Cross-references to PIT-* / check_* are named in `ref`.",
+    "trigger_inputs": {
+      "role_jsons": "Triggers read the already-produced role JSONs in PROJECT_DIR: editor.json (items[].triage / full_triage → lead ana), analyst.json (items[ana].calculation), interaction.json (centerpiece object), designer.json (items[].type=='chart'; content.source_url/assets/flags/photos arrays), scout.json (items[] with asset arrays + kind/role), cinematographer.json (meta.mode).",
+      "topic_profile": "the RESOLVED topic_profile in detective.json/scout.json (the Detective writes it at Stage 1, the Scout at 1.5; it carries the post-Analyst is_computational upgrade) — NOT the references/topic_profile.json template side-file (which only widens/labels). Fields used: is_computational (bool), is_visual (bool), tags[] (subset of visual_subject/geographic/event/sport/culture/place/emotional/abstract/privacy_sensitive). An ABSENT profile (neither detective.json nor scout.json carries explicit is_visual+is_computational) is itself a hard error at validate.py (`topic_profile_unresolved`), so triggers may assume a resolved profile; the role JSON is authoritative, the template only widens/labels."
+    },
+    "severity": "hard = a capability the data earned but the page silently dropped (a reader/judge would see it missing or broken) → send-back that blocks. soft = a richness/breadth opportunity → advisory only, never a block. send-back = a richness-floor miss on a topic the classifier marks RICH (is_visual OR is_computational true) → warn-AND-route: the orchestrator sends it back to the named role and the floor BLOCKS, UNLESS a legitimate blocker is recorded (C-RICHNESS): a privacy_sensitive topic, or an honest recorded `media_blocker` (hero). With such a blocker recorded, the absence is correct restraint and the floor passes; without one, the rich-topic miss is enforced. (BGM has NO such escape — it is MANDATORY on every topic via the hard `bgm_music` entry; the rung-C classical-recording floor guarantees a track, so there is no `audio.used==false` / ships-no-BGM outcome.) ENGAGEMENT-FLOOR EXCEPTION: `missing_engagement_floor` is now HARD on the DESCRIPTIVE case (is_visual:false AND is_computational:false AND zero interactives) and BLOCKS-with-escape — the escape is an honest `interaction.meta.engagement_blocker` (or a privacy_sensitive topic); validate.py Section 12 enforces it deterministically. Its visual/computational sibling `interaction_abundance_floor` stays SOFT (advisory).",
+    "fields": "id, severity (hard|soft|send-back), role (owning role for the send-back), report_type (canonical send-back type in report_types.json), trigger (the IF predicate, in prose + the JSON path it reads), find (grep/check list, like checks.json), pattern (what the find must confirm; a miss is the violation), ref (cross-link to the PIT-*/check_* that encodes the same defect).",
+    "richness_floor": "RICHNESS FLOOR — the inverse of media breadth. The media-purpose gate cuts purposeless ADDITIONS (too much); the richness floor forbids IMPOVERISHMENT on topics the data made rich (too little). It fires on RICH topics that UNDER-delivered (`cinematic_supply_floor`/`dynamic_hero_on_visual`/`topic_asset_floor`/the substantive-verify clause of `runnable_verify_for_computed_headline`); it is the mirror of `missing_engagement_floor` (which fires on a DESCRIPTIVE topic — neither visual nor computational — that ships ZERO interactives, and is now HARD: it BLOCKS-with-escape via an honest `engagement_blocker`/privacy, enforced by validate.py Section 12). (BGM is NOT a richness-floor entry — it is MANDATORY on every topic with no escape; see the hard `bgm_music` entry.) Its sibling on the engagement axis is `interaction_abundance_floor` (the VISUAL/COMPUTATIONAL sibling, the inverse of `missing_engagement_floor`): the abundance floor fires when a rich multi-finding topic ships only a LONE hero (an under-supplied supporting set), the engagement floor fires when a descriptive topic ships ZERO interactives. do NOT collide their triggers — they are DISJOINT: engagement_floor needs is_computational==false AND is_visual==false AND zero interactives; abundance_floor and the richness-floor entries need is_visual OR is_computational true (abundance_floor specifically: a lone hero on a multi-finding topic). Each richness entry is capability-gated off the RESOLVED topic_profile in detective.json/scout.json (NOT the references/topic_profile.json template, which only widens/labels) — an abstract/small/privacy_sensitive dataset trips none, and a genuinely ABSENT profile is itself a hard error (validate.py `topic_profile_unresolved`) rather than a silent no-op. SEVERITY (C-RICHNESS): a richness-floor miss BLOCKS on a topic the classifier marks rich (is_visual OR is_computational true), UNLESS a legitimate blocker is recorded — a privacy_sensitive topic (the escape hatch) or an honest media_blocker (hero). The privacy / absent-profile exemptions are the only escape hatches; otherwise the richness floor is enforced, not merely advisory. (BGM has NO such escape — it is MANDATORY on every topic; the rung-C classical-recording floor guarantees a clean track, so there is no `audio.used==false` outcome.) Anti-slop: the floor forbids impoverishment, it never forces a fabricated/decorative asset (which itself caps visual_design at 3)."
+  },
+
+  "runnable_verify_for_computed_headline": {
+    "severity": "hard",
+    "role": "programmer",
+    "report_type": "flagship_missing_runnable_verify",
+    "trigger": "IF the Editor's LEAD finding resolves to an `ana_*` that carries a `calculation` (i.e. the headline is a COMPUTED number). Read editor.json: the lead is the `ana_*` whose triage value is \"lead\" in any `items[edt].triage` (or in `full_triage`); then read analyst.json `items[that_ana].calculation`. Equivalent topic_profile signal: `is_computational == true`. FALSE when the lead is a non-numeric/qualitative claim or no `ana_*` has a calculation — then this entry does not fire.",
+    "find": [
+      "grep -n 'triage' PROJECT_DIR/editor.json",
+      "grep -n 'full_triage' PROJECT_DIR/editor.json",
+      "grep -n 'calculation' PROJECT_DIR/analyst.json",
+      "grep -n 'runnable' PROJECT_DIR/verify/run_cells.json",
+      "grep -n 'expected_stdout' PROJECT_DIR/verify/run_cells.json"
+    ],
+    "pattern": "When the lead headline is a computed number, verify/run_cells.json MUST contain a `runnable:true` cell keyed to that lead `ana_*` (or to the `data-ana` element that renders the headline) whose `expected_stdout` is REAL (non-empty, the literal stdout the pre-tested snippet prints — not a placeholder, not empty). A miss = the headline number cannot be re-executed by the reader (the paper's coding verifier is absent for the load-bearing claim). Stochastic leads run a reduced-N cell graded '≈ within noise' (still `runnable:true` with a real reduced-N expected_stdout); needs_network:true ⇒ runnable:false is NOT acceptable for the lead computed headline (find a self-contained reduced form). Send back to Programmer (Step 2.5). SUBSTANTIVE-VERIFY CLAUSE (the computational half of the richness floor): on an `is_computational` topic the runnable verify must be SUBSTANTIVE, not hollow — the lead cell is not the only one, and a verify cell registered with an EMPTY `computes` (cell_registry.json `computes==\"\"`) or a placeholder `expected_stdout` is impoverishment of the verify layer (the reader sees a verify drawer that re-runs nothing real). validate.py Section 12 `richness_hollow_verify_cells` warns on it; the lead-cell half above stays the hard owner.",
+    "ref": "critic rubric.json data_method_transparency (runnable coding verifier); PIT-23 (Pyodide-safe self-contained reduced-N); run_cells.schema.json; validate.py Section 12 richness_hollow_verify_cells (substantive-verify, soft); cf PIT-45 (impoverished path)"
+  },
+
+  "interactive_centerpiece": {
+    "severity": "hard",
+    "role": "programmer",
+    "report_type": "flagship_missing_centerpiece",
+    "trigger": "IF interaction.json has a `centerpiece` (a single object with an `id`, e.g. int_01). Read interaction.json `centerpiece`. FALSE when interaction.json is absent or `centerpiece` is null/missing (the Interaction Engineer found no narrative-bound explorable for this dataset) — then this entry does not fire.",
+    "find": [
+      "grep -n 'centerpiece' PROJECT_DIR/interaction.json",
+      "grep -n 'data-int' PROJECT_DIR/index.html",
+      "grep -nE 'addEventListener|oninput|onchange|onclick' PROJECT_DIR/index.html"
+    ],
+    "pattern": "When interaction.json declares a centerpiece, index.html MUST contain exactly ONE element carrying `data-int=\"<centerpiece id>\"` that is wired to a LIVE recompute — its controls drive a JS handler that re-derives the lead finding on the client (the reader PRODUCES the number), not a static image of the result. A miss (no `data-int`, a `data-int` that resolves to no centerpiece id, or a `data-int` element with no event wiring / no recompute) = the spec'd centerpiece was dropped or rendered inert. Send back to Programmer (its wiring) — or to Interaction if the centerpiece spec itself is incomplete.",
+    "ref": "interaction/SKILL.md (the ONE narrative-bound centerpiece); validate.py int_/data-int contract; critic insight_value (reader produces the finding)"
+  },
+
+  "interactive_supporting_set": {
+    "severity": "hard",
+    "role": "programmer",
+    "report_type": "flagship_dropped_supporting_playground",
+    "trigger": "IF interaction.json has a non-empty `supporting[]` array (the Editor curated one or more supporting playgrounds beyond the hero). Read interaction.json `supporting`. FALSE when `supporting` is absent/empty (only a hero centerpiece, or no interactives at all) — then this entry does not fire. (The hero itself is covered by `interactive_centerpiece`; this entry covers the curated supporting SET so abundance can't degrade quality.)",
+    "find": [
+      "grep -n 'supporting' PROJECT_DIR/interaction.json",
+      "grep -n 'data-int' PROJECT_DIR/index.html",
+      "grep -nE 'addEventListener|oninput|onchange|onclick' PROJECT_DIR/index.html",
+      "grep -nE 'fires|recompute_oracle|send_backs' PROJECT_DIR/audit/playtest_report.json"
+    ],
+    "pattern": "EVERY `supporting[].id` MUST (a) resolve to a WIRED element on the page — an `data-int=\"<id>\"` driven by a JS handler (control → live recompute/readout, the reader PRODUCES something), NOT a static image — AND (b) have PASSED the Playtester: in `audit/playtest_report.json`, that id's `checks.fires == \"PASS\"` AND its `checks.recompute_oracle` is within tolerance (`PASS` for a derived number, `≈ within noise` for a stochastic one). A supporting id that is ABSENT (no data-int), INERT (control fires but the declared readout never changes / errors), or DISAGREES (live readout != published figure) is a hard send-back to the Programmer (its wiring) — or to Interaction if the spec itself is incomplete. When `playtest_report.json` is missing or `ran:false` (no browser), the playground is UNVERIFIED, not PASS — record the human-eyeball flag from the report; do not certify a supporting playground without a real-browser playtest. [Cross-ref the Playtester (Step 0c) + validate.py int_/data-int contract — dedup the send-back if Step 0c already flagged the same id.]",
+    "ref": "interaction/SKILL.md (hero + curated supporting set); auditor/scripts/playtest_drive.js (Step 0c real-browser playtest); validate.py int_ids (centerpiece + every supporting[].id); critic rubric.json R8 (each interaction must earn its place); PIT-30/PIT-31/PIT-32/PIT-33/PIT-34"
+  },
+
+  "responsive_charts": {
+    "severity": "hard",
+    "role": "programmer",
+    "report_type": "flagship_missing_responsive_chart",
+    "trigger": "IF any designer.json item is a chart. Read designer.json: any `items[did].type == \"chart\"` (or a `content.chart_type` present). FALSE when the page has no charts (text/media-only treatment) — then this entry does not fire.",
+    "find": [
+      "grep -n '\\\"type\\\": \\\"chart\\\"' PROJECT_DIR/designer.json",
+      "grep -n 'chart_type' PROJECT_DIR/designer.json",
+      "grep -nE \"width.*container|\\\"width\\\": \\\"container\\\"\" PROJECT_DIR/index.html",
+      "grep -n 'vegaEmbed' PROJECT_DIR/index.html",
+      "grep -n 'embedChart' PROJECT_DIR/index.html"
+    ],
+    "pattern": "Every chart mount MUST go through the responsive embed (the canonical `embedChart` helper that measures the REAL pixel width after layout: DOMContentLoaded + requestAnimationFrame, parent-width / 640 fallback, column-max cap, re-render on resize) — NOT a bare `vegaEmbed(el, spec)` on a `width:\"container\"` spec, which measures 0 at parse time and renders the chart 0px wide (invisible). A miss (a `width:\"container\"` chart mounted via bare vegaEmbed, no embedChart routing) = a blank chart for the reader. When the live render audit ran, prefer its `zeroWidthCharts`/`chartsWithNoRender` as ground truth. Send back to Programmer. [Cross-ref PIT-01 — do not duplicate the send-back if PIT-01's detect already flagged the same mount.]",
+    "ref": "PIT-01 (width:container measured at parse time → 0); checks.json check_4_responsive; component_implementations.json charts_vega_lite.responsive_embed; fix_patterns.json fix_8_chart_width_measure"
+  },
+
+  "multi_asset_gallery": {
+    "severity": "hard",
+    "role": "programmer",
+    "report_type": "flagship_missing_gallery",
+    "trigger": "IF any des_* OR sct_* item carries an ASSET ARRAY — a multi-value `content.source_url` / `assets` / `flags` / `photos` (more than one asset under one element). Read designer.json `items[].content` and scout.json `items[]` for any of those arrays with length > 1. FALSE when every media element is single-asset — then this entry does not fire.",
+    "find": [
+      "grep -rnE 'flags|photos|assets|source_url' PROJECT_DIR/designer.json PROJECT_DIR/scout.json",
+      "grep -rn 'firstUrl' PROJECT_DIR/index.html",
+      "grep -rnE 'source_url\\[0\\]|assets\\[0\\]|flags\\[0\\]|photos\\[0\\]' PROJECT_DIR/index.html"
+    ],
+    "pattern": "An element backed by an asset ARRAY MUST render a GALLERY — the renderer maps over the WHOLE array so every asset gets its own thumbnail + label + source link + per-item license. A miss = the renderer collapsed the array to its first element via `firstUrl(...)` or `[...][0]`, silently dropping every asset after the first from the page AND from provenance. Flag any `firstUrl(`/`[0]` applied to a multi-value source_url/assets/flags/photos. Send back to Programmer (render the full gallery with per-item license). [Cross-ref PIT-21 / checks.json check_6 — dedup the send-back if already flagged there.]",
+    "ref": "PIT-21 (multi-asset collapsed to first); checks.json check_6_multi_asset_gallery_not_firsturl; verify_map.schema.json $defs/galleryItem; PIT-21 (per-item not aggregate credit)"
+  },
+
+  "cinematic_background": {
+    "severity": "hard",
+    "role": "cinematographer",
+    "report_type": "flagship_missing_cinematic",
+    "trigger": "IF cinematographer.json `meta.mode` is one of {`photographic`, `generative`, `data_driven`, `cinematic`} — i.e. ALWAYS, because cinematic is now a MANDATORY pipeline stage with no `off`/opt-out (every blog ships a scroll background; the mode only ADAPTS to the topic: `photographic` = real images (primary), `generative` = AI atmosphere, `data_driven` = a chart-spine background). Read cinematographer.json `meta.mode`. This entry checks that the DECLARED mode was actually BUILT — a declared-but-not-built immersion is the hard miss. (A tonally-wrong or decorative immersion is a DIFFERENT failure: it is built, so it passes this hard contract, but it is caught by the decorative/tonally-wrong cap in critic/quality rubric, which caps visual_design at 3. Mandatory means always-present-AND-tasteful, never force-junk.)",
+    "find": [
+      "grep -nE '\"mode\"' PROJECT_DIR/cinematographer.json",
+      "grep -nE 'position:\\s*fixed|position:\\s*sticky|data-cin' PROJECT_DIR/index.html",
+      "grep -n 'data-cin' PROJECT_DIR/index.html",
+      "grep -n 'media_ref' PROJECT_DIR/cinematographer.json"
+    ],
+    "pattern": "Cinematic is mandatory, so SOME immersive scroll layer MUST be built for every blog; assert the matching build PER MODE: (photographic / generative / cinematic) index.html MUST implement the scroll-driven background layer (a pinned/fixed full-bleed background with scroll-progress crossfade) AND every `data-cin=\"cin_xx\"` scene whose `background.kind` is `image`/`video` MUST reference a VERIFIED, REGISTERED `sct_`/`des_` asset (its `cinematographer.json` `cin_xx.background.media_ref` resolves to a current scout sct_ or designer des_ item — never raw/bypass imagery); (data_driven) the chart-spine background is built from chart/`kind:color|gradient` scenes — these carry NO media_ref and so are NOT subject to the asset-resolution check (they are still a real built scroll layer, just not photographic). A miss (NO scroll background built at all despite the mandatory mode, or a `data-cin` image/video scene whose media_ref dangles) = the declared cinematic experience is absent or its backgrounds are unverified — HARD. Send back to Cinematographer (and Designer/Scout to register a dangling background). [Cross-ref validate.py Section 6, which hard-fails a dangling cin_ media_ref deterministically for the image/video scenes and skips media-less data_driven scenes — this entry adds the 'mandatory mode declared but not built' half.]",
+    "ref": "validate.py Section 6 (cin_ image/video background must resolve to a verified sct_/des_; data_driven color/gradient scenes skip the media_ref guard); cinematographer/references/schema.json (_field_notes.backgrounds_must_be_verified); SKILL.md Stage 4.7 mandatory cinematic; PIT-04 (uniform scrim, not per-section seams)"
+  },
+
+  "bgm_music": {
+    "severity": "hard",
+    "role": "scout",
+    "report_type": "flagship_missing_bgm",
+    "trigger": "IF a blog exists — i.e. ALWAYS, on EVERY topic, with NO privacy exemption. BGM is a MANDATORY front-of-blog element: every blog opens with a fitting real-sourced soundtrack, so a missing BGM is ALWAYS a real miss. Read topic_profile.tags. There is NO non-fire case: a privacy_sensitive topic ALSO fires (it gets a quiet, non-intrusive classical recording — never silence), and for abstract/statistical topics a RESTRAINED real BGM still fits (it sets a reading tone). The Scout's rung-C license-clean CLASSICAL-RECORDING floor is the GUARANTEED terminal rung (it never fails), so a clean BGM always exists and 'ships no BGM' is never a legitimate outcome on any topic — a missing track is the hard `bgm_missing` error (validate.py), not warn-and-send-back. SEPARATELY: a track that is TONALLY WRONG (a celebratory/upbeat track on a sober/grief/disaster topic) is NOT a pass — it is built but inappropriate, so it does NOT clear this miss and instead routes to the decorative/tonally-wrong cap (critic/quality rubric → visual_design capped at 3). Mandatory means always-present-AND-tonally-fitting, never force-junk.",
+    "find": [
+      "grep -n 'audio' PROJECT_DIR/designer.json",
+      "grep -nE '<audio|sourced_bgm|generated.*bgm' PROJECT_DIR/index.html",
+      "ls PROJECT_DIR/assets/*.mp3 PROJECT_DIR/assets/*.m4a PROJECT_DIR/assets/*.wav PROJECT_DIR/assets/*scout_*"
+    ],
+    "pattern": "Every blog on EVERY topic (privacy_sensitive included) MUST carry a fitting front-of-blog BGM in the signature_media_card cover-art card (self-hosted `<audio>` with a single play/pause control + first-gesture autostart, never autoplay-with-sound, centered at the top) — a REAL Scout-SOURCED track (license-clean, publishable) OR a best-fit copyrighted track self-hosted for the DEMO behind a publish-gate (a des_ asset with publish_blocker:true → Auditor advisory copyrighted_audio_publish_blocker + a footer 'demo-only' note). NEVER an AI-generated/composed score (text2music is the opt-in sound_design/SFX form only, never the BGM). A MISSING BGM on ANY topic is the HARD `bgm_missing` error (validate.py) — NOT warn-and-send-back, NOT non-privacy-only: send the Scout to source a fitting track, and because the rung-C license-clean classical-recording floor always lands a track, 'ships no BGM' is never legitimate (a privacy_sensitive topic gets a quiet classical recording, not silence). ANTI-DECORATION CLAUSE (unchanged in spirit): a BGM that is present but TONALLY WRONG for the subject (celebratory on a sober topic, jarring against the mood) is NOT a pass and is NOT cured by merely existing — it is decorative/mis-fit immersion and routes to the decorative/tonally-wrong cap (visual_design capped at 3); send it back to the Scout to re-source a tonally-fitting track.",
+    "ref": "designer/references/audio_rules.json; references/topic_profile.json audio_bgm_expected; inspector/scripts/validate.py bgm_missing (the hard error this entry mirrors); components.json signature_media_card; report_types.json copyrighted_audio_publish_blocker; critic rubric.json / frontend-design-pro quality_rubric.json decorative/tonally-wrong cap (visual_design→3); SKILL.md Stage 4.7 gate (missing BGM → Scout); PIT-19 (centered BGM player at top); PIT-35 (AI track must not be the BGM); PIT-07/PIT-08 (self-host + gesture-gated, no autoplay sound)"
+  },
+
+  "map": {
+    "severity": "soft",
+    "role": "designer",
+    "report_type": "flagship_missing_map",
+    "trigger": "IF the data is geographic — topic_profile `tags` include `geographic`/`place`, OR analyst.json/detective.json expose location fields (coordinates, country/region, venue) the story turns on. Read topic_profile.tags and the data fields. FALSE for non-spatial data — then this entry does not fire (advisory only even when it does).",
+    "find": [
+      "grep -rnE 'lat|lon|coordinate|country|region|geo' PROJECT_DIR/analyst.json",
+      "grep -nE 'map|leaflet|topojson|geojson|projection' PROJECT_DIR/index.html PROJECT_DIR/designer.json"
+    ],
+    "pattern": "When the story is spatial, a MAP (choropleth / point map / route) SHOULD be one of the visuals so the geography is shown, not just described. A miss is an ADVISORY (soft). Any coordinates/capacities absent from the dataset must be SOURCED + verified, never fabricated (cf PIT-15).",
+    "ref": "designer visual_modes.json (map); PIT-15 (source missing geo facts, never fabricate)"
+  },
+
+  "ratings_cards": {
+    "severity": "soft",
+    "role": "designer",
+    "report_type": "flagship_missing_ratings_cards",
+    "trigger": "IF the data is a set of comparable ENTITIES with multiple per-entity attributes (players/teams/products/places with several metrics each) — topic_profile `tags` include `sport`/`culture`/`event`, AND analyst.json exposes a per-entity multi-attribute table. Read the analyst tables. FALSE when the data is not entity-comparative — then this entry does not fire (advisory only even when it does).",
+    "find": [
+      "grep -nE 'card|deck|radar|rating' PROJECT_DIR/designer.json PROJECT_DIR/index.html",
+      "grep -n 'data_table' PROJECT_DIR/analyst.json"
+    ],
+    "pattern": "When the data is entity-comparative, a RATINGS / stat-card deck SHOULD present each entity with its own auditable, SELF-DERIVED index (formula published) + per-item licensed imagery. A miss is an ADVISORY (soft). The numbers must be self-derived from public data — never a lifted proprietary index (cf PIT-10); the IP minefield is the card VISUALS (photo/crest/likeness), cleared per-item.",
+    "ref": "PIT-10 (derive your own auditable index, no proprietary ratings); PIT-05 (stack radar above bars; unwrap {value}); PIT-17/PIT-21 (real photo per entity, per-item credit)"
+  },
+
+  "model_vs_market": {
+    "severity": "soft",
+    "role": "analyst",
+    "report_type": "flagship_missing_model_vs_market",
+    "trigger": "IF the headline is a MODELLED / predictive / derived estimate AND a public external benchmark exists to compare against (a market line, an official forecast, a published baseline). Read analyst.json for a model/forecast finding and detective.json for an external benchmark source. FALSE for purely descriptive (non-predictive) stories, or when no external benchmark exists — then this entry does not fire (advisory only even when it does).",
+    "find": [
+      "grep -rnE 'model|forecast|predict|baseline|monte|simulat' PROJECT_DIR/analyst.json",
+      "grep -rnE 'market|odds|benchmark|consensus|baseline' PROJECT_DIR/index.html PROJECT_DIR/detective.json"
+    ],
+    "pattern": "When the headline is modelled/predictive and a public benchmark exists, the page SHOULD show a MODEL-vs-BENCHMARK comparison (your estimate beside the market/official line) so the reader can judge the model honestly. A miss is an ADVISORY (soft). Any 'disagreement' with the benchmark must note snapshot/method/as-of differences (cf claim_data_alignment), and the modelled headline needs an explicit validation/backtest (cf data_method_transparency).",
+    "ref": "critic rubric.json data_method_transparency (validation for a modelled headline) + claim_data_alignment (snapshot-artefact honesty)"
+  },
+
+  "interactive_hero_verify_coexistence": {
+    "severity": "hard",
+    "role": "programmer",
+    "report_type": "interactive_verify_coexistence_broken",
+    "trigger": "IF interaction.json has a `centerpiece` (an interactive hero, e.g. int_01) AND the page has a Verify layer (a `#verifyToggle` is present in index.html). Read interaction.json `centerpiece` and grep index.html for `#verifyToggle`. FALSE when there is no interactive hero, or no verify layer (a static page) — then this entry does not fire. (The hero's mere presence/wiring is covered by `interactive_centerpiece`; THIS entry checks the hero co-EXISTS correctly with the Verify drawer.)",
+    "find": [
+      "grep -nE 'data-int=\"[^\"]+\"' PROJECT_DIR/index.html",
+      "grep -nE 'role=\"link\"|<a [^>]*data-int' PROJECT_DIR/index.html",
+      "grep -nE 'stopPropagation|preventDefault' PROJECT_DIR/index.html",
+      "grep -nE 'verifyToggle|verifyOn|__verify|data-int' PROJECT_DIR/index.html",
+      "grep -nE 'fires|verify_coexist' PROJECT_DIR/audit/playtest_report.json"
+    ],
+    "pattern": "When an interactive hero AND a Verify layer both exist, the hero MUST obey the verify-coexistence contract so a reader can BOTH play it AND inspect it: (1) the provenance `data-int` lives on the CONTAINER (so a click anywhere in the widget can open the drawer), the interactive CONTROLS are real `<button>/<input>/<select>` children; (2) when Verify is ON, driving a control does NOT recompute (the widget is inspect-only) and a click opens the drawer — implemented by an EARLY-RETURN guard in the handler (`if (verifyOn) return;` BEFORE recompute), NOT by `stopPropagation()` on the control (which would swallow the drawer-opening click); (3) the control handlers must not `stopPropagation`/`preventDefault` the click that bubbles to the container's drawer opener. A miss — `data-int` on a leaf control instead of the container, a `stopPropagation` that blocks the drawer, or no early-return so Verify-on still recomputes — is the Step 0c `verify_coexist` FAIL. Prefer `audit/playtest_report.json` `playgrounds[].checks.verify_coexist` as ground truth when the playtester ran. Send back to the Programmer. [Cross-ref Step 0c playtest_drive.js verify_coexist — dedup if already flagged there.]",
+    "ref": "auditor/scripts/playtest_drive.js (Step 0c verify_coexist check); inspector inspector_panel_internals.json (data-* on innermost tagged element; drawer click target); programmer interaction wiring (early-return verify guard, role=link container, no stopPropagation); PIT-31"
+  },
+
+  "honest_model_scorecard": {
+    "severity": "hard",
+    "role": "analyst",
+    "report_type": "flagship_missing_honest_scorecard",
+    "trigger": "IF a BACKTEST / accuracy / out-of-sample evaluation dataset exists for a modelled/predictive headline — analyst.json carries a backtest/validation/accuracy finding (a held-out test, a hit-rate, a calibration/Brier/log-loss, a historical replay), OR detective.json/the dataset expose realized outcomes the model could be scored against. Read analyst.json for a backtest/accuracy/validation finding and the dataset for realized outcomes. FALSE for a purely descriptive (non-predictive) story, or when no outcome data exists to score against (a pure forward forecast with no history) — then this entry does not fire. (Distinct from the SOFT `model_vs_market`, which compares against an EXTERNAL benchmark; THIS entry is HARD and fires when the project's OWN accuracy can be measured.)",
+    "find": [
+      "grep -rnE 'backtest|out.?of.?sample|hold.?out|accuracy|hit.?rate|calibrat|brier|log.?loss|baseline|naive' PROJECT_DIR/analyst.json",
+      "grep -rnE 'scorecard|baseline|naive|chance|accuracy|brier|calibrat|backtest' PROJECT_DIR/index.html"
+    ],
+    "pattern": "When an accuracy/backtest CAN be computed, the page MUST present an HONEST model-vs-NAIVE scorecard: the model's accuracy/skill shown BESIDE a naive baseline (chance / always-favourite / last-value / market-implied), so the reader sees whether the model actually beats the dumb default — AND any unflattering small-sample or low-skill result is shown, not hidden. A miss is HARD: the accuracy is computable but (a) no baseline comparison is on the page (skill claimed without a yardstick), or (b) an unflattering result (the model barely beats / loses to naive, or n is tiny) is omitted while a flattering framing is kept. Send back to the Analyst (compute + publish the model-vs-naive scorecard with the honest baseline and the small-sample caveat). [Cross-ref critic rubric.json honest_accuracy_cap (the Critic caps data_method_transparency at 3 for the same defect) — dedup the send-back.]",
+    "ref": "critic rubric.json data_method_transparency honest_accuracy_cap; flagship_contract.json model_vs_market (external-benchmark, soft sibling); PIT-10 (derive your own auditable number)"
+  },
+
+  "hero_video_continuous_backdrop": {
+    "severity": "hard",
+    "role": "designer",
+    "report_type": "hero_video_hard_cut",
+    "trigger": "IF a hero/cover exists — the Hero role (Stage 4.6) produces `hero.json` (`hero.kind` `video`|`image`), OR designer.json marks a hero/teaser slot, OR index.html's first full-bleed element is a `<video>`/`<img>` cover. Read hero.json + designer.json hero/teaser slot + index.html top-of-page. The ANIMATED hero is now the DEFAULT (the Hero role's source ladder keeps the cover animated even on sober topics); a bare static still is only the recorded last-rung fallback (see `hero_static_unrecorded`). This entry checks the hero video's HANDOFF into the page; web-weight is covered by check_9/PIT-13. FALSE only when there is no hero slot at all.",
+    "find": [
+      "grep -nE '<video|<source|poster=' PROJECT_DIR/index.html",
+      "grep -nE 'fade|fade-to-black|hard.?cut|crossfade|backdrop|handoff|last.?frame|first.?frame|position:\\s*fixed|position:\\s*sticky' PROJECT_DIR/index.html",
+      "grep -nE 'hero|teaser|backdrop|continuous|handoff|cin-stage' PROJECT_DIR/index.html PROJECT_DIR/designer.json PROJECT_DIR/cinematographer.json",
+      "grep -n 'kind' PROJECT_DIR/hero.json"
+    ],
+    "pattern": "When the hero is a video (the default; `hero.json` `kind==\"video\"`), the transition OUT of it MUST be a CONTINUOUS backdrop handoff — the video resolves into the next scene's first frame, a held last-frame still, a crossfade, or a pinned cinematic backdrop (the Cinematographer consumes the hero as `cin_00`) that carries the eye downward — NOT a hard fade-to-black CUT that drops the reader onto an empty frame / a jarring seam. A miss = a hero `<video>` followed immediately by a blank or hard-cut section with no continuous-backdrop bridge. Send back to the Designer (author the continuous handoff) — and to the Cinematographer if a cinematic backdrop should own the handoff. [Cross-ref checks.json check_10_video_model_misuse (c) + PIT-04 (uniform backdrop, no per-section seams); the hero asset/wrapper itself is asserted deterministically by validate.py Section 12.]",
+    "ref": "checks.json check_10_video_model_misuse; hero/references/hero_recipes.json (source ladder); cinematographer cinematic_recipes.json (hero_as_cin_00_continuous_backdrop); designer media_presentation.json (hero video handoff); validate.py Section 12 (hero asset/wrapper); PIT-04 (no per-section seam); PIT-13 (web-weight hero video)"
+  },
+
+  "hero_static_unrecorded": {
+    "severity": "soft",
+    "role": "hero",
+    "report_type": "hero_static_unrecorded",
+    "trigger": "IF the hero is a bare STATIC still — `hero.json` `kind==\"image\"` (no animated video), OR index.html's hero/cover element is a still `<img>` with no `<video>` companion. Read hero.json `kind` + the recorded `media_blocker`/fallback reason, and index.html top-of-page. FALSE when the hero is an animated `<video>` (the default) — then this entry does not fire (advisory only even when it does).",
+    "find": [
+      "grep -n 'kind' PROJECT_DIR/hero.json",
+      "grep -nE 'media_blocker|fallback|reduced_motion' PROJECT_DIR/hero.json",
+      "grep -nE '<video|<img' PROJECT_DIR/index.html"
+    ],
+    "pattern": "The animated hero is the pipeline DEFAULT; a bare static cover is the source ladder's LAST rung and is acceptable ONLY when every animation rung degraded AND that degrade is RECORDED — `hero.json` carries a `kind==\"image\"` with a `media_blocker`/fallback reason naming why no rung resolved (Veo/Wan refused a real face and Kling was unavailable, no cover-able imagery existed, etc.). A static hero with NO recorded blocker is the miss: it reads as the lazy minimal path, not an honest fallback. A miss is an ADVISORY (soft): note 'static hero with no recorded blocker — animate it or record why no rung resolved' rather than blocking. Mirrors the richness floor's `dynamic_hero_on_visual` (which fires on a VISUAL topic specifically); this entry fires on any unrecorded static hero.",
+    "ref": "hero/references/hero_recipes.json (the 6-rung source ladder; rung 5 = recorded static fallback only); flagship_contract.json dynamic_hero_on_visual (the visual-topic richness sibling); validate.py Section 12 richness_static_hero; cf PIT-45 (impoverished path)"
+  },
+
+  "cinematic_supply_floor": {
+    "severity": "send-back",
+    "role": "scout",
+    "report_type": "richness_cinematic_undersupplied",
+    "trigger": "IF the topic is VISUAL (topic_profile `is_visual == true`) AND cinematic is ON (`meta.mode` is one of {photographic, generative, data_driven, cinematic} — there is no `off` anymore) AND there IS cover-able verified imagery, just too little for a PHOTOGRAPHIC scroll: `1 <= (verified license-clean cover-able image count) < 5`. Read topic_profile.is_visual, cinematographer.json `meta.mode` + `meta.mode_reason`, and count the cover-able verified images (scout.json `sct_` image items + designer.json `des_` image items + detective.reference_media). The COUNT is the PRIMARY signal (the under-supply fallback to generative/data_driven now shows up as a fallback MODE, not an `off`); `mode_reason` is only a SECONDARY confirm (free-text, brittle) that the fallback was supply-driven, not topic-driven. FALSE when is_visual is false (honest-abstract fallback — correct restraint, passes), when the count is 0 (privacy-sensitive / no imagery — nothing to source), when count >= 5 (enough supply; the photographic scroll SHOULD have fired and `cinematic_background` covers the not-built case), or when mode == \"photographic\"/\"cinematic\" already (the upgrade already happened).",
+    "find": [
+      "grep -nE 'is_visual' PROJECT_DIR/detective.json PROJECT_DIR/scout.json",
+      "grep -nE '\"mode\"|mode_reason' PROJECT_DIR/cinematographer.json",
+      "grep -cnE 'kind.*image' PROJECT_DIR/scout.json PROJECT_DIR/designer.json"
+    ],
+    "pattern": "On a visual topic, an under-supplied NON-photographic fallback (generative / data_driven shipped because too few cover-able images exist) is IMPOVERISHMENT, not restraint: the data could carry a PHOTOGRAPHIC cinematic scroll but the Scout sourced too few cover-able backgrounds (1..4) so the Cinematographer fell back. This is warn-AND-SEND-BACK (the only routing richness entry): → Scout: source >= 5 (ideally a dozen+) license-clean cover-able backgrounds of the story's subjects → Designer: register each as a real des_/sct_ item, THEN re-run the Cinematographer so the immersion UPGRADES to photographic. It NEVER hard-blocks the build (the run still finishes); it routes a richness send-back through the orchestrator's 'richness gate'. The image COUNT is the primary signal; the `mode_reason` discriminator separates this from an honest-abstract fallback (passes); the `1<=count<5` bound prevents firing on zero/privacy-sensitive imagery. Anti-slop: the sourced backgrounds must each be a real verified asset, never fabricated filler.",
+    "ref": "validate.py Section 12 richness_cinematic_undersupplied (the deterministic front-run); cinematographer cinematic_recipes.json; flagship_contract.json cinematic_background (the >=5 'declared-but-not-built' hard sibling); SKILL.md orchestrator cinematic-supply gate; cf PIT-46 (cinematic-undersupply)"
+  },
+
+  "dynamic_hero_on_visual": {
+    "severity": "soft",
+    "role": "hero",
+    "report_type": "richness_static_hero",
+    "trigger": "IF the topic is VISUAL (topic_profile `is_visual == true`) AND the hero strategy is a bare static still with no animation — `hero.json` `kind==\"image\"` (no animated video companion) on a topic whose imagery could have been animated. Read topic_profile.is_visual and hero.json `kind`. FALSE when is_visual is false (a sober/computational topic may keep a calm static or atmospheric cover), or when the hero is an animated `<video>` (the default) — then this entry does not fire (advisory only even when it does).",
+    "find": [
+      "grep -nE 'is_visual' PROJECT_DIR/detective.json PROJECT_DIR/scout.json",
+      "grep -n 'kind' PROJECT_DIR/hero.json"
+    ],
+    "pattern": "On a visual topic the cover (the hook) SHOULD be a dynamic hero — an animated cinemagraph / image2video / Ken-Burns motion still — not a bare static photo, because the cover is the single most important detail and a visual topic can always carry motion (the Hero role's source ladder keeps it animated through 4 animation rungs before the static fallback). A static hero on a visual topic is the richness miss. A miss is an ADVISORY (soft): note 'static hero on a visual topic — the cover should be animated' rather than blocking. Distinct from `hero_static_unrecorded` (which fires on ANY unrecorded static hero regardless of topic); this one is the VISUAL-topic richness-floor half (RF-a). Anti-slop: never fabricate motion with no source — animate a real verified still.",
+    "ref": "hero/references/hero_recipes.json (animate by default; static is the recorded last rung); flagship_contract.json hero_static_unrecorded (the topic-agnostic sibling); validate.py Section 12 richness_static_hero; critic rubric.json visual_design (impoverished visual caps at 3); cf PIT-45 (impoverished path)"
+  },
+
+  "topic_asset_floor": {
+    "severity": "soft",
+    "role": "scout",
+    "report_type": "richness_asset_floor",
+    "trigger": "IF the topic is VISUAL (topic_profile `is_visual == true`) AND NOT privacy_sensitive (topic_profile `tags` does not include `privacy_sensitive`) AND the verified license-clean image floor is below 3: `(verified license-clean image count) < 3` across scout.json `sct_` image items + designer.json `des_` image items + detective.reference_media. Read topic_profile.is_visual + tags and count the verified images. FALSE when is_visual is false, when the topic is privacy_sensitive (no real imagery is the correct, honest outcome — never fabricate faces/places), or when the count is already >= 3 — then this entry does not fire (advisory only even when it does).",
+    "find": [
+      "grep -nE 'is_visual|privacy_sensitive' PROJECT_DIR/detective.json PROJECT_DIR/scout.json",
+      "grep -cnE 'kind.*image|asset_type.*image' PROJECT_DIR/scout.json PROJECT_DIR/designer.json"
+    ],
+    "pattern": "A visual, non-privacy-sensitive topic SHOULD clear a license-clean topic-asset floor (>= 3 distinct verified images of the story's subjects; >= 5 cover-able for the cinematic scroll, see `cinematic_supply_floor`) — shipping a visual story on one lonely stock photo is impoverishment. A miss is an ADVISORY (soft): note 'topic-asset floor not met (< 3 verified images) — source more of the story's real subjects'. NEVER blocks; NEVER fabricate an image to clear the floor (a fabricated/decorative asset itself caps visual_design at 3, and a privacy-sensitive topic legitimately ships no faces). Anti-slop: each asset earns its place via the media-purpose gate — the floor forbids impoverishment, it does not force filler.",
+    "ref": "SKILL.md orchestrator richness gate; scout/SKILL.md (source the story's real subjects); flagship_contract.json cinematic_supply_floor (the >=5 cover-able sibling); validate.py Section 12 richness_asset_floor; PIT-15 (source missing facts, never fabricate); cf PIT-45 (impoverished path)"
+  },
+
+  "media_channel_breadth": {
+    "severity": "soft",
+    "role": "designer",
+    "report_type": "flagship_missing_media_breadth",
+    "trigger": "ALWAYS evaluable, but ADVISORY only — and scoped by capability: only channels the dataset can genuinely support count. Read designer.json `meta.media_decisions` (the five channels: chart, image, video, audio, interactive_or_map) and each channel's `used` + recorded reason. A channel skipped with a genuine data-grounded reason in `meta.media_decisions` is FINE and not a miss.",
+    "find": [
+      "grep -n 'media_decisions' PROJECT_DIR/designer.json",
+      "grep -nE '\\\"used\\\":\\s*false' PROJECT_DIR/designer.json"
+    ],
+    "pattern": "The page SHOULD reach breadth across the five channels (chart, image, video, audio, interactive_or_map) WHERE the data supports each — a flagship blog is multimedia-rich, not single-channel. A channel marked `used:false` is only a miss (ADVISORY, soft) if it was skipped for CONVENIENCE rather than a genuine documented lack of purpose; a channel with a real data-grounded reason recorded in `meta.media_decisions` is acceptable. Never block; never force a fabricated/decorative asset just to fill a channel (that would itself cap visual_design at 3).",
+    "ref": "SKILL.md media-purpose gate (every asset earns INFORM/IMMERSE; documented reason for used:false); critic rubric.json visual_design (decorative channel-filler caps at 3)"
+  },
+
+  "interaction_abundance_floor": {
+    "severity": "soft",
+    "role": "editor/interaction",
+    "report_type": "flagship_missing_engagement_floor",
+    "trigger": "IF the topic is VISUAL OR COMPUTATIONAL (topic_profile `is_visual == true` OR `is_computational == true`) AND the dataset affords MULTIPLE distinct producible findings (analyst.json carries >= 3 `ana_*` items, at least 2 of them BEYOND the lead, each carrying a `data_table` or a `calculation`) AND the Interaction Engineer curated a hero with an EMPTY / near-empty `supporting[]` (a lone hero on a multi-finding rich topic — interaction.json has a `centerpiece` but `supporting[]` is absent/empty, and index.html carries just the one `data-int`). Read the RESOLVED topic_profile in detective.json/scout.json — including the post-Analyst is_computational upgrade — NOT the template side-file: is_visual + is_computational, count `ana_*` with a `data_table`/`calculation` in analyst.json, and read interaction.json `centerpiece`/`supporting` (+ grep `data-int` in index.html). FALSE on a DESCRIPTIVE topic (is_visual == false AND is_computational == false — that is `missing_engagement_floor`'s domain), or when `supporting[]` ALREADY covers the available distinct findings (one playground per distinct producible finding) — then this entry does not fire (advisory only even when it does). The INVERSE of `missing_engagement_floor`: that sibling fires when a descriptive topic ships ZERO interactives; THIS one fires when a rich multi-finding topic ships only a LONE hero.",
+    "find": [
+      "grep -nE '\"is_visual\"|\"is_computational\"' PROJECT_DIR/detective.json PROJECT_DIR/scout.json",
+      "grep -nE 'data_table|calculation' PROJECT_DIR/analyst.json",
+      "grep -nE 'centerpiece|supporting' PROJECT_DIR/interaction.json",
+      "grep -n 'data-int' PROJECT_DIR/index.html"
+    ],
+    "pattern": "When a rich, multi-finding visual/computational topic ships only a lone hero centerpiece — its supporting set empty even though the data affords more distinct producible findings — it UNDER-delivers engagement: the reader gets one explorable where the data earned several. This is an ADVISORY (soft) note 'abundance floor not met — only the hero shipped on a rich multi-finding topic; curate the full earned supporting set (one playground per distinct producible finding)'. Route to the Editor (curate which supporting findings earn a playground) then to the Interaction Engineer (build them). It NEVER blocks the build; it NEVER forces a duplicate or decorative widget just to grow the count — each supporting playground must EARN its place (the earned_test / anti_pile / Playtester guards still cap a pile, and the Critic R8 still caps a purposeless interaction at 3). The abundance lever is COVERAGE of distinct findings, never quantity for its own sake.",
+    "ref": "interaction/references/interaction_playbook.json centerpiece_doctrine.abundance_floor; editor/SKILL.md Step 3 (curate the earned supporting set); critic rubric.json R8 (each interaction must earn its place / anti widget-pile); flagship_contract.json missing_engagement_floor (the DESCRIPTIVE-topic sibling — disjoint trigger); PIT-45 (impoverished path)"
+  },
+
+  "missing_engagement_floor": {
+    "severity": "hard",
+    "role": "interaction",
+    "report_type": "flagship_missing_engagement_floor",
+    "trigger": "IF the story is NEITHER computational NOR visual AND ships NO interactive — topic_profile `is_computational == false` AND `is_visual == false`, AND no `int_` element was shipped (interaction.json has no `centerpiece` and an empty/absent `supporting[]`, and index.html carries no `data-int`). Read the RESOLVED topic_profile in detective.json/scout.json — including the post-Analyst is_computational upgrade — NOT the template side-file: is_computational + is_visual, and interaction.json `centerpiece`/`supporting` (+ grep `data-int` in index.html). FALSE the moment ANY engagement floor already exists — a computed headline, a chart/media-rich visual treatment, or a shipped interactive — and FALSE when the profile is unresolved (that is validate.py `topic_profile_unresolved`, not this floor). then this entry does not fire.",
+    "find": [
+      "grep -nE '\"is_computational\"|\"is_visual\"' PROJECT_DIR/detective.json PROJECT_DIR/scout.json",
+      "grep -nE 'centerpiece|supporting' PROJECT_DIR/interaction.json",
+      "grep -n 'data-int' PROJECT_DIR/index.html"
+    ],
+    "pattern": "HARD: a descriptive topic (is_visual:false AND is_computational:false) shipping ZERO interactives BLOCKS — every blog must offer >=1 reader-active element, and the mandated lever is a single simple `personal_input` (the reader enters their own value and sees where they land) or a `sortable`/filterable table of the underlying entities, so the reader PRODUCES or RE-ORDERS something rather than only scrolling — never a decorative widget. It blocks UNLESS an honest `interaction.meta.engagement_blocker` (or a privacy_sensitive topic) is recorded for a genuinely degenerate dataset (the escape hatch keeps it fair). Send back to the Imagineer/Interaction Engineer to add ONE earned lever. validate.py Section 12 `missing_engagement_floor` enforces this deterministically (literal error, with the engagement_blocker / privacy escape). do NOT collide with `interaction_abundance_floor` (the VISUAL/COMPUTATIONAL sibling, which stays SOFT): the two triggers are DISJOINT — `missing_engagement_floor` fires when the topic is NEITHER visual NOR computational AND zero interactives shipped (a flat-text page); `interaction_abundance_floor` fires when the topic IS visual OR computational AND a lone hero shipped on a multi-finding dataset (an UNDER-supplied supporting set). A topic is in at most one domain, so only one of the pair can ever fire.",
+    "ref": "interaction/SKILL.md (personal_input / sortable recipes; each interaction earns its place); critic rubric.json R8 (insight_value / reader produces the finding); flagship_contract.json interaction_abundance_floor (the VISUAL/COMPUTATIONAL sibling — disjoint trigger); PIT-30/PIT-31 (anti widget-pile — earned, not bolted-on)"
+  }
+}

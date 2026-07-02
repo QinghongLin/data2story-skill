@@ -1,0 +1,36 @@
+{
+  "name": "data2story-skill",
+  "owner": {
+    "name": "QinghongLin",
+    "url": "https://github.com/QinghongLin/data2story-skill"
+  },
+  "metadata": {
+    "description": "Data Journalist Agent (Data2Story) skills — the paper's canonical pipeline and the extended pro build",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "data2story",
+      "description": "The paper's canonical 7-role Data Journalist Agent pipeline",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/data2story",
+        "./skills/frontend-design"
+      ]
+    },
+    {
+      "name": "data2story-pro",
+      "description": "14-agent extended build — verified media, interactive playgrounds, cinematic cover, runnable verify layer",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/data2story-pro",
+        "./skills/frontend-design-pro",
+        "./skills/dataviz-craft",
+        "./skills/find-data",
+        "./skills/sparring-partner"
+      ]
+    }
+  ]
+}
