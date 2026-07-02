@@ -27,7 +27,7 @@ def main():
 
     key = os.environ.get("OPENROUTER_API_KEY")
     if not key:
-        for env_path in (os.path.expanduser("~/.env"),):
+        for env_path in ("/Users/forrest/Desktop/data2blog/.env", os.path.expanduser("~/.env")):
             try:
                 with open(env_path) as f:
                     for line in f:
