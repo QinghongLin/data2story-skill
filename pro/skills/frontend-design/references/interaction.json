@@ -1,5 +1,0 @@
-{
-  "_deprecated": "This file is deprecated. Its content was folded into siblings to remove duplication: motion (timing/easing/scroll-reveal/micro-interactions), accessibility, reduced-motion and performance now live in references/motion.json; the interaction recipes (centerpiece doctrine, the universal state+render+steps[] engine, scrollytelling/explorable/guess-reveal) live in references/interaction_playbook.json.",
-  "_use_instead": ["references/motion.json", "references/interaction_playbook.json"],
-  "_note": "Kept as a non-empty stub so any external SKILL or reference still pointing at frontend-design/references/interaction.json does not break; do not add content here — extend motion.json or interaction_playbook.json instead. (Distinct from the Interaction role's OUTPUT PROJECT_DIR/interaction.json, which is unrelated to this design-reference file.)"
-}

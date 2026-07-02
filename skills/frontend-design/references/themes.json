@@ -19,9 +19,40 @@
     "warm_magazine": {
       "feel": "Lifestyle/feature warmth: soft surfaces, generous imagery, rounded cards; for food, travel, people.",
       "tokens": { "--bg": "#faf7f2", "--surface": "#ffffff", "--ink": "#23201c", "--muted": "#8c8378", "--line": "#ece3d6", "--accent": "#e07a3f" },
-      "type": "elegant serif display + humanist sans body", "radius": "12-16px"
+      "type": "elegant serif display + humanist sans body (typography.json field_report)", "radius": "12-16px", "tiles": "CARTO positron"
+    },
+    "swiss_international": {
+      "feel": "International-typographic: white field, strict grid, neo-grotesque, one hot accent. For structured, quantitative subjects.",
+      "tokens": { "--bg": "#ffffff", "--surface": "#f3f3f3", "--ink": "#111111", "--muted": "#666666", "--line": "#dcdcdc", "--accent": "#d6261e" },
+      "type": "neo-grotesque system-ui display + body, radius 0 (typography.json modern_desk)", "tiles": "CARTO positron", "radius": "0", "subject": "structured / quant rankings, comparisons, indices"
+    },
+    "data_zine": {
+      "feel": "Loud independent-zine energy: near-black field, thick rules, oversized grotesk, mono captions. For youth, culture, music.",
+      "tokens": { "--bg": "#101014", "--surface": "#1b1b22", "--ink": "#f5f5f0", "--muted": "#9b9ba6", "--line": "#33333d", "--accent": "#ff4d2e", "--accent-2": "#ffd400" },
+      "type": "heavy grotesk display + mono captions, thick rules (typography.json modern_desk display + mono)", "tiles": "CARTO dark", "subject": "youth / culture / music"
+    },
+    "annual_report": {
+      "feel": "Corporate-report restraint: warm paper, navy ink, transitional serif headings over humanist sans body. For finance and org metrics.",
+      "tokens": { "--bg": "#f7f5f0", "--surface": "#ffffff", "--ink": "#1c2a3a", "--muted": "#5c6b7a", "--line": "#d9dee5", "--accent": "#0a558c" },
+      "type": "transitional serif display + humanist sans body (typography.json broadsheet display + modern_desk body)", "tiles": "CARTO positron", "subject": "finance / org metrics"
+    },
+    "retro_print": {
+      "feel": "Vintage print: aged paper, antique slab headings, old-style serif body, paper grain. For history and year-in-review.",
+      "tokens": { "--bg": "#efe7d3", "--surface": "#f8f2e2", "--ink": "#2b2118", "--muted": "#7a6a52", "--line": "#cdbfa1", "--accent": "#b5471f", "--accent-2": "#3d6b54" },
+      "type": "antique slab display + old-style serif body + paper grain (typography.json field_report; finish.json paper_grain)", "tiles": "CARTO positron", "subject": "history / year-in-review"
+    },
+    "terminal_mono": {
+      "feel": "Green-on-black terminal: monospace everything, scanline-flat surfaces, phosphor accent. For software and leaderboards.",
+      "tokens": { "--bg": "#0b0e0c", "--surface": "#11150f", "--ink": "#cfeccf", "--muted": "#6f8f6f", "--line": "#23301f", "--accent": "#39ff14" },
+      "type": "monospace display + body (typography.json tier2_websafe mono; or modern_desk mono)", "tiles": "CARTO dark", "radius": "0", "subject": "software / benchmarks / leaderboards"
+    },
+    "luxury_serif": {
+      "feel": "Premium editorial: deep warm-black field, gold accent, didone headlines over a transitional serif body. For premium profiles and design.",
+      "tokens": { "--bg": "#12100e", "--surface": "#1b1814", "--ink": "#efe6d6", "--muted": "#a89a83", "--line": "#332d23", "--accent": "#c9a227" },
+      "type": "didone display + transitional serif body (typography.json didone_fashion)", "tiles": "CARTO dark", "subject": "premium profiles / design"
     }
   },
+  "_typography_link": "Each theme's `type` direction names a pairing in typography.json — wire that pairing's stacks into :root (--font-display / --font-body / --font-ui|--font-mono). Defaults: warm_magazine -> field_report, newsprint_light -> broadsheet, editorial_dark -> didone_fashion (or luxury_serif), swiss_international -> modern_desk, terminal_mono -> tier2_websafe mono. Record the chosen pairing name in designer.json page_rhythm.",
   "choosing": "Match the theme to the subject and tone; pick the accent from the data's meaning. Record the chosen theme + accent in designer.json page_rhythm so the Programmer applies it consistently.",
   "anti_patterns": [
     "Generic-AI look: bootstrap blue, a purple/indigo gradient hero, everything center-aligned, one default system font, evenly-spaced soulless cards.",
