@@ -5,9 +5,6 @@ node_modules/
 __pycache__/
 *.pyc
 
-# Logs
-*.log
-
 # Secrets — API keys are read from the environment / ~/.env, never from the repo
 .env
 .env.local
@@ -15,20 +12,3 @@ __pycache__/
 # OS / editor cruft
 .DS_Store
 Thumbs.db
-
-# Generated per-run audit output
-skills/**/audit/
-# ...but DO ship the eval fixtures' audit/ payloads — they are test INPUTS, not run output
-!skills/data2story-pro/evals/fixtures/**/audit/
-!skills/data2story-pro/evals/fixtures/**/audit/**
-
-# Generated eval reports (the reports/ dir itself is kept via .gitkeep)
-skills/data2story-pro/evals/reports/*.json
-skills/data2story-pro/evals/reports/*.md
-
-# Superseded reference material (kept locally, never shipped)
-_archive/
-
-# Vendored sparring-partner: personal calibration profile + session living-docs
-skills/sparring-partner/references/profile.md
-brainstorm-*.md
