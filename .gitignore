@@ -9,6 +9,9 @@ __pycache__/
 .env
 .env.local
 
+# Vendored sparring-partner: personal calibration profile — never shipped
+skills/sparring-partner/references/profile.md
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db

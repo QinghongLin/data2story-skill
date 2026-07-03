@@ -16,7 +16,12 @@ https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
 - **Verifiable.** Each run writes to its own versioned project folder and snapshots the exact skill versions used, so every result can be traced and re-checked.
 - **Progressive disclosure.** Each role's `SKILL.md` holds only its instructions; bulky reference material (output schemas, field rules, lookup tables) lives in that role's `references/` folder as JSON and is loaded only when needed.
 
-> **Extended build.** A 14-agent "pro" build — cinematic scroll, interactive playgrounds, an animated cover, and a runnable in-page verify layer — lives in [`pro/`](pro/) and is invoked as `/data2story-pro`. This top-level version is the paper's canonical 7-role pipeline; `pro/` is a superset for richer stories. See [`pro/README.md`](pro/README.md).
+> **Two versions.** The repository ships two peer skills under [`skills/`](skills/) — the richer, current build is **`data2story-pro`**; the paper's reproducible version is **`data2story`**.
+>
+> | Skill | Invoke | What it is |
+> |---|---|---|
+> | [`data2story-pro`](skills/data2story-pro/) | `/data2story-pro` | Extended 14-agent build — verified media, interactive playgrounds, a cinematic cover, and a runnable in-page verify layer. See [`skills/data2story-pro/README.md`](skills/data2story-pro/README.md). |
+> | [`data2story`](skills/data2story/) | `/data2story` | The paper's canonical 7-role pipeline — reproduces the article. |
 
 ## Updates
 * [x] [2026.6] Version 0.1.0: Optimized visual effects.
@@ -54,15 +59,19 @@ Data2Story is an agent skill. The orchestrator lives in `skills/data2story/SKILL
 ```
 data2story-skill/
 ├── skills/
-│   ├── data2story/        the agent: SKILL.md (orchestrator) + one folder per role
-│   │                      each role = SKILL.md + references/ (JSON) + scripts/ (the tools it runs)
-│   │                        · designer/scripts/  — OpenRouter media tools (text→image/video/music, embeddings)
-│   │                        · inspector/scripts/ — verify.py + generate_viewer.py
-│   │                        · detective/scripts/ — Wikimedia/Commons fetch helpers
-│   └── frontend-design/   shared UI/visual design system the Designer & Programmer borrow from
-├── data/     example datasets
-└── assets/   shared images
+│   ├── data2story/           the paper's canonical 7-role pipeline    ·  /data2story
+│   ├── data2story-pro/       the extended 14-agent build              ·  /data2story-pro
+│   │                         └ self-contained: its own README, package.json, example data/
+│   ├── frontend-design/      visual design system used by data2story
+│   ├── frontend-design-pro/  extended design system used by data2story-pro
+│   ├── dataviz-craft/        chart-craft recipes               ·  data2story-pro helper
+│   ├── find-data/            dataset discovery & validation    ·  data2story-pro helper
+│   └── sparring-partner/     idea-to-topic ideation            ·  data2story-pro helper
+├── .claude-plugin/           marketplace.json  ·  installs either skill
+└── assets/                   shared images
 ```
+
+Inside each orchestrator, a role is a `SKILL.md` + a `references/` folder (JSON schemas & lookup tables) + any `scripts/` it runs — e.g. `designer/scripts/` (OpenRouter media tools), `inspector/scripts/` (the `verify.py` / `generate_viewer.py` verifier), `detective/scripts/` (media fetch helpers).
 
 ## The virtual newsroom
 
