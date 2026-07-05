@@ -20,8 +20,8 @@ https://github.com/user-attachments/assets/7a2e2b65-3289-431d-b06a-230252df8774
 >
 > | Skill | Invoke | What it is |
 > |---|---|---|
-> | [`data2story-pro`](skills/data2story-pro/) | `/data2story-pro` | Extended 14-agent build — verified media, interactive playgrounds, a cinematic cover, and a runnable in-page verify layer. See [`skills/data2story-pro/README.md`](skills/data2story-pro/README.md). |
-> | [`data2story`](skills/data2story/) | `/data2story` | The paper's canonical 7-role pipeline — reproduces the article. |
+> | [`data2story-pro`](skills/data2story-pro/) | `/data2story-pro` | Improved version of data2story. See [`skills/data2story-pro/README.md`](skills/data2story-pro/README.md). |
+> | [`data2story`](skills/data2story/) | `/data2story` | The paper's canonical 7-role pipeline. |
 
 ## Updates
 * [x] [2026.6] Version 0.1.0: Optimized visual effects.
